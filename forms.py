@@ -100,9 +100,7 @@ class ServiceOrderForm(FlaskForm):
 
 class CloseServiceOrderForm(FlaskForm):
     invoice_number = StringField('Número da NF-e', validators=[DataRequired()])
-    original_amount = DecimalField('Valor Original (R$)', validators=[DataRequired()], places=2)
-    discount_amount = DecimalField('Valor do Desconto (R$)', validators=[Optional()], places=2)
-    invoice_amount = DecimalField('Valor Final com Desconto (R$)', validators=[DataRequired()], places=2)
+    invoice_amount = DecimalField('Valor Total (R$)', validators=[DataRequired()], places=2)
     service_details = TextAreaField('Detalhes do Serviço Executado', validators=[DataRequired()])
 
 class FinancialEntryForm(FlaskForm):

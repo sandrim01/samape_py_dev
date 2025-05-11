@@ -38,7 +38,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Configure session
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = False  # Changed for development environment
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
@@ -46,7 +46,6 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["WTF_CSRF_ENABLED"] = True
 app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
 app.config["WTF_CSRF_SSL_STRICT"] = False  # Para ambiente de desenvolvimento
-app.config["WTF_CSRF_CHECK_DEFAULT"] = False  # Desativar verificação CSRF global
 
 # Initialize extensions with app
 db.init_app(app)

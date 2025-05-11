@@ -97,11 +97,6 @@
                                 <i class="fas fa-dollar-sign"></i> Financeiro
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if '/notas-fiscais' in request.path %}active{% endif %}" href="{{ url_for('invoices') }}">
-                                <i class="fas fa-file-invoice-dollar"></i> Notas Fiscais
-                            </a>
-                        </li>
                         {% endif %}
                         {% if current_user.role == UserRole.admin %}
                         <li class="nav-item">
