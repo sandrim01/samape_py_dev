@@ -10,12 +10,13 @@ from wtforms.validators import Optional
 from app import db
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
-    UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale
+    UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
+    SupplierOrder, OrderItem, OrderStatus
 )
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
-    SupplierForm, PartForm, PartSaleForm
+    SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm
 )
 from utils import (
     role_required, admin_required, manager_required, log_action,
@@ -24,6 +25,9 @@ from utils import (
 )
 
 def register_routes(app):
+    # Define o admin_or_manager_required como alias para manager_required
+    admin_or_manager_required = manager_required
+    
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):
@@ -1875,6 +1879,269 @@ def register_routes(app):
         
         return render_template('parts/adjust_stock.html', part=part)
 
+    # Rotas de Pedidos a Fornecedores
+    @app.route('/pedidos-fornecedor')
+    @login_required
+    def supplier_orders():
+        page = request.args.get('page', 1, type=int)
+        per_page = 20  # Itens por página
+        
+        query = SupplierOrder.query
+        
+        # Filtros
+        supplier_id = request.args.get('supplier_id', type=int)
+        status = request.args.get('status')
+        
+        if supplier_id:
+            query = query.filter(SupplierOrder.supplier_id == supplier_id)
+        
+        if status:
+            query = query.filter(SupplierOrder.status == status)
+        
+        orders = query.order_by(SupplierOrder.created_at.desc()).paginate(page=page, per_page=per_page)
+        
+        # Fornecedores para o filtro
+        suppliers = Supplier.query.order_by(Supplier.name).all()
+        
+        return render_template(
+            'supplier_orders/index.html', 
+            orders=orders,
+            suppliers=suppliers,
+            order_statuses=OrderStatus,
+            current_supplier=supplier_id,
+            current_status=status
+        )
+    
+    @app.route('/pedidos-fornecedor/novo', methods=['GET', 'POST'])
+    @login_required
+    @admin_or_manager_required
+    def new_supplier_order():
+        form = SupplierOrderForm()
+        
+        if form.validate_on_submit():
+            # Formatar as datas
+            expected_delivery_date = None
+            if form.expected_delivery_date.data:
+                try:
+                    expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
+                except ValueError:
+                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                    return render_template('supplier_orders/create.html', form=form)
+            
+            delivery_date = None
+            if form.delivery_date.data:
+                try:
+                    delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
+                except ValueError:
+                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                    return render_template('supplier_orders/create.html', form=form)
+            
+            # Criar o pedido
+            order = SupplierOrder(
+                supplier_id=form.supplier_id.data,
+                order_number=form.order_number.data,
+                total_value=form.total_value.data or 0,
+                status=form.status.data,
+                expected_delivery_date=expected_delivery_date,
+                delivery_date=delivery_date,
+                notes=form.notes.data,
+                created_by=current_user.id
+            )
+            
+            db.session.add(order)
+            db.session.commit()
+            
+            log_action(
+                'Criação de Pedido',
+                'supplier_order',
+                order.id,
+                f'Pedido para {order.supplier.name} criado'
+            )
+            
+            flash('Pedido criado com sucesso!', 'success')
+            return redirect(url_for('view_supplier_order', id=order.id))
+        
+        return render_template('supplier_orders/create.html', form=form)
+    
+    @app.route('/pedidos-fornecedor/<int:id>')
+    @login_required
+    def view_supplier_order(id):
+        order = SupplierOrder.query.get_or_404(id)
+        item_form = OrderItemForm()
+        
+        return render_template(
+            'supplier_orders/view.html', 
+            order=order,
+            item_form=item_form,
+            order_statuses=OrderStatus
+        )
+    
+    @app.route('/pedidos-fornecedor/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    @admin_or_manager_required
+    def edit_supplier_order(id):
+        order = SupplierOrder.query.get_or_404(id)
+        form = SupplierOrderForm(obj=order)
+        
+        # Formatar datas para exibição no formulário
+        if order.expected_delivery_date:
+            form.expected_delivery_date.data = order.expected_delivery_date.strftime('%d/%m/%Y')
+        
+        if order.delivery_date:
+            form.delivery_date.data = order.delivery_date.strftime('%d/%m/%Y')
+        
+        if form.validate_on_submit():
+            # Formatar as datas
+            expected_delivery_date = None
+            if form.expected_delivery_date.data:
+                try:
+                    expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
+                except ValueError:
+                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                    return render_template('supplier_orders/edit.html', form=form, order=order)
+            
+            delivery_date = None
+            if form.delivery_date.data:
+                try:
+                    delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
+                except ValueError:
+                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                    return render_template('supplier_orders/edit.html', form=form, order=order)
+            
+            # Atualizar os campos do pedido
+            order.supplier_id = form.supplier_id.data
+            order.order_number = form.order_number.data
+            order.total_value = form.total_value.data
+            order.status = form.status.data
+            order.expected_delivery_date = expected_delivery_date
+            order.delivery_date = delivery_date
+            order.notes = form.notes.data
+            
+            db.session.commit()
+            
+            log_action(
+                'Edição de Pedido',
+                'supplier_order',
+                order.id,
+                f'Pedido para {order.supplier.name} atualizado'
+            )
+            
+            flash('Pedido atualizado com sucesso!', 'success')
+            return redirect(url_for('view_supplier_order', id=order.id))
+        
+        return render_template('supplier_orders/edit.html', form=form, order=order)
+    
+    @app.route('/pedidos-fornecedor/<int:id>/excluir', methods=['POST'])
+    @login_required
+    @admin_required
+    def delete_supplier_order(id):
+        order = SupplierOrder.query.get_or_404(id)
+        supplier_name = order.supplier.name
+        
+        # Registrar a ação antes de excluir
+        log_action(
+            'Exclusão de Pedido',
+            'supplier_order',
+            order.id,
+            f'Pedido {order.order_number or "#" + str(order.id)} para {supplier_name} excluído'
+        )
+        
+        db.session.delete(order)
+        db.session.commit()
+        
+        flash('Pedido excluído com sucesso!', 'success')
+        return redirect(url_for('supplier_orders'))
+    
+    @app.route('/pedidos-fornecedor/item/<int:id>/adicionar', methods=['POST'])
+    @login_required
+    @admin_or_manager_required
+    def add_order_item(id):
+        order = SupplierOrder.query.get_or_404(id)
+        form = OrderItemForm()
+        
+        if form.validate_on_submit():
+            # Adicionar novo item ao pedido
+            item = OrderItem(
+                order_id=order.id,
+                part_id=form.part_id.data if form.part_id.data else None,
+                description=form.description.data,
+                quantity=form.quantity.data,
+                unit_price=form.unit_price.data or 0,
+                total_price=form.total_price.data or 0,
+                status=form.status.data,
+                notes=form.notes.data
+            )
+            
+            db.session.add(item)
+            
+            # Atualizar valor total do pedido
+            if item.total_price:
+                if order.total_value:
+                    order.total_value += item.total_price
+                else:
+                    order.total_value = item.total_price
+            
+            db.session.commit()
+            
+            flash('Item adicionado com sucesso!', 'success')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'Erro no campo {getattr(form, field).label.text}: {error}', 'danger')
+        
+        return redirect(url_for('view_supplier_order', id=order.id))
+    
+    @app.route('/pedidos-fornecedor/item/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    @admin_or_manager_required
+    def edit_order_item(id):
+        item = OrderItem.query.get_or_404(id)
+        order = item.supplier_order
+        
+        form = OrderItemForm(obj=item)
+        
+        if form.validate_on_submit():
+            # Ajustar o valor total do pedido
+            old_total = item.total_price or 0
+            
+            # Atualizar o item
+            item.part_id = form.part_id.data if form.part_id.data else None
+            item.description = form.description.data
+            item.quantity = form.quantity.data
+            item.unit_price = form.unit_price.data
+            item.total_price = form.total_price.data
+            item.status = form.status.data
+            item.notes = form.notes.data
+            
+            # Atualizar o valor total do pedido
+            if order.total_value is not None:
+                order.total_value = order.total_value - old_total + (item.total_price or 0)
+            
+            db.session.commit()
+            
+            flash('Item atualizado com sucesso!', 'success')
+            return redirect(url_for('view_supplier_order', id=order.id))
+        
+        return render_template('supplier_orders/edit_item.html', form=form, item=item, order=order)
+    
+    @app.route('/pedidos-fornecedor/item/<int:id>/excluir', methods=['POST'])
+    @login_required
+    @admin_or_manager_required
+    def delete_order_item(id):
+        item = OrderItem.query.get_or_404(id)
+        order_id = item.order_id
+        order = item.supplier_order
+        
+        # Atualizar o valor total do pedido
+        if order.total_value is not None and item.total_price is not None:
+            order.total_value -= item.total_price
+        
+        db.session.delete(item)
+        db.session.commit()
+        
+        flash('Item excluído com sucesso!', 'success')
+        return redirect(url_for('view_supplier_order', id=order_id))
+    
     # System Settings
     @app.route('/configuracoes', methods=['GET', 'POST'])
     @login_required
