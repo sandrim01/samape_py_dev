@@ -3,67 +3,70 @@
 {% block title %}Login - SAMAPE{% endblock %}
 
 {% block auth_content %}
-<div class="login-page">
-    <div class="container login-container">
-        <div class="card shadow-lg">
-            <div class="card-body p-4 p-sm-5">
-                <div class="login-logo">
-                    <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SAMAPE Logo">
-                </div>
-                
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                
-                <form method="post" novalidate>
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        <label for="username" class="form-label">{{ form.username.label }}</label>
-                        {{ form.username(class="form-control", id="username", placeholder="Nome de usuário") }}
-                        {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label">{{ form.password.label }}</label>
-                        {{ form.password(class="form-control", id="password") }}
-                        {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3 form-check">
-                        {{ form.remember_me(class="form-check-input", id="remember_me") }}
-                        <label class="form-check-label" for="remember_me">{{ form.remember_me.label }}</label>
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
-                    </div>
-                </form>
+<div class="login-container">
+    <div class="login-card card">
+        <div class="card-header">
+            <div class="login-logo">
+                <img src="{{ url_for('static', filename='images/logo com sombra maior.png') }}" alt="SAMAPE Logo">
             </div>
         </div>
-        
-        <div class="text-center mt-3 text-muted">
-            <small>&copy; {{ now().year }} SAMAPE. Todos os direitos reservados.</small>
+        <div class="card-body">
+            <h3 class="login-title">Acesso ao Sistema</h3>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-4">
+                    <label for="username" class="form-label">{{ form.username.label }}</label>
+                    {{ form.username(class="form-control", id="username", placeholder="Digite seu usuário", autocomplete="username") }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="password" class="form-label">{{ form.password.label }}</label>
+                    {{ form.password(class="form-control", id="password", placeholder="Digite sua senha", autocomplete="current-password") }}
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4 form-check">
+                    {{ form.remember_me(class="form-check-input", id="remember_me") }}
+                    <label class="form-check-label" for="remember_me">{{ form.remember_me.label }}</label>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
+    
+    <div class="text-center mt-4 text-white">
+        <small>&copy; {{ now().year }} SAMAPE. Todos os direitos reservados.</small>
     </div>
 </div>
 {% endblock %}
