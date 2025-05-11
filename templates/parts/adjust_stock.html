@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustar Estoque - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Ajustar Estoque</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-boxes me-1"></i> Ajuste de Estoque: {{ part.name }}
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Informações da Peça</div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 35%">Nome</th>
+                                    <td>{{ part.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Código</th>
+                                    <td>{{ part.part_number if part.part_number else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <td>{{ part.category | capitalize if part.category else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fornecedor</th>
+                                    <td>
+                                        {% if part.supplier %}
+                                        {{ part.supplier.name }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Estoque Atual</div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6 text-center">
+                                <div class="display-4 mb-2">{{ part.stock_quantity }}</div>
+                                <span class="badge {% if part.stock_quantity <= part.minimum_stock %}bg-danger{% elif part.stock_quantity < part.minimum_stock * 2 %}bg-warning{% else %}bg-success{% endif %} p-2">
+                                    {% if part.stock_quantity <= part.minimum_stock %}
+                                    Abaixo do Mínimo
+                                    {% elif part.stock_quantity < part.minimum_stock * 2 %}
+                                    Estoque Baixo
+                                    {% else %}
+                                    Estoque Adequado
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Estoque Mínimo:</strong> {{ part.minimum_stock }}</p>
+                                <p><strong>Localização:</strong> {{ part.location if part.location else 'N/A' }}</p>
+                                <p><strong>Última Atualização:</strong> {{ part.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            <div class="card mb-4">
+                <div class="card-header">Ajustar Quantidade</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Nova Quantidade em Estoque *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" value="{{ part.stock_quantity }}" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Motivo do Ajuste *</label>
+                                <select class="form-select" id="reason_type" name="reason_type" onchange="toggleCustomReason()">
+                                    <option value="">Selecione um motivo</option>
+                                    <option value="Entrada de mercadoria">Entrada de mercadoria</option>
+                                    <option value="Inventário físico">Inventário físico</option>
+                                    <option value="Devolução de cliente">Devolução de cliente</option>
+                                    <option value="Transferência de estoque">Transferência de estoque</option>
+                                    <option value="Perda/Extravio">Perda/Extravio</option>
+                                    <option value="Dano/Avaria">Dano/Avaria</option>
+                                    <option value="Uso interno">Uso interno</option>
+                                    <option value="Outro">Outro (especificar)</option>
+                                </select>
+                                <input type="text" class="form-control mt-2" id="custom_reason" name="custom_reason" placeholder="Especifique o motivo" style="display: none;">
+                                <input type="hidden" id="reason" name="reason" value="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text text-muted mb-3">
+                        <i class="fas fa-info-circle"></i> Este ajuste será registrado no histórico da peça.
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Confirmar Ajuste</button>
+                    <a href="{{ url_for('view_part', id=part.id) }}" class="btn btn-secondary ms-2">Cancelar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleCustomReason() {
+        const reasonType = document.getElementById('reason_type');
+        const customReason = document.getElementById('custom_reason');
+        const reasonField = document.getElementById('reason');
+        
+        if (reasonType.value === 'Outro') {
+            customReason.style.display = 'block';
+            customReason.required = true;
+        } else {
+            customReason.style.display = 'none';
+            customReason.required = false;
+        }
+        
+        // Pre-fill the hidden reason field
+        if (reasonType.value === 'Outro') {
+            reasonField.value = customReason.value;
+        } else {
+            reasonField.value = reasonType.value;
+        }
+    }
+    
+    // Event listener for custom reason input
+    document.getElementById('custom_reason').addEventListener('input', function() {
+        document.getElementById('reason').value = this.value;
+    });
+    
+    // Event listener for form submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const reasonType = document.getElementById('reason_type');
+        const customReason = document.getElementById('custom_reason');
+        const reasonField = document.getElementById('reason');
+        
+        if (reasonType.value === '') {
+            e.preventDefault();
+            alert('Por favor, selecione um motivo para o ajuste.');
+            return false;
+        }
+        
+        if (reasonType.value === 'Outro' && customReason.value.trim() === '') {
+            e.preventDefault();
+            alert('Por favor, especifique o motivo do ajuste.');
+            return false;
+        }
+        
+        // Set final reason value
+        if (reasonType.value === 'Outro') {
+            reasonField.value = customReason.value;
+        } else {
+            reasonField.value = reasonType.value;
+        }
+    });
+</script>
+{% endblock %}

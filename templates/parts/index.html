@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Peças e Materiais - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Peças e Materiais</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('new_part') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Peça
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-search me-1"></i> Buscar Peças
+    </div>
+    <div class="card-body">
+        <form method="get" action="{{ url_for('parts') }}" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="search" name="search" placeholder="Nome, código ou descrição" value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="category" name="category">
+                    <option value="">Todas as categorias</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="low_stock" name="low_stock" value="true" {% if low_stock %}checked{% endif %}>
+                    <label class="form-check-label" for="low_stock">Estoque baixo</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-cogs me-1"></i> Lista de Peças
+    </div>
+    <div class="card-body">
+        {% if parts %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Código</th>
+                        <th>Categoria</th>
+                        <th>Fornecedor</th>
+                        <th>Estoque</th>
+                        <th>Preço</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for part in parts %}
+                    <tr>
+                        <td>{{ part.name }}</td>
+                        <td>{{ part.part_number if part.part_number else 'N/A' }}</td>
+                        <td>{{ part.category | capitalize if part.category else 'N/A' }}</td>
+                        <td>
+                            {% if part.supplier %}
+                            <a href="{{ url_for('view_supplier', id=part.supplier_id) }}">{{ part.supplier.name }}</a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if part.stock_quantity <= part.minimum_stock %}bg-danger{% elif part.stock_quantity < part.minimum_stock * 2 %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ part.stock_quantity }}
+                                {% if part.stock_quantity <= part.minimum_stock %}
+                                <i class="fas fa-exclamation-triangle ms-1" title="Estoque abaixo do mínimo"></i>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>R$ {{ part.selling_price | format_currency if part.selling_price else '0,00' }}</td>
+                        <td>
+                            <a href="{{ url_for('view_part', id=part.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('edit_part', id=part.id) }}" class="btn btn-sm btn-primary" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('new_part_sale', part_id=part.id) }}" class="btn btn-sm btn-success" title="Vender">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                            {% if current_user.role == UserRole.admin or current_user.role == UserRole.gerente %}
+                            <a href="{{ url_for('adjust_stock', id=part.id) }}" class="btn btn-sm btn-warning" title="Ajustar Estoque">
+                                <i class="fas fa-boxes"></i>
+                            </a>
+                            {% endif %}
+                            {% if current_user.role == UserRole.admin %}
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ part.id }}" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            
+                            <!-- Modal de Confirmação de Exclusão -->
+                            <div class="modal fade" id="deleteModal{{ part.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ part.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ part.id }}">Confirmação de Exclusão</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Tem certeza que deseja excluir a peça <strong>{{ part.name }}</strong>?
+                                            <p class="text-danger mt-3">
+                                                <i class="fas fa-exclamation-triangle"></i> Esta ação não pode ser desfeita!
+                                            </p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="{{ url_for('delete_part', id=part.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-danger">Excluir</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Paginação">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('parts', page=pagination.prev_num, search=search, category=category, low_stock=low_stock) }}">Anterior</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Anterior</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('parts', page=page_num, search=search, category=category, low_stock=low_stock) }}">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('parts', page=pagination.next_num, search=search, category=category, low_stock=low_stock) }}">Próximo</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Próximo</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhuma peça encontrada{% if search or category or low_stock %} para os filtros aplicados{% endif %}.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Vendas de Peças - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Vendas de Peças</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('new_part_sale') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Venda
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-search me-1"></i> Buscar Vendas
+    </div>
+    <div class="card-body">
+        <form method="get" action="{{ url_for('part_sales') }}" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="search" name="search" placeholder="Nome da peça, código ou NF-e" value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="client_id" name="client_id">
+                    <option value="">Todos os clientes</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" {% if client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="service_order_id" name="service_order_id">
+                    <option value="">Todas as OS</option>
+                    {% for order in service_orders %}
+                    <option value="{{ order.id }}" {% if service_order_id == order.id %}selected{% endif %}>OS #{{ order.id }} - {{ order.client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-shopping-cart me-1"></i> Histórico de Vendas
+    </div>
+    <div class="card-body">
+        {% if sales %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Peça</th>
+                        <th>Quantidade</th>
+                        <th>Valor Total</th>
+                        <th>Cliente</th>
+                        <th>OS</th>
+                        <th>NF-e</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td>{{ sale.sale_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('view_part', id=sale.part_id) }}">{{ sale.part.name }}</a>
+                        </td>
+                        <td>{{ sale.quantity }} x R$ {{ sale.unit_price | format_currency }}</td>
+                        <td>R$ {{ sale.total_price | format_currency }}</td>
+                        <td>
+                            {% if sale.client %}
+                            <a href="{{ url_for('view_client', id=sale.client_id) }}">{{ sale.client.name }}</a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sale.service_order %}
+                            <a href="{{ url_for('view_service_order', id=sale.service_order_id) }}">OS #{{ sale.service_order_id }}</a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ sale.invoice_number if sale.invoice_number else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('view_part_sale', id=sale.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if current_user.role == UserRole.admin %}
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelSaleModal{{ sale.id }}" title="Cancelar Venda">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                            
+                            <!-- Modal de Confirmação de Cancelamento -->
+                            <div class="modal fade" id="cancelSaleModal{{ sale.id }}" tabindex="-1" aria-labelledby="cancelSaleModalLabel{{ sale.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="cancelSaleModalLabel{{ sale.id }}">Confirmação de Cancelamento</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Tem certeza que deseja cancelar a venda de <strong>{{ sale.quantity }}x {{ sale.part.name }}</strong>?
+                                            <p class="text-info mt-3">
+                                                <i class="fas fa-info-circle"></i> O estoque será ajustado automaticamente.
+                                            </p>
+                                            {% if sale.service_order %}
+                                            <p class="text-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> A entrada financeira relacionada a esta venda também será excluída.
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="{{ url_for('cancel_part_sale', id=sale.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Paginação">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('part_sales', page=pagination.prev_num, search=search, client_id=client_id, service_order_id=service_order_id) }}">Anterior</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Anterior</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('part_sales', page=page_num, search=search, client_id=client_id, service_order_id=service_order_id) }}">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('part_sales', page=pagination.next_num, search=search, client_id=client_id, service_order_id=service_order_id) }}">Próximo</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Próximo</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhuma venda encontrada{% if search or client_id or service_order_id %} para os filtros aplicados{% endif %}.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
