@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="{{ get_system_setting('theme', 'light') }}">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -139,20 +139,15 @@
     <script>
         // Check if system setting is 'auto', and if so, apply theme based on system preference
         document.addEventListener('DOMContentLoaded', function() {
-            const theme = "{{ get_system_setting('theme', 'light') }}";
-            if (theme === 'auto') {
-                // Check if system prefers dark mode
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.setAttribute('data-bs-theme', 'dark');
-                } else {
-                    document.documentElement.setAttribute('data-bs-theme', 'light');
-                }
-                
-                // Listen for system theme changes
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                    document.documentElement.setAttribute('data-bs-theme', event.matches ? 'dark' : 'light');
-                });
+            // For now, use system preference directly
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
             }
+            
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                document.documentElement.setAttribute('data-bs-theme', event.matches ? 'dark' : 'light');
+            });
         });
     </script>
     
