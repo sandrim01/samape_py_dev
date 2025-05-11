@@ -87,7 +87,7 @@ class EquipmentForm(FlaskForm):
 
 class ServiceOrderForm(FlaskForm):
     client_id = SelectField('Cliente', coerce=int, validators=[DataRequired()])
-    equipment_ids = SelectField('Equipamentos', validators=[Optional()], render_kw={"multiple": True})
+    equipment_ids = HiddenField('Equipamentos', validators=[Optional()])
     responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
