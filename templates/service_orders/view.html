@@ -66,6 +66,11 @@
                     <p>{{ service_order.description }}</p>
                 </div>
                 
+                <div class="mb-3">
+                    <h6 class="fw-bold">Valor Estimado</h6>
+                    <p>{{ format_currency(service_order.estimated_value) if service_order.estimated_value else 'Não definido' }}</p>
+                </div>
+                
                 {% if service_order.status.name == 'fechada' %}
                 <div class="row mb-3">
                     <div class="col-md-6">
