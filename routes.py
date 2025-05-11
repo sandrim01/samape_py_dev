@@ -1750,17 +1750,25 @@ def register_routes(app):
             # Atualizar o estoque da peça
             part.stock_quantity -= form.quantity.data
             
-            # Se a venda estiver associada a uma ordem de serviço, adicionar entrada financeira
-            if sale.service_order_id:
-                financial_entry = FinancialEntry(
-                    service_order_id=sale.service_order_id,
-                    description=f"Venda de peça: {part.name} (x{sale.quantity})",
-                    amount=sale.total_price,
-                    type=FinancialEntryType.entrada,
-                    date=datetime.now(),
-                    created_by=current_user.id
-                )
-                db.session.add(financial_entry)
+            # Adicionar entrada financeira sempre, independentemente de estar associada a uma OS
+            description = f"Venda de peça: {part.name} (x{sale.quantity})"
+            if sale.client_id:
+                client = Client.query.get(sale.client_id)
+                if client:
+                    description += f" - Cliente: {client.name}"
+            
+            if sale.invoice_number:
+                description += f" - NF-e: {sale.invoice_number}"
+                
+            financial_entry = FinancialEntry(
+                service_order_id=sale.service_order_id if sale.service_order_id else None,
+                description=description,
+                amount=sale.total_price,
+                type=FinancialEntryType.entrada,
+                date=datetime.now(),
+                created_by=current_user.id
+            )
+            db.session.add(financial_entry)
             
             db.session.add(sale)
             db.session.commit()
@@ -1798,16 +1806,28 @@ def register_routes(app):
         if part:
             part.stock_quantity += sale.quantity
         
-        # Remover entrada financeira associada, se houver
+        # Remover entrada financeira associada, sempre
+        # Primeiro tenta buscar pela ordem de serviço, se tiver
+        financial_entry = None
         if sale.service_order_id:
             financial_entry = FinancialEntry.query.filter_by(
                 service_order_id=sale.service_order_id,
                 amount=sale.total_price,
                 type=FinancialEntryType.entrada
             ).first()
-            
-            if financial_entry:
-                db.session.delete(financial_entry)
+        
+        # Se não encontrou, tenta buscar pela descrição contendo o nome da peça e quantidade
+        if not financial_entry:
+            description_pattern = f"Venda de peça: {part.name} (x{sale.quantity})"
+            financial_entry = FinancialEntry.query.filter(
+                FinancialEntry.description.like(f"%{description_pattern}%"),
+                FinancialEntry.amount == sale.total_price,
+                FinancialEntry.type == FinancialEntryType.entrada
+            ).first()
+        
+        # Remove a entrada financeira, se encontrada
+        if financial_entry:
+            db.session.delete(financial_entry)
         
         # Registrar o cancelamento no log
         log_action(

@@ -150,6 +150,7 @@ class Supplier(db.Model):
     
     # Relacionamentos
     parts = db.relationship('Part', backref='supplier', lazy=True)
+    orders = db.relationship('SupplierOrder', backref='supplier', lazy=True)
     
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -170,6 +171,7 @@ class Part(db.Model):
     
     # Relacionamentos
     sales = db.relationship('PartSale', backref='part', lazy=True)
+    order_items = db.relationship('OrderItem', backref='part', lazy=True)
 
 class PartSale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -184,6 +186,40 @@ class PartSale(db.Model):
     notes = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class OrderStatus(enum.Enum):
+    pendente = "pendente"
+    aprovado = "aprovado"
+    enviado = "enviado"
+    recebido = "recebido"
+    cancelado = "cancelado"
+
+class SupplierOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=False)
+    order_number = db.Column(db.String(50))
+    total_value = db.Column(db.Numeric(10, 2))
+    status = db.Column(Enum(OrderStatus), default=OrderStatus.pendente, nullable=False)
+    expected_delivery_date = db.Column(db.Date)
+    delivery_date = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    items = db.relationship('OrderItem', backref='supplier_order', lazy=True, cascade="all, delete-orphan")
+    
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('supplier_order.id'), nullable=False)
+    part_id = db.Column(db.Integer, db.ForeignKey('part.id'))
+    description = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    unit_price = db.Column(db.Numeric(10, 2))
+    total_price = db.Column(db.Numeric(10, 2))
+    status = db.Column(Enum(OrderStatus), default=OrderStatus.pendente, nullable=False)
+    notes = db.Column(db.Text)
     
 class SystemSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
 import re
-from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part
+from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus
 
 class LoginForm(FlaskForm):
     username = StringField('Nome de Usuário', validators=[DataRequired()])
@@ -228,6 +228,43 @@ class PartSaleForm(FlaskForm):
             for o in ServiceOrder.query.filter(
                 ServiceOrder.status != ServiceOrderStatus.fechada
             ).order_by(ServiceOrder.id.desc()).all()
+        ]
+
+
+class SupplierOrderForm(FlaskForm):
+    supplier_id = SelectField('Fornecedor', validators=[DataRequired()], coerce=lambda x: int(x) if x else None)
+    order_number = StringField('Número do Pedido', validators=[Optional(), Length(max=50)])
+    total_value = DecimalField('Valor Total (R$)', validators=[Optional()], places=2)
+    status = SelectField('Status', choices=[(status.name, status.value) for status in OrderStatus], validators=[DataRequired()])
+    expected_delivery_date = StringField('Data Prevista de Entrega', validators=[Optional()])
+    delivery_date = StringField('Data de Entrega', validators=[Optional()])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    id = HiddenField()
+
+    def __init__(self, *args, **kwargs):
+        super(SupplierOrderForm, self).__init__(*args, **kwargs)
+        # Fornecedores para o dropdown
+        from models import Supplier
+        self.supplier_id.choices = [(s.id, s.name) for s in Supplier.query.order_by(Supplier.name).all()]
+
+
+class OrderItemForm(FlaskForm):
+    part_id = SelectField('Peça', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    description = StringField('Descrição', validators=[DataRequired(), Length(max=200)])
+    quantity = IntegerField('Quantidade', validators=[DataRequired(), NumberRange(min=1)], default=1)
+    unit_price = DecimalField('Preço Unitário (R$)', validators=[Optional()], places=2)
+    total_price = DecimalField('Preço Total (R$)', validators=[Optional()], places=2)
+    status = SelectField('Status', choices=[(status.name, status.value) for status in OrderStatus], validators=[DataRequired()])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    id = HiddenField()
+
+    def __init__(self, *args, **kwargs):
+        super(OrderItemForm, self).__init__(*args, **kwargs)
+        # Peças para o dropdown
+        from models import Part
+        self.part_id.choices = [('', 'Selecione uma peça ou digite a descrição')] + [
+            (p.id, f"{p.name} - {p.part_number or 'S/N'}") 
+            for p in Part.query.order_by(Part.name).all()
         ]
 
 
