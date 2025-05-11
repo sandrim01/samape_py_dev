@@ -986,6 +986,100 @@ def register_routes(app):
         
         return render_template('invoices/index.html', invoices=invoices)
     
+    @app.route('/notas-fiscais/exportar')
+    @login_required
+    def export_invoices():
+        import zipfile
+        import io
+        from weasyprint import HTML
+        from flask import make_response
+        import tempfile
+        import os
+        
+        # Obtém os mesmos filtros da listagem
+        cliente = request.args.get('cliente')
+        numero_nf = request.args.get('numero_nf')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        
+        # Constrói a query com os mesmos filtros da página de listagem
+        query = ServiceOrder.query.filter(
+            ServiceOrder.status == ServiceOrderStatus.fechada,
+            ServiceOrder.invoice_number.isnot(None)
+        ).order_by(ServiceOrder.invoice_date.desc())
+        
+        if cliente:
+            query = query.join(Client).filter(Client.name.ilike(f'%{cliente}%'))
+        
+        if numero_nf:
+            query = query.filter(ServiceOrder.invoice_number.ilike(f'%{numero_nf}%'))
+        
+        if data_inicio:
+            try:
+                data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+                query = query.filter(ServiceOrder.invoice_date >= data_inicio)
+            except ValueError:
+                flash('Data inicial inválida.', 'warning')
+                return redirect(url_for('invoices'))
+        
+        if data_fim:
+            try:
+                data_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+                data_fim = datetime.combine(data_fim, datetime.max.time())
+                query = query.filter(ServiceOrder.invoice_date <= data_fim)
+            except ValueError:
+                flash('Data final inválida.', 'warning')
+                return redirect(url_for('invoices'))
+        
+        # Limita a quantidade para evitar arquivos muito grandes
+        invoices = query.limit(50).all()
+        
+        if not invoices:
+            flash('Nenhuma nota fiscal encontrada para exportação.', 'warning')
+            return redirect(url_for('invoices'))
+        
+        # Cria um arquivo ZIP em memória
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            # Adiciona cada nota fiscal ao ZIP
+            for so in invoices:
+                # Gera HTML da nota fiscal
+                html_content = render_template('invoices/view.html', 
+                                              service_order=so, 
+                                              export_mode=True)
+                
+                # Cria arquivo PDF temporário
+                with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp:
+                    # Gera PDF do HTML
+                    HTML(string=html_content).write_pdf(temp.name)
+                
+                # Lê o arquivo PDF e adiciona ao ZIP
+                with open(temp.name, 'rb') as pdf_file:
+                    pdf_data = pdf_file.read()
+                    # Adiciona ao ZIP com um nome adequado
+                    zf.writestr(f'NF_{so.invoice_number}.pdf', pdf_data)
+                
+                # Remove o arquivo temporário
+                os.unlink(temp.name)
+        
+        # Prepara o arquivo ZIP para download
+        memory_file.seek(0)
+        
+        data_str = datetime.now().strftime('%Y%m%d')
+        response = make_response(memory_file.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = f'attachment; filename=notas_fiscais_{data_str}.zip'
+        
+        # Registra a ação
+        log_action(
+            'Exportação de Notas Fiscais',
+            None,
+            None,
+            f'Exportação de {len(invoices)} notas fiscais em PDF'
+        )
+        
+        return response
+    
     @app.route('/os/<int:id>/nfe')
     @login_required
     def view_invoice(id):
@@ -997,6 +1091,42 @@ def register_routes(app):
             return redirect(url_for('view_service_order', id=id))
             
         return render_template('invoices/view.html', service_order=service_order)
+    
+    @app.route('/os/<int:id>/nfe/exportar')
+    @login_required
+    def export_invoice(id):
+        from weasyprint import HTML
+        from flask import make_response
+        import tempfile
+        import os
+        
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Check if order is closed
+        if service_order.status != ServiceOrderStatus.fechada:
+            flash('Esta OS ainda não foi fechada.', 'warning')
+            return redirect(url_for('view_service_order', id=id))
+        
+        # Render the invoice template to HTML
+        html_content = render_template('invoices/view.html', 
+                                       service_order=service_order, 
+                                       export_mode=True)
+        
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp:
+            # Generate PDF from HTML content
+            HTML(string=html_content).write_pdf(temp.name)
+        
+        # Create a response with the PDF file
+        with open(temp.name, 'rb') as pdf_file:
+            response = make_response(pdf_file.read())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename=nota_fiscal_{service_order.invoice_number}.pdf'
+        
+        # Clean up temporary file
+        os.unlink(temp.name)
+        
+        return response
         
     # System Settings
     @app.route('/configuracoes', methods=['GET', 'POST'])
