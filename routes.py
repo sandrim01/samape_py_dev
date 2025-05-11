@@ -483,6 +483,31 @@ def register_routes(app):
         flash('Cliente excluído com sucesso!', 'success')
         return redirect(url_for('clients'))
 
+    # Equipment API endpoints
+    @app.route('/api/equipamentos/modelos-por-marca', methods=['GET'])
+    @login_required
+    def get_models_by_brand():
+        """
+        Retorna os modelos disponíveis para uma marca específica
+        Utilizado para o preenchimento dinâmico do campo de modelo no formulário de equipamento
+        """
+        brand = request.args.get('brand', '')
+        
+        if not brand:
+            return jsonify([])
+        
+        # Buscar modelos distintos para a marca selecionada
+        from sqlalchemy import distinct
+        models = db.session.query(distinct(Equipment.model))\
+            .filter(Equipment.brand == brand)\
+            .order_by(Equipment.model)\
+            .all()
+        
+        # Formatar para retornar como JSON
+        model_list = [{'value': m[0], 'text': m[0]} for m in models if m[0]]
+        
+        return jsonify(model_list)
+    
     # Equipment routes
     @app.route('/maquinarios')
     @login_required
@@ -525,11 +550,16 @@ def register_routes(app):
         form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
         
         if form.validate_on_submit():
+            # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
+            equipment_type = form.type_select.data if form.type_select.data else form.type.data
+            equipment_brand = form.brand_select.data if form.brand_select.data else form.brand.data
+            equipment_model = form.model_select.data if form.model_select.data else form.model.data
+            
             equipment = Equipment(
                 client_id=form.client_id.data,
-                type=form.type.data,
-                brand=form.brand.data,
-                model=form.model.data,
+                type=equipment_type,
+                brand=equipment_brand,
+                model=equipment_model,
                 serial_number=form.serial_number.data,
                 year=form.year.data
             )
@@ -541,7 +571,7 @@ def register_routes(app):
                 'Criação de Equipamento',
                 'equipment',
                 equipment.id,
-                f"Equipamento {equipment.type} criado para cliente {equipment.client.name}"
+                f"Equipamento {equipment.type} {equipment.brand} {equipment.model} criado para cliente {equipment.client.name}"
             )
             
             flash('Equipamento cadastrado com sucesso!', 'success')
@@ -570,16 +600,36 @@ def register_routes(app):
     @login_required
     def edit_equipment(id):
         equipment = Equipment.query.get_or_404(id)
-        form = EquipmentForm(obj=equipment)
+        form = EquipmentForm()
         
         # Load clients for dropdown
         form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
         
+        # Preencher o formulário na primeira vez
+        if request.method == 'GET':
+            form.client_id.data = equipment.client_id
+            form.type.data = equipment.type
+            form.brand.data = equipment.brand
+            form.model.data = equipment.model
+            form.serial_number.data = equipment.serial_number
+            form.year.data = equipment.year
+            
+            # Tentar selecionar valores nos dropdowns se possível
+            if equipment.type in [choice[0] for choice in form.type_select.choices]:
+                form.type_select.data = equipment.type
+                form.type.data = ''
+            
+            if equipment.brand in [choice[0] for choice in form.brand_select.choices]:
+                form.brand_select.data = equipment.brand
+                form.brand.data = ''
+        
         if form.validate_on_submit():
             equipment.client_id = form.client_id.data
-            equipment.type = form.type.data
-            equipment.brand = form.brand.data
-            equipment.model = form.model.data
+            
+            # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
+            equipment.type = form.type_select.data if form.type_select.data else form.type.data
+            equipment.brand = form.brand_select.data if form.brand_select.data else form.brand.data
+            equipment.model = form.model_select.data if form.model_select.data else form.model.data
             equipment.serial_number = form.serial_number.data
             equipment.year = form.year.data
             
@@ -589,7 +639,7 @@ def register_routes(app):
                 'Edição de Equipamento',
                 'equipment',
                 equipment.id,
-                f"Equipamento {equipment.type} atualizado"
+                f"Equipamento {equipment.type} {equipment.brand} {equipment.model} atualizado"
             )
             
             flash('Equipamento atualizado com sucesso!', 'success')
