@@ -43,25 +43,25 @@ def log_action(action, entity_type=None, entity_id=None, details=None):
         db.session.add(log)
         db.session.commit()
 
-def check_login_attempts(email):
-    """Check if the email has exceeded login attempts"""
+def check_login_attempts(username):
+    """Check if the username has exceeded login attempts"""
     rate_limit = current_app.config.get('LOGIN_RATE_LIMIT', 5)
     rate_limit_timeout = current_app.config.get('LOGIN_RATE_LIMIT_TIMEOUT', 300)  # 5 minutes
     
     # Get recent failed attempts
     cutoff_time = datetime.utcnow() - timedelta(seconds=rate_limit_timeout)
     attempts = LoginAttempt.query.filter(
-        LoginAttempt.email == email,
+        LoginAttempt.username == username,
         LoginAttempt.success == False,
         LoginAttempt.timestamp > cutoff_time
     ).count()
     
     return attempts >= rate_limit
 
-def record_login_attempt(email, success):
+def record_login_attempt(username, success):
     """Record login attempt for rate limiting"""
     attempt = LoginAttempt(
-        email=email,
+        username=username,
         success=success,
         ip_address=request.remote_addr
     )
