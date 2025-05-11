@@ -5,6 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
+from wtforms.validators import Optional
 
 from app import db
 from models import (
@@ -940,6 +941,50 @@ def register_routes(app):
         return render_template('profile/index.html', form=form)
 
     # Invoice/NF-e routes
+    @app.route('/notas-fiscais')
+    @login_required
+    def invoices():
+        page = request.args.get('page', 1, type=int)
+        per_page = 20  # Pode ser ajustado nas configurações do sistema posteriormente
+        
+        # Obtém ordens de serviço fechadas (com nota fiscal)
+        query = ServiceOrder.query.filter(
+            ServiceOrder.status == ServiceOrderStatus.fechada,
+            ServiceOrder.invoice_number.isnot(None)
+        ).order_by(ServiceOrder.invoice_date.desc())
+        
+        # Filtros
+        cliente = request.args.get('cliente')
+        numero_nf = request.args.get('numero_nf')
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        
+        if cliente:
+            query = query.join(Client).filter(Client.name.ilike(f'%{cliente}%'))
+        
+        if numero_nf:
+            query = query.filter(ServiceOrder.invoice_number.ilike(f'%{numero_nf}%'))
+        
+        if data_inicio:
+            try:
+                data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+                query = query.filter(ServiceOrder.invoice_date >= data_inicio)
+            except ValueError:
+                flash('Data inicial inválida.', 'warning')
+        
+        if data_fim:
+            try:
+                data_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+                data_fim = datetime.combine(data_fim, datetime.max.time())  # Fim do dia
+                query = query.filter(ServiceOrder.invoice_date <= data_fim)
+            except ValueError:
+                flash('Data final inválida.', 'warning')
+        
+        # Paginação
+        invoices = query.paginate(page=page, per_page=per_page)
+        
+        return render_template('invoices/index.html', invoices=invoices)
+    
     @app.route('/os/<int:id>/nfe')
     @login_required
     def view_invoice(id):
