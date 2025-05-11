@@ -275,8 +275,7 @@
         <div class="emitente-block">
             <div class="emitente-logo">
                 <div class="logo-box">
-                    <div class="company-name">SAMAPE</div>
-                    <div class="company-slogan">SISTEMA DE GESTÃO DE SERVIÇOS</div>
+                    <img src="/static/images/logo.png" alt="SAMAPE" class="company-logo">
                 </div>
             </div>
             <div class="emitente-dados">
@@ -294,9 +293,21 @@
                 <div class="danfe-pagina">PÁGINA 1/1</div>
             </div>
             <div class="barcode-area">
-                <div class="barcode">
-                    <div class="barcode-lines">||||||||||||||||||||||||||||||||||||||||||||||||||||||||</div>
-                    <div class="barcode-number">{{ "9999" + service_order.invoice_number.zfill(9) }}</div>
+                <div class="qrcode">
+                    <div class="qrcode-symbol">
+                        <!-- QR Code gerado com símbolos ASCII simples -->
+                        <div class="qr-row">▓▓▓▓▓▓▓ ▓▓▓▓▓▓▓</div>
+                        <div class="qr-row">▓     ▓ ▓     ▓</div>
+                        <div class="qr-row">▓ ▓▓▓ ▓ ▓ ▓▓▓ ▓</div>
+                        <div class="qr-row">▓ ▓▓▓ ▓ ▓ ▓▓▓ ▓</div>
+                        <div class="qr-row">▓ ▓▓▓ ▓ ▓ ▓▓▓ ▓</div>
+                        <div class="qr-row">▓     ▓ ▓     ▓</div>
+                        <div class="qr-row">▓▓▓▓▓▓▓ ▓▓▓▓▓▓▓</div>
+                        <div class="qr-row"></div>
+                        <div class="qr-row">▓▓▓▓ ▓▓ ▓  ▓▓▓▓</div>
+                        <div class="qr-row">▓▓▓▓▓▓▓ ▓▓ ▓ ▓▓</div>
+                    </div>
+                    <div class="qrcode-number">{{ "9999" + service_order.invoice_number.zfill(9) }}</div>
                 </div>
                 <div class="barcode-info">Consulta de autenticidade no portal nacional da NF-e www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizadora</div>
             </div>
@@ -636,14 +647,12 @@
         text-align: center;
     }
     
-    .company-name {
-        font-weight: bold;
-        font-size: 14pt;
-        color: #006400;
-    }
-    
-    .company-slogan {
-        font-size: 7pt;
+    .company-logo {
+        max-width: 100%;
+        height: auto;
+        max-height: 60px;
+        display: block;
+        margin: 0 auto;
     }
     
     .emitente-dados {
@@ -692,19 +701,30 @@
         font-size: 7pt;
     }
     
-    .barcode {
+    .qrcode {
         margin-bottom: 5px;
+        text-align: center;
     }
     
-    .barcode-lines {
+    .qrcode-symbol {
+        display: inline-block;
         font-family: 'Courier New', monospace;
-        font-size: 24pt;
-        letter-spacing: -1px;
+        font-size: 6pt;
+        line-height: 1;
+        margin: 0 auto;
+        background-color: white;
+        padding: 5px;
+        border: 1px solid #ccc;
+    }
+    
+    .qr-row {
+        white-space: pre;
         line-height: 0.8;
     }
     
-    .barcode-number {
+    .qrcode-number {
         font-size: 10pt;
+        margin-top: 5px;
     }
     
     .barcode-info {
