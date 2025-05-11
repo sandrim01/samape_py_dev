@@ -23,6 +23,11 @@ class UserForm(FlaskForm):
     ])
     active = BooleanField('Ativo', default=True)
     
+    # Armazenar um ID de usuário para checagem de duplicatas
+    def __init__(self, *args, **kwargs):
+        self.user_id = kwargs.pop('user_id', None)
+        super(UserForm, self).__init__(*args, **kwargs)
+    
     def validate_username(self, field):
         if self.user_id is None:  # Novo usuário
             if User.query.filter_by(username=field.data).first():
