@@ -1279,6 +1279,582 @@ def register_routes(app):
             flash(f'Erro ao exportar a nota fiscal: {str(e)}', 'danger')
             return redirect(url_for('view_invoice', id=id))
         
+    # =====================================================================
+    # Rotas para Fornecedores
+    # =====================================================================
+    @app.route('/fornecedores')
+    @login_required
+    def suppliers():
+        page = request.args.get('page', 1, type=int)
+        search = request.args.get('search', '')
+        
+        query = Supplier.query
+        
+        # Filtrar por pesquisa
+        if search:
+            query = query.filter(
+                or_(
+                    Supplier.name.ilike(f'%{search}%'),
+                    Supplier.document.ilike(f'%{search}%'),
+                    Supplier.contact_name.ilike(f'%{search}%'),
+                    Supplier.email.ilike(f'%{search}%')
+                )
+            )
+        
+        # Ordenar fornecedores
+        query = query.order_by(Supplier.name)
+        
+        # Paginação
+        from utils import get_system_setting
+        pagination = query.paginate(
+            page=page,
+            per_page=int(get_system_setting('items_per_page', '20')),
+            error_out=False
+        )
+        
+        suppliers = pagination.items
+        
+        return render_template(
+            'suppliers/index.html',
+            suppliers=suppliers,
+            pagination=pagination,
+            search=search
+        )
+    
+    @app.route('/fornecedores/novo', methods=['GET', 'POST'])
+    @login_required
+    def new_supplier():
+        form = SupplierForm()
+        
+        if form.validate_on_submit():
+            supplier = Supplier(
+                name=form.name.data,
+                document=form.document.data,
+                contact_name=form.contact_name.data,
+                email=form.email.data,
+                phone=form.phone.data,
+                address=form.address.data,
+                website=form.website.data,
+                notes=form.notes.data
+            )
+            
+            db.session.add(supplier)
+            db.session.commit()
+            
+            log_action(
+                'Cadastro de Fornecedor',
+                'supplier',
+                supplier.id,
+                f'Fornecedor {supplier.name} cadastrado'
+            )
+            
+            flash('Fornecedor cadastrado com sucesso!', 'success')
+            return redirect(url_for('view_supplier', id=supplier.id))
+        
+        return render_template('suppliers/create.html', form=form)
+    
+    @app.route('/fornecedores/<int:id>')
+    @login_required
+    def view_supplier(id):
+        supplier = Supplier.query.get_or_404(id)
+        
+        # Buscar peças do fornecedor
+        parts = Part.query.filter_by(supplier_id=supplier.id).all()
+        
+        return render_template(
+            'suppliers/view.html',
+            supplier=supplier,
+            parts=parts
+        )
+    
+    @app.route('/fornecedores/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    def edit_supplier(id):
+        supplier = Supplier.query.get_or_404(id)
+        form = SupplierForm()
+        
+        if request.method == 'GET':
+            form.id.data = supplier.id
+            form.name.data = supplier.name
+            form.document.data = supplier.document
+            form.contact_name.data = supplier.contact_name
+            form.email.data = supplier.email
+            form.phone.data = supplier.phone
+            form.address.data = supplier.address
+            form.website.data = supplier.website
+            form.notes.data = supplier.notes
+        
+        if form.validate_on_submit():
+            supplier.name = form.name.data
+            supplier.document = form.document.data
+            supplier.contact_name = form.contact_name.data
+            supplier.email = form.email.data
+            supplier.phone = form.phone.data
+            supplier.address = form.address.data
+            supplier.website = form.website.data
+            supplier.notes = form.notes.data
+            
+            db.session.commit()
+            
+            log_action(
+                'Edição de Fornecedor',
+                'supplier',
+                supplier.id,
+                f'Fornecedor {supplier.name} atualizado'
+            )
+            
+            flash('Fornecedor atualizado com sucesso!', 'success')
+            return redirect(url_for('view_supplier', id=supplier.id))
+        
+        return render_template('suppliers/edit.html', form=form, supplier=supplier)
+    
+    @app.route('/fornecedores/<int:id>/excluir', methods=['POST'])
+    @login_required
+    @admin_required
+    def delete_supplier(id):
+        supplier = Supplier.query.get_or_404(id)
+        
+        # Verificar se o fornecedor tem peças cadastradas
+        if supplier.parts:
+            flash('Não é possível excluir um fornecedor com peças cadastradas!', 'danger')
+            return redirect(url_for('view_supplier', id=supplier.id))
+        
+        name = supplier.name
+        db.session.delete(supplier)
+        db.session.commit()
+        
+        log_action(
+            'Exclusão de Fornecedor',
+            'supplier',
+            id,
+            f'Fornecedor {name} excluído'
+        )
+        
+        flash('Fornecedor excluído com sucesso!', 'success')
+        return redirect(url_for('suppliers'))
+    
+    # =====================================================================
+    # Rotas para Peças e Vendas
+    # =====================================================================
+    @app.route('/pecas')
+    @login_required
+    def parts():
+        page = request.args.get('page', 1, type=int)
+        search = request.args.get('search', '')
+        category = request.args.get('category', '')
+        low_stock = request.args.get('low_stock', False, type=bool)
+        
+        query = Part.query
+        
+        # Filtrar por pesquisa
+        if search:
+            query = query.filter(
+                or_(
+                    Part.name.ilike(f'%{search}%'),
+                    Part.part_number.ilike(f'%{search}%'),
+                    Part.description.ilike(f'%{search}%')
+                )
+            )
+        
+        # Filtrar por categoria
+        if category:
+            query = query.filter(Part.category == category)
+        
+        # Filtrar por estoque baixo
+        if low_stock:
+            query = query.filter(Part.stock_quantity <= Part.minimum_stock)
+        
+        # Ordenar peças
+        query = query.order_by(Part.name)
+        
+        # Paginação
+        from utils import get_system_setting
+        pagination = query.paginate(
+            page=page,
+            per_page=int(get_system_setting('items_per_page', '20')),
+            error_out=False
+        )
+        
+        parts = pagination.items
+        
+        # Obter categorias para filtro
+        categories = db.session.query(Part.category.distinct()).filter(Part.category.isnot(None)).order_by(Part.category).all()
+        categories = [c[0] for c in categories if c[0]]
+        
+        return render_template(
+            'parts/index.html',
+            parts=parts,
+            pagination=pagination,
+            search=search,
+            category=category,
+            categories=categories,
+            low_stock=low_stock
+        )
+    
+    @app.route('/pecas/nova', methods=['GET', 'POST'])
+    @login_required
+    def new_part():
+        form = PartForm()
+        
+        if form.validate_on_submit():
+            # Processar upload de imagem, se houver
+            image_filename = None
+            if form.image.data:
+                image = form.image.data
+                # Gerar nome de arquivo único
+                from werkzeug.utils import secure_filename
+                filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
+                image_path = os.path.join('static', 'uploads', 'parts', filename)
+                os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
+                image.save(image_path)
+                image_filename = filename
+            
+            part = Part(
+                name=form.name.data,
+                description=form.description.data,
+                part_number=form.part_number.data,
+                supplier_id=form.supplier_id.data if form.supplier_id.data else None,
+                category=form.category.data,
+                subcategory=form.subcategory.data,
+                cost_price=form.cost_price.data,
+                selling_price=form.selling_price.data,
+                stock_quantity=form.stock_quantity.data,
+                minimum_stock=form.minimum_stock.data,
+                location=form.location.data,
+                image=image_filename
+            )
+            
+            db.session.add(part)
+            db.session.commit()
+            
+            log_action(
+                'Cadastro de Peça',
+                'part',
+                part.id,
+                f'Peça {part.name} cadastrada'
+            )
+            
+            flash('Peça cadastrada com sucesso!', 'success')
+            return redirect(url_for('view_part', id=part.id))
+        
+        return render_template('parts/create.html', form=form)
+    
+    @app.route('/pecas/<int:id>')
+    @login_required
+    def view_part(id):
+        part = Part.query.get_or_404(id)
+        
+        # Buscar histórico de vendas
+        sales = PartSale.query.filter_by(part_id=part.id).order_by(PartSale.sale_date.desc()).all()
+        
+        return render_template(
+            'parts/view.html',
+            part=part,
+            sales=sales
+        )
+    
+    @app.route('/pecas/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    def edit_part(id):
+        part = Part.query.get_or_404(id)
+        form = PartForm()
+        
+        if request.method == 'GET':
+            form.id.data = part.id
+            form.name.data = part.name
+            form.description.data = part.description
+            form.part_number.data = part.part_number
+            form.supplier_id.data = part.supplier_id
+            form.category.data = part.category
+            form.subcategory.data = part.subcategory
+            form.cost_price.data = part.cost_price
+            form.selling_price.data = part.selling_price
+            form.stock_quantity.data = part.stock_quantity
+            form.minimum_stock.data = part.minimum_stock
+            form.location.data = part.location
+        
+        if form.validate_on_submit():
+            # Processar upload de imagem, se houver
+            if form.image.data:
+                image = form.image.data
+                # Gerar nome de arquivo único
+                from werkzeug.utils import secure_filename
+                filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
+                image_path = os.path.join('static', 'uploads', 'parts', filename)
+                os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
+                image.save(image_path)
+                part.image = filename
+            
+            part.name = form.name.data
+            part.description = form.description.data
+            part.part_number = form.part_number.data
+            part.supplier_id = form.supplier_id.data if form.supplier_id.data else None
+            part.category = form.category.data
+            part.subcategory = form.subcategory.data
+            part.cost_price = form.cost_price.data
+            part.selling_price = form.selling_price.data
+            part.stock_quantity = form.stock_quantity.data
+            part.minimum_stock = form.minimum_stock.data
+            part.location = form.location.data
+            
+            db.session.commit()
+            
+            log_action(
+                'Edição de Peça',
+                'part',
+                part.id,
+                f'Peça {part.name} atualizada'
+            )
+            
+            flash('Peça atualizada com sucesso!', 'success')
+            return redirect(url_for('view_part', id=part.id))
+        
+        return render_template('parts/edit.html', form=form, part=part)
+    
+    @app.route('/pecas/<int:id>/excluir', methods=['POST'])
+    @login_required
+    @admin_required
+    def delete_part(id):
+        part = Part.query.get_or_404(id)
+        
+        # Verificar se a peça tem vendas registradas
+        if part.sales:
+            flash('Não é possível excluir uma peça com vendas registradas!', 'danger')
+            return redirect(url_for('view_part', id=part.id))
+        
+        name = part.name
+        
+        # Remover a imagem, se existir
+        if part.image:
+            image_path = os.path.join('static', 'uploads', 'parts', part.image)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        db.session.delete(part)
+        db.session.commit()
+        
+        log_action(
+            'Exclusão de Peça',
+            'part',
+            id,
+            f'Peça {name} excluída'
+        )
+        
+        flash('Peça excluída com sucesso!', 'success')
+        return redirect(url_for('parts'))
+    
+    @app.route('/vendas-pecas')
+    @login_required
+    def part_sales():
+        page = request.args.get('page', 1, type=int)
+        search = request.args.get('search', '')
+        client_id = request.args.get('client_id', None, type=int)
+        service_order_id = request.args.get('service_order_id', None, type=int)
+        
+        query = PartSale.query
+        
+        # Filtrar por pesquisa
+        if search:
+            query = query.join(Part).filter(
+                or_(
+                    Part.name.ilike(f'%{search}%'),
+                    Part.part_number.ilike(f'%{search}%'),
+                    PartSale.invoice_number.ilike(f'%{search}%')
+                )
+            )
+        
+        # Filtrar por cliente
+        if client_id:
+            query = query.filter(PartSale.client_id == client_id)
+        
+        # Filtrar por ordem de serviço
+        if service_order_id:
+            query = query.filter(PartSale.service_order_id == service_order_id)
+        
+        # Ordenar vendas
+        query = query.order_by(PartSale.sale_date.desc())
+        
+        # Paginação
+        from utils import get_system_setting
+        pagination = query.paginate(
+            page=page,
+            per_page=int(get_system_setting('items_per_page', '20')),
+            error_out=False
+        )
+        
+        sales = pagination.items
+        
+        # Obter clientes para filtro
+        clients = Client.query.order_by(Client.name).all()
+        
+        # Obter ordens de serviço para filtro
+        service_orders = ServiceOrder.query.order_by(ServiceOrder.id.desc()).all()
+        
+        return render_template(
+            'part_sales/index.html',
+            sales=sales,
+            pagination=pagination,
+            search=search,
+            client_id=client_id,
+            service_order_id=service_order_id,
+            clients=clients,
+            service_orders=service_orders
+        )
+    
+    @app.route('/vendas-pecas/nova', methods=['GET', 'POST'])
+    @login_required
+    def new_part_sale():
+        form = PartSaleForm()
+        
+        # Pré-preencher dados se vier de uma ordem de serviço
+        service_order_id = request.args.get('service_order_id', None, type=int)
+        if service_order_id:
+            form.service_order_id.data = service_order_id
+            service_order = ServiceOrder.query.get(service_order_id)
+            if service_order:
+                form.client_id.data = service_order.client_id
+        
+        # Pré-preencher dados se vier de uma peça específica
+        part_id = request.args.get('part_id', None, type=int)
+        if part_id:
+            form.part_id.data = part_id
+            part = Part.query.get(part_id)
+            if part:
+                form.unit_price.data = part.selling_price
+                form.total_price.data = part.selling_price
+        
+        if form.validate_on_submit():
+            # Obter a peça e verificar estoque
+            part = Part.query.get(form.part_id.data)
+            if not part:
+                flash('Peça não encontrada!', 'danger')
+                return redirect(url_for('new_part_sale'))
+            
+            if part.stock_quantity < form.quantity.data:
+                flash(f'Estoque insuficiente! Disponível: {part.stock_quantity}', 'danger')
+                return render_template('part_sales/create.html', form=form)
+            
+            # Criar a venda
+            sale = PartSale(
+                part_id=form.part_id.data,
+                client_id=form.client_id.data if form.client_id.data else None,
+                service_order_id=form.service_order_id.data if form.service_order_id.data else None,
+                quantity=form.quantity.data,
+                unit_price=form.unit_price.data,
+                total_price=form.total_price.data,
+                invoice_number=form.invoice_number.data,
+                notes=form.notes.data,
+                created_by=current_user.id
+            )
+            
+            # Atualizar o estoque da peça
+            part.stock_quantity -= form.quantity.data
+            
+            # Se a venda estiver associada a uma ordem de serviço, adicionar entrada financeira
+            if sale.service_order_id:
+                financial_entry = FinancialEntry(
+                    service_order_id=sale.service_order_id,
+                    description=f"Venda de peça: {part.name} (x{sale.quantity})",
+                    amount=sale.total_price,
+                    type=FinancialEntryType.entrada,
+                    date=datetime.now(),
+                    created_by=current_user.id
+                )
+                db.session.add(financial_entry)
+            
+            db.session.add(sale)
+            db.session.commit()
+            
+            log_action(
+                'Venda de Peça',
+                'part_sale',
+                sale.id,
+                f'Venda de {sale.quantity}x {part.name} realizada'
+            )
+            
+            flash('Venda registrada com sucesso!', 'success')
+            
+            # Redirecionar para a ordem de serviço, se associada
+            if sale.service_order_id:
+                return redirect(url_for('view_service_order', id=sale.service_order_id))
+            return redirect(url_for('part_sales'))
+        
+        return render_template('part_sales/create.html', form=form)
+    
+    @app.route('/vendas-pecas/<int:id>')
+    @login_required
+    def view_part_sale(id):
+        sale = PartSale.query.get_or_404(id)
+        return render_template('part_sales/view.html', sale=sale)
+    
+    @app.route('/vendas-pecas/<int:id>/cancelar', methods=['POST'])
+    @login_required
+    @admin_required
+    def cancel_part_sale(id):
+        sale = PartSale.query.get_or_404(id)
+        
+        # Restaurar estoque
+        part = Part.query.get(sale.part_id)
+        if part:
+            part.stock_quantity += sale.quantity
+        
+        # Remover entrada financeira associada, se houver
+        if sale.service_order_id:
+            financial_entry = FinancialEntry.query.filter_by(
+                service_order_id=sale.service_order_id,
+                amount=sale.total_price,
+                type=FinancialEntryType.entrada
+            ).first()
+            
+            if financial_entry:
+                db.session.delete(financial_entry)
+        
+        # Registrar o cancelamento no log
+        log_action(
+            'Cancelamento de Venda',
+            'part_sale',
+            id,
+            f'Venda de {sale.quantity}x {part.name} cancelada'
+        )
+        
+        db.session.delete(sale)
+        db.session.commit()
+        
+        flash('Venda cancelada com sucesso!', 'success')
+        return redirect(url_for('part_sales'))
+    
+    # Rota de ajuste de estoque
+    @app.route('/pecas/<int:id>/ajustar-estoque', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def adjust_stock(id):
+        part = Part.query.get_or_404(id)
+        
+        if request.method == 'POST':
+            quantity = request.form.get('quantity', type=int)
+            reason = request.form.get('reason')
+            
+            if not quantity:
+                flash('Quantidade inválida!', 'danger')
+                return redirect(url_for('view_part', id=part.id))
+            
+            old_quantity = part.stock_quantity
+            part.stock_quantity = quantity
+            
+            db.session.commit()
+            
+            log_action(
+                'Ajuste de Estoque',
+                'part',
+                part.id,
+                f'Estoque ajustado de {old_quantity} para {quantity} unidades. Motivo: {reason}'
+            )
+            
+            flash('Estoque ajustado com sucesso!', 'success')
+            return redirect(url_for('view_part', id=part.id))
+        
+        return render_template('parts/adjust_stock.html', part=part)
+
     # System Settings
     @app.route('/configuracoes', methods=['GET', 'POST'])
     @login_required

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Fornecedor: {{ supplier.name }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Detalhes do Fornecedor</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('edit_supplier', id=supplier.id) }}" class="btn btn-primary me-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if current_user.role == UserRole.admin %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="fas fa-trash"></i> Excluir
+        </button>
+        
+        <!-- Modal de Confirmação de Exclusão -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirmação de Exclusão</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        Tem certeza que deseja excluir o fornecedor <strong>{{ supplier.name }}</strong>?
+                        <p class="text-danger mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> Esta ação não pode ser desfeita!
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form action="{{ url_for('delete_supplier', id=supplier.id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-1"></i> Informações do Fornecedor
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th style="width: 35%">Nome/Razão Social</th>
+                            <td>{{ supplier.name }}</td>
+                        </tr>
+                        {% if supplier.document %}
+                        <tr>
+                            <th>CPF/CNPJ</th>
+                            <td>{{ supplier.document | format_document }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.contact_name %}
+                        <tr>
+                            <th>Nome do Contato</th>
+                            <td>{{ supplier.contact_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.email %}
+                        <tr>
+                            <th>Email</th>
+                            <td>
+                                <a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.phone %}
+                        <tr>
+                            <th>Telefone</th>
+                            <td>{{ supplier.phone }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.website %}
+                        <tr>
+                            <th>Website</th>
+                            <td>
+                                <a href="{{ supplier.website }}" target="_blank" rel="noopener noreferrer">
+                                    {{ supplier.website }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.address %}
+                        <tr>
+                            <th>Endereço</th>
+                            <td>{{ supplier.address }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if supplier.notes %}
+                        <tr>
+                            <th>Observações</th>
+                            <td>{{ supplier.notes | nl2br | safe }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Data de Cadastro</th>
+                            <td>{{ supplier.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Última Atualização</th>
+                            <td>{{ supplier.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-cogs me-1"></i> Peças Fornecidas
+                <a href="{{ url_for('new_part', supplier_id=supplier.id) }}" class="float-end btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Nova Peça
+                </a>
+            </div>
+            <div class="card-body">
+                {% if parts %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Código</th>
+                                <th>Estoque</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for part in parts %}
+                            <tr>
+                                <td>{{ part.name }}</td>
+                                <td>{{ part.part_number if part.part_number else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge {% if part.stock_quantity <= part.minimum_stock %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ part.stock_quantity }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_part', id=part.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Este fornecedor ainda não possui peças cadastradas.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    <a href="{{ url_for('suppliers') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar para Lista
+    </a>
+</div>
+{% endblock %}

@@ -86,6 +86,21 @@
                                 <i class="fas fa-tools"></i> Maquinários
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/fornecedores' in request.path %}active{% endif %}" href="{{ url_for('suppliers') }}">
+                                <i class="fas fa-truck"></i> Fornecedores
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/pecas' in request.path and '/vendas-pecas' not in request.path %}active{% endif %}" href="{{ url_for('parts') }}">
+                                <i class="fas fa-cogs"></i> Peças
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/vendas-pecas' in request.path %}active{% endif %}" href="{{ url_for('part_sales') }}">
+                                <i class="fas fa-shopping-cart"></i> Venda de Peças
+                            </a>
+                        </li>
                         {% if current_user.role == UserRole.admin or current_user.role == UserRole.gerente %}
                         <li class="nav-item">
                             <a class="nav-link {% if '/funcionarios' in request.path %}active{% endif %}" href="{{ url_for('employees') }}">

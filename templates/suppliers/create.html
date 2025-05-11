@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Fornecedor - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Novo Fornecedor</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-plus me-1"></i> Cadastro de Fornecedor
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Nome/Razão Social *</label>
+                    {{ form.name(class="form-control", id="name") }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="document" class="form-label">CPF/CNPJ</label>
+                    {{ form.document(class="form-control", id="document", oninput="formatDocument(this)") }}
+                    {% if form.document.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.document.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="contact_name" class="form-label">Nome do Contato</label>
+                    {{ form.contact_name(class="form-control", id="contact_name") }}
+                    {% if form.contact_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.contact_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    {{ form.email(class="form-control", id="email", type="email") }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">Telefone</label>
+                    {{ form.phone(class="form-control", id="phone") }}
+                    {% if form.phone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.phone.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="website" class="form-label">Website</label>
+                    {{ form.website(class="form-control", id="website") }}
+                    {% if form.website.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.website.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="address" class="form-label">Endereço</label>
+                {{ form.address(class="form-control", id="address") }}
+                {% if form.address.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.address.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Observações</label>
+                {{ form.notes(class="form-control", id="notes", rows=3) }}
+                {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.notes.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Cadastrar</button>
+                <a href="{{ url_for('suppliers') }}" class="btn btn-secondary ms-2">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
