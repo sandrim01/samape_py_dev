@@ -68,18 +68,18 @@ def register_routes(app):
         form = LoginForm()
         
         if form.validate_on_submit():
-            username = form.username.data
+            email = form.email.data
             
             # Check if user is rate limited
-            if check_login_attempts(username):
+            if check_login_attempts(email):
                 flash('Muitas tentativas de login. Tente novamente mais tarde.', 'danger')
                 return render_template('login.html', form=form)
             
-            user = User.query.filter_by(username=username).first()
+            user = User.query.filter_by(email=email).first()
             
             if user and user.check_password(form.password.data) and user.active:
                 login_user(user, remember=form.remember_me.data)
-                record_login_attempt(username, True)
+                record_login_attempt(email, True)
                 log_action('Login', 'user', user.id)
                 
                 next_page = request.args.get('next')
@@ -88,8 +88,8 @@ def register_routes(app):
                 
                 return redirect(next_page)
             else:
-                record_login_attempt(username, False)
-                flash('Nome de usuário ou senha inválidos.', 'danger')
+                record_login_attempt(email, False)
+                flash('Email ou senha inválidos.', 'danger')
         
         return render_template('login.html', form=form)
 
