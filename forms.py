@@ -5,7 +5,7 @@ import re
 from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType
 
 class LoginForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    username = StringField('Nome de Usuário', validators=[DataRequired()])
     password = PasswordField('Senha', validators=[DataRequired()])
     remember_me = BooleanField('Lembrar-me')
 
