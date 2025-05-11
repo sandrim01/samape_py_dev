@@ -128,7 +128,7 @@ class ActionLog(db.Model):
 
 class LoginAttempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(120), nullable=False)  # Esta é a coluna que existe no banco de dados
     success = db.Column(db.Boolean, default=False)
     ip_address = db.Column(db.String(45))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
