@@ -1,49 +1,91 @@
 /* Main Styles */
 :root {
-    --primary-color: #333333; /* Cinza escuro principal */
-    --secondary-color: #555555; /* Cinza secundário */
-    --tertiary-color: #777777; /* Cinza terciário */
-    --accent-color: #cc0000; /* Vermelho accent */
-    --accent-dark: #990000; /* Vermelho escuro */
-    --light-color: #f8f9fa; /* Branco off-white */
-    --white-color: #ffffff; /* Branco puro */
-    --gray-light: #e9ecef; /* Cinza muito claro */
-    --gray-medium: #adb5bd; /* Cinza médio */
-    --gray-dark: #495057; /* Cinza escuro */
-    --dark-color: #212529; /* Quase preto */
-    --black-color: #000000; /* Preto puro */
-    --success-color: #28a745; /* Verde para sucesso */
-    --danger-color: #dc3545; /* Vermelho para erro/perigo */
-    --warning-color: #ffc107; /* Amarelo para avisos */
+    /* Cores base */
+    --bg-dark: #1e1e1e; /* Cor de fundo escura principal */
+    --bg-card: #242424; /* Cor de fundo dos cards */
+    --bg-darker: #171717; /* Cor de fundo mais escura */
+    
+    /* Cores de texto */
+    --text-white: #ffffff; /* Texto branco */
+    --text-light: #f0f0f0; /* Texto claro */
+    --text-muted: #a0a0a0; /* Texto secundário */
+    --text-disabled: #666666; /* Texto desabilitado */
+    
+    /* Cores de destaque */
+    --pink: #f85d8e; /* Cor rosa */
+    --green: #37d09e; /* Cor verde */
+    --orange: #ff9353; /* Cor laranja */
+    --blue: #4285f4; /* Cor azul */
+    
+    /* Cores utilitárias */
+    --border-light: #333333; /* Borda clara */
+    --border-dark: #000000; /* Borda escura */
+    --panel-bg: #242424; /* Fundo de painéis */
+    
+    /* Mapeando variáveis antigas para novas */
+    --primary-color: var(--bg-dark);
+    --secondary-color: var(--bg-card);
+    --tertiary-color: var(--bg-darker);
+    --accent-color: var(--pink);
+    --accent-dark: #d34572; /* Tom mais escuro do rosa */
+    --light-color: var(--text-light);
+    --white-color: var(--text-white);
+    --gray-light: #333333;
+    --gray-medium: #444444;
+    --gray-dark: #666666;
+    --dark-color: var(--bg-darker);
+    --black-color: #000000;
+    --success-color: var(--green);
+    --danger-color: var(--pink);
+    --warning-color: var(--orange);
+    
+    /* Cores de status */
+    --status-aberta: var(--pink);
+    --status-em-andamento: var(--orange);
+    --status-fechada: var(--green);
+}
+
+html {
+    /* Forçando o tema escuro independente da configuração do usuário */
+    color-scheme: dark;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: var(--gray-light);
+    background-color: var(--bg-dark);
+    color: var(--text-light);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 /* Navbar */
 .navbar {
-    background-color: var(--black-color);
+    background-color: var(--bg-darker);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-    padding: 0.7rem 1.2rem;
-    border-bottom: 2px solid var(--accent-color);
+    padding: 0.8rem 1.2rem;
+    border-bottom: none;
 }
 
 .navbar-brand {
-    color: var(--white-color) !important;
+    color: var(--text-white) !important;
     font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .navbar-nav .nav-link {
-    color: var(--light-color) !important;
+    color: var(--text-muted) !important;
+    transition: all 0.2s ease;
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.15rem;
+    border-radius: 4px;
 }
 
-.navbar-nav .nav-link:hover {
-    color: var(--white-color) !important;
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color: var(--text-white) !important;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .navbar-brand img {
@@ -52,93 +94,194 @@ body {
 
 /* Sidebar */
 .sidebar {
-    background-color: var(--dark-color);
+    background-color: var(--bg-darker);
     border-right: none;
     padding: 1.2rem 0;
     min-height: calc(100vh - 60px);
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar .nav-link {
-    color: var(--gray-medium);
+    color: var(--text-muted);
     padding: 0.8rem 1.2rem;
     border-radius: 0;
-    margin-bottom: 0.2rem;
+    margin: 0.15rem 0.8rem;
     transition: all 0.2s ease;
-    font-weight: 500;
+    font-weight: 400;
     position: relative;
     overflow: hidden;
-    border-left: 3px solid transparent;
+    border-radius: 4px;
+    font-size: 0.95rem;
 }
 
 .sidebar .nav-link:hover {
     background-color: rgba(255, 255, 255, 0.05);
-    color: var(--white-color);
-    border-left-color: var(--gray-medium);
+    color: var(--text-white);
 }
 
 .sidebar .nav-link.active {
-    background-color: rgba(0, 0, 0, 0.3);
-    color: white;
-    border-left-color: var(--accent-color);
+    background-color: var(--bg-card);
+    color: var(--text-white);
+    font-weight: 500;
+}
+
+.sidebar .nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: var(--pink);
 }
 
 .sidebar .nav-link i {
     margin-right: 0.8rem;
     width: 24px;
     text-align: center;
-    color: var(--gray-medium);
+    transition: all 0.2s ease;
 }
 
-.sidebar .nav-link:hover i,
-.sidebar .nav-link.active i {
-    color: var(--accent-color);
+/* Usar cores diferentes para os ícones da sidebar */
+.sidebar .nav-link:nth-child(4n+1) i {
+    color: var(--pink);
+}
+
+.sidebar .nav-link:nth-child(4n+2) i {
+    color: var(--green);
+}
+
+.sidebar .nav-link:nth-child(4n+3) i {
+    color: var(--orange);
+}
+
+.sidebar .nav-link:nth-child(4n+4) i {
+    color: var(--blue);
 }
 
 .sidebar-heading {
-    color: var(--gray-medium);
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
+    color: var(--text-disabled);
+    padding: 0.75rem 1.5rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     font-weight: 700;
-    margin-top: 1rem;
-    opacity: 0.7;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Content area */
 .content {
     padding: 1.5rem;
-    background-color: var(--white-color);
+    background-color: var(--bg-dark);
+    min-height: 100vh;
+}
+
+.page-title {
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: var(--text-white);
+}
+
+/* Cards */
+.card {
+    background-color: var(--bg-card);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: none;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-light);
+    position: relative;
+}
+
+.card-header h5, 
+.card-header h6 {
+    margin-bottom: 0;
+    color: var(--text-white);
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.card-body {
+    padding: 1.5rem;
+    background-color: var(--bg-card);
+}
+
+.card-footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-light);
+    padding: 1rem 1.5rem;
+}
+
+/* Card variations */
+.card-pink {
+    border-top: 3px solid var(--pink);
+}
+
+.card-green {
+    border-top: 3px solid var(--green);
+}
+
+.card-orange {
+    border-top: 3px solid var(--orange);
+}
+
+.card-blue {
+    border-top: 3px solid var(--blue);
 }
 
 /* Forms */
 .form-control {
-    border: 1px solid var(--gray-medium);
-    border-radius: 0.25rem;
-    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 0.7rem 1rem;
     transition: all 0.2s ease;
-    background-color: var(--white-color);
+    background-color: var(--bg-darker);
+    color: var(--text-light);
 }
 
 .form-control:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 0.2rem rgba(204, 0, 0, 0.15);
+    border-color: var(--pink);
+    box-shadow: 0 0 0 2px rgba(248, 93, 142, 0.15);
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.form-control::placeholder {
+    color: var(--text-disabled);
 }
 
 .form-select {
-    border-radius: 0.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 0.7rem 1rem;
+    background-color: var(--bg-darker);
+    color: var(--text-light);
 }
 
 .form-select:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 0.2rem rgba(204, 0, 0, 0.15);
+    border-color: var(--pink);
+    box-shadow: 0 0 0 2px rgba(248, 93, 142, 0.15);
 }
 
 .form-label {
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 0.5rem;
-    color: var(--dark-color);
+    color: var(--text-light);
+    letter-spacing: 0.3px;
+}
+
+.input-group-text {
+    background-color: var(--bg-darker);
+    border-color: var(--border-light);
+    color: var(--text-muted);
 }
 
 .input-group-text {
