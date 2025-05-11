@@ -20,235 +20,234 @@
         </div>
     </div>
 {% else %}
-<div class="container-fluid py-4">
-    <div class="text-center mb-4">
-        <h1 class="h3">Nota Fiscal Eletrônica</h1>
-    </div>
+<div class="container-fluid py-2">
 {% endif %}
 
-    <div class="card nfe-card">
-        <div class="card-header nfe-header">
-            <div class="row">
-                <div class="col-md-6">
-                    <h4 class="mb-0">DANFE - NF-e</h4>
-                    <p class="mb-0 text-muted">Documento Auxiliar da Nota Fiscal Eletrônica</p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <div class="nfe-barcode">
-                        <div class="nfe-barcode-number">
-                            <strong>NF-e</strong> {{ service_order.invoice_number }}
-                        </div>
+    <div class="nfe-document">
+        <!-- Cabeçalho principal -->
+        <div class="nfe-header">
+            <div class="header-left">
+                <div class="recibo-box">
+                    <div class="recibo-text">RECEBEMOS OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA AO LADO. EMISSÃO: {{ service_order.invoice_date.strftime('%d/%m/%Y') }} VALOR TOTAL: R$ {{ "%.2f"|format(service_order.invoice_amount) }} DESTINATÁRIO: {{ service_order.client.name }}</div>
+                    <div class="recibo-signature">
+                        <div>DATA DE RECEBIMENTO</div>
+                        <div>IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR</div>
                     </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="nfe-number">
+                    <div class="nfe-title">NF-e</div>
+                    <div class="nfe-number">Nº {{ service_order.invoice_number }}</div>
+                    <div class="nfe-serie">Série 001</div>
                 </div>
             </div>
         </div>
         
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card bg-light h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">EMITENTE</h5>
-                        </div>
-                        <div class="card-body">
-                            <h5>SAMAPE</h5>
-                            <p class="mb-1">CNPJ: 12.345.678/0001-90</p>
-                            <p class="mb-1">INSCRIÇÃO ESTADUAL: 123456789</p>
-                            <p class="mb-1">Rua Exemplo, 123 - Centro</p>
-                            <p class="mb-1">São Paulo - SP - CEP: 01234-567</p>
-                            <p class="mb-1">Telefone: (11) 1234-5678</p>
-                        </div>
-                    </div>
+        <!-- Identificação do emitente -->
+        <div class="emitente-block">
+            <div class="emitente-logo">
+                <div class="logo-box">
+                    <div class="company-name">SAMAPE</div>
+                    <div class="company-slogan">SISTEMA DE GESTÃO DE SERVIÇOS</div>
+                </div>
+            </div>
+            <div class="emitente-dados">
+                <div class="dados-row">ENDEREÇO: RUA EXEMPLO, 123 - CENTRO - SÃO PAULO/SP - CEP 01234-567</div>
+                <div class="dados-row">CNPJ: 12.345.678/0001-90 - INSCR. EST.: 123456789</div>
+                <div class="dados-row">FONE: (11) 1234-5678</div>
+            </div>
+            <div class="danfe-title">
+                <div>DANFE</div>
+                <div class="danfe-subtitle">DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA</div>
+                <div class="danfe-tipo">0 - ENTRADA</div>
+                <div class="danfe-tipo">1 - SAÍDA</div>
+                <div class="danfe-numero">Nº {{ service_order.invoice_number }}</div>
+                <div class="danfe-serie">SÉRIE 001</div>
+                <div class="danfe-pagina">PÁGINA 1/1</div>
+            </div>
+            <div class="barcode-area">
+                <div class="barcode">
+                    <div class="barcode-lines">||||||||||||||||||||||||||||||||||||||||||||||||||||||||</div>
+                    <div class="barcode-number">{{ "9999" + service_order.invoice_number.zfill(9) }}</div>
+                </div>
+                <div class="barcode-info">Consulta de autenticidade no portal nacional da NF-e www.nfe.fazenda.gov.br/portal ou no site da SEFAZ Autorizadora</div>
+            </div>
+        </div>
+        
+        <!-- Natureza da operação -->
+        <div class="natureza-block">
+            <div class="natureza-operacao-label">NATUREZA DA OPERAÇÃO</div>
+            <div class="natureza-operacao-value">PRESTAÇÃO DE SERVIÇO DE MANUTENÇÃO EM EQUIPAMENTOS</div>
+            <div class="protocolo-label">PROTOCOLO DE AUTORIZAÇÃO DE USO</div>
+            <div class="protocolo-value">{{ "999999999999999" }} {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}</div>
+        </div>
+        
+        <!-- Dados do destinatário -->
+        <div class="destinatario-block">
+            <div class="block-header">DESTINATÁRIO / REMETENTE</div>
+            <div class="destinatario-grid">
+                <div class="dest-nome-label">NOME / RAZÃO SOCIAL</div>
+                <div class="dest-nome-value">{{ service_order.client.name }}</div>
+                <div class="dest-cnpj-label">CNPJ / CPF</div>
+                <div class="dest-cnpj-value">{{ service_order.client.document }}</div>
+                <div class="dest-data-label">DATA EMISSÃO</div>
+                <div class="dest-data-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') }}</div>
+                
+                <div class="dest-endereco-label">ENDEREÇO</div>
+                <div class="dest-endereco-value">{% if service_order.client.address %}{{ service_order.client.address }}{% else %}Não informado{% endif %}</div>
+                <div class="dest-bairro-label">BAIRRO</div>
+                <div class="dest-bairro-value">-</div>
+                <div class="dest-data-saida-label">DATA SAÍDA</div>
+                <div class="dest-data-saida-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') }}</div>
+                
+                <div class="dest-municipio-label">MUNICÍPIO</div>
+                <div class="dest-municipio-value">-</div>
+                <div class="dest-fone-label">FONE</div>
+                <div class="dest-fone-value">{% if service_order.client.phone %}{{ service_order.client.phone }}{% else %}-{% endif %}</div>
+                <div class="dest-uf-label">UF</div>
+                <div class="dest-uf-value">-</div>
+                <div class="dest-inscr-label">INSC. ESTADUAL</div>
+                <div class="dest-inscr-value">-</div>
+                <div class="dest-hora-label">HORA SAÍDA</div>
+                <div class="dest-hora-value">{{ service_order.invoice_date.strftime('%H:%M:%S') }}</div>
+            </div>
+        </div>
+        
+        <!-- Faturas -->
+        <div class="fatura-block">
+            <div class="block-header">FATURA / DUPLICATAS</div>
+            <div class="fatura-grid">
+                <div class="fatura-numero">NÚMERO: {{ service_order.invoice_number }}</div>
+                <div class="fatura-valor">VALOR ORIGINAL: R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+                <div class="fatura-desconto">DESCONTO: R$ 0,00</div>
+                <div class="fatura-valor-liquido">VALOR LÍQUIDO: R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+            </div>
+        </div>
+        
+        <!-- Impostos -->
+        <div class="impostos-block">
+            <div class="block-header">CÁLCULO DO IMPOSTO</div>
+            <div class="impostos-grid">
+                <div class="imposto-label">BASE DE CÁLCULO DO ICMS</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">VALOR DO ICMS</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">BASE DE CÁLCULO DO ICMS ST</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">VALOR DO ICMS ST</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">VALOR TOTAL DOS PRODUTOS</div>
+                <div class="imposto-value">0,00</div>
+                
+                <div class="imposto-label">VALOR DO FRETE</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">VALOR DO SEGURO</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">DESCONTO</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">OUTRAS DESPESAS</div>
+                <div class="imposto-value">0,00</div>
+                <div class="imposto-label">VALOR TOTAL DA NOTA</div>
+                <div class="imposto-value">{{ "%.2f"|format(service_order.invoice_amount) }}</div>
+            </div>
+        </div>
+        
+        <!-- Transportador -->
+        <div class="transportador-block">
+            <div class="block-header">TRANSPORTADOR / VOLUMES TRANSPORTADOS</div>
+            <div class="transportador-grid">
+                <div class="transp-nome-label">NOME / RAZÃO SOCIAL</div>
+                <div class="transp-nome-value">-</div>
+                <div class="transp-frete-label">FRETE POR CONTA</div>
+                <div class="transp-frete-value">-</div>
+                <div class="transp-antt-label">CÓDIGO ANTT</div>
+                <div class="transp-antt-value">-</div>
+                <div class="transp-placa-label">PLACA DO VEÍCULO</div>
+                <div class="transp-placa-value">-</div>
+                <div class="transp-uf-label">UF</div>
+                <div class="transp-uf-value">-</div>
+                <div class="transp-cnpj-label">CNPJ / CPF</div>
+                <div class="transp-cnpj-value">-</div>
+            </div>
+            
+            <div class="volumes-grid">
+                <div class="volume-label">QUANTIDADE</div>
+                <div class="volume-value">-</div>
+                <div class="volume-label">ESPÉCIE</div>
+                <div class="volume-value">-</div>
+                <div class="volume-label">MARCA</div>
+                <div class="volume-value">-</div>
+                <div class="volume-label">NÚMERO</div>
+                <div class="volume-value">-</div>
+                <div class="volume-label">PESO BRUTO</div>
+                <div class="volume-value">-</div>
+                <div class="volume-label">PESO LÍQUIDO</div>
+                <div class="volume-value">-</div>
+            </div>
+        </div>
+        
+        <!-- Dados dos produtos -->
+        <div class="produtos-block">
+            <div class="block-header">DADOS DOS PRODUTOS / SERVIÇOS</div>
+            <div class="produtos-grid">
+                <div class="produtos-header">
+                    <div class="prod-codigo">CÓDIGO</div>
+                    <div class="prod-descricao">DESCRIÇÃO DOS PRODUTOS / SERVIÇOS</div>
+                    <div class="prod-ncm">NCM/SH</div>
+                    <div class="prod-cst">CST</div>
+                    <div class="prod-cfop">CFOP</div>
+                    <div class="prod-un">UN</div>
+                    <div class="prod-qtde">QTDE</div>
+                    <div class="prod-valor-un">VALOR UNIT</div>
+                    <div class="prod-valor-total">VALOR TOTAL</div>
+                    <div class="prod-bc-icms">BC ICMS</div>
+                    <div class="prod-valor-icms">VALOR ICMS</div>
+                    <div class="prod-aliq-icms">ALÍQ ICMS</div>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="card bg-light h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">DESTINATÁRIO</h5>
-                        </div>
-                        <div class="card-body">
-                            <h5>{{ service_order.client.name }}</h5>
-                            <p class="mb-1">{{ "CNPJ" if service_order.client.document|length > 11 else "CPF" }}: {{ service_order.client.document }}</p>
-                            {% if service_order.client.address %}
-                            <p class="mb-1">{{ service_order.client.address }}</p>
-                            {% endif %}
-                            {% if service_order.client.email %}
-                            <p class="mb-1">Email: {{ service_order.client.email }}</p>
-                            {% endif %}
-                            {% if service_order.client.phone %}
-                            <p class="mb-1">Telefone: {{ service_order.client.phone }}</p>
-                            {% endif %}
-                        </div>
+                <!-- Produto -->
+                <div class="produto-item">
+                    <div class="prod-codigo">OS{{ service_order.id }}</div>
+                    <div class="prod-descricao">
+                        {{ service_order.service_details }}
+                        {% for eq in service_order.equipment %}
+                        {{ eq.type }} {% if eq.brand %}{{ eq.brand }}{% endif %} {% if eq.model %}{{ eq.model }}{% endif %} {% if eq.serial_number %}S/N:{{ eq.serial_number }}{% endif %}
+                        {% endfor %}
                     </div>
+                    <div class="prod-ncm">-</div>
+                    <div class="prod-cst">-</div>
+                    <div class="prod-cfop">-</div>
+                    <div class="prod-un">SERV</div>
+                    <div class="prod-qtde">1</div>
+                    <div class="prod-valor-un">{{ "%.2f"|format(service_order.invoice_amount) }}</div>
+                    <div class="prod-valor-total">{{ "%.2f"|format(service_order.invoice_amount) }}</div>
+                    <div class="prod-bc-icms">0,00</div>
+                    <div class="prod-valor-icms">0,00</div>
+                    <div class="prod-aliq-icms">0,00</div>
                 </div>
             </div>
-            
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card bg-light">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">DADOS DA NOTA</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3 mb-3">
-                                    <strong>Número:</strong> {{ service_order.invoice_number }}
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <strong>Série:</strong> 1
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <strong>Data de Emissão:</strong> {{ service_order.invoice_date.strftime('%d/%m/%Y') }}
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <strong>Valor Total:</strong> R$ {{ "%.2f"|format(service_order.invoice_amount) }}
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <strong>Natureza da Operação:</strong> Prestação de Serviços de Manutenção
-                                </div>
-                            </div>
-                        </div>
+        </div>
+        
+        <!-- Dados adicionais -->
+        <div class="dados-adicionais-block">
+            <div class="block-header">DADOS ADICIONAIS</div>
+            <div class="dados-adicionais-grid">
+                <div class="info-complementar">
+                    <div class="info-title">INFORMAÇÕES COMPLEMENTARES</div>
+                    <div class="info-content">
+                        Ordem de Serviço: #{{ service_order.id }}
+                        {% if service_order.responsible %}
+                        Responsável Técnico: {{ service_order.responsible.name }}
+                        {% endif %}
+                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') }}.
+                        Documento emitido por ME ou EPP optante pelo Simples Nacional.
                     </div>
                 </div>
-            </div>
-            
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card bg-light">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">DETALHES DOS SERVIÇOS</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Descrição</th>
-                                            <th class="text-end">Valor (R$)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="service-description">
-                                                    <h6>Ordem de Serviço #{{ service_order.id }}</h6>
-                                                    <p>{{ service_order.service_details|nl2br }}</p>
-                                                    
-                                                    <h6 class="mt-3">Equipamentos:</h6>
-                                                    <ul>
-                                                        {% for eq in service_order.equipment %}
-                                                        <li>
-                                                            <strong>{{ eq.type }}</strong> 
-                                                            {% if eq.brand %}{{ eq.brand }}{% endif %}
-                                                            {% if eq.model %} - Modelo: {{ eq.model }}{% endif %}
-                                                            {% if eq.serial_number %} - S/N: {{ eq.serial_number }}{% endif %}
-                                                        </li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                            <td class="text-end">{{ "%.2f"|format(service_order.invoice_amount) }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                <div class="reservado-fisco">
+                    <div class="fisco-title">RESERVADO AO FISCO</div>
+                    <div class="fisco-content"></div>
                 </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="card bg-light">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">DADOS ADICIONAIS</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12">
-                                    <strong>Responsável Técnico:</strong> 
-                                    {% if service_order.responsible %}
-                                        {{ service_order.responsible.name }}
-                                    {% else %}
-                                        Não atribuído
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="row mt-2">
-                                <div class="col-12">
-                                    <strong>Observações:</strong>
-                                    <p class="mt-1">
-                                        Nota fiscal referente à prestação de serviços de manutenção em equipamentos.
-                                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') }}.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-5">
-                    <div class="card bg-light">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">TOTAIS</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-8">
-                                    <strong>Base de Cálculo ICMS:</strong>
-                                </div>
-                                <div class="col-4 text-end">
-                                    R$ 0,00
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-8">
-                                    <strong>Valor do ICMS:</strong>
-                                </div>
-                                <div class="col-4 text-end">
-                                    R$ 0,00
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-8">
-                                    <strong>Valor dos Serviços:</strong>
-                                </div>
-                                <div class="col-4 text-end">
-                                    R$ {{ "%.2f"|format(service_order.invoice_amount) }}
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-8">
-                                    <strong>Valor do ISS:</strong>
-                                </div>
-                                <div class="col-4 text-end">
-                                    R$ {{ "%.2f"|format(service_order.invoice_amount / 20) }}
-                                </div>
-                            </div>
-                            <div class="row font-weight-bold nfe-total">
-                                <div class="col-8">
-                                    <strong>VALOR TOTAL DA NOTA:</strong>
-                                </div>
-                                <div class="col-4 text-end">
-                                    <strong>R$ {{ "%.2f"|format(service_order.invoice_amount) }}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="nfe-footer mt-4">
-                <div class="nfe-protocol">
-                    <strong>Protocolo de Autorização:</strong> {{ "99999999999999" }} - {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}
-                </div>
-                <p class="text-center small">
-                    Documento emitido por ME ou EPP optante pelo Simples Nacional<br>
-                    Consulte a autenticidade no site: www.nfe.fazenda.gov.br/portal
-                </p>
             </div>
         </div>
     </div>
@@ -259,6 +258,7 @@
         body {
             background-color: white !important;
             color: black !important;
+            font-size: 8pt !important;
         }
         
         .navbar, .sidebar, .btn, .alert, header {
@@ -273,76 +273,374 @@
         
         .container-fluid {
             padding: 0 !important;
+            margin: 0 !important;
         }
         
-        .card {
-            border: 1px solid #000 !important;
-            page-break-inside: avoid;
-        }
-        
-        .card-header.bg-primary {
-            background-color: #e0e0e0 !important;
-            color: black !important;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-        }
-        
-        .text-white {
-            color: black !important;
-        }
-        
-        .nfe-barcode {
-            border: 1px solid #000;
-            padding: 10px;
-            text-align: center;
-            page-break-inside: avoid;
+        .nfe-document {
+            border: none !important;
+            width: 100% !important;
+            max-width: 210mm !important;
+            margin: 0 auto !important;
         }
     }
     
-    .nfe-card {
-        border: 1px solid #ddd;
+    /* Estilo geral do documento */
+    .nfe-document {
+        font-family: Arial, sans-serif;
+        border: 1px solid #000;
+        width: 100%;
+        max-width: 210mm;
+        margin: 0 auto;
+        font-size: 9pt;
+        box-sizing: border-box;
     }
     
+    /* Cabeçalho */
     .nfe-header {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-bottom: 2px solid #007bff;
+        display: flex;
+        border-bottom: 1px solid #000;
     }
     
-    .nfe-barcode {
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-top: 10px;
+    .header-left {
+        width: 60%;
+        border-right: 1px solid #000;
+    }
+    
+    .header-right {
+        width: 40%;
+        padding: 5px;
         text-align: center;
     }
     
-    .nfe-barcode-number {
-        font-size: 18px;
+    .recibo-box {
+        padding: 5px;
+    }
+    
+    .recibo-text {
+        font-size: 7pt;
+        margin-bottom: 20px;
+    }
+    
+    .recibo-signature {
+        display: flex;
+        justify-content: space-between;
+        font-size: 7pt;
+        border-top: 1px dashed #000;
+        padding-top: 5px;
+    }
+    
+    .nfe-title {
+        font-weight: bold;
+        font-size: 14pt;
+    }
+    
+    .nfe-number, .nfe-serie {
+        margin-top: 5px;
         font-weight: bold;
     }
     
-    .nfe-total {
-        border-top: 2px solid #ddd;
-        padding-top: 10px;
-        margin-top: 10px;
-        font-size: 18px;
+    /* Bloco do emitente */
+    .emitente-block {
+        display: flex;
+        border-bottom: 1px solid #000;
     }
     
-    .nfe-footer {
-        border-top: 1px solid #ddd;
-        padding-top: 15px;
+    .emitente-logo {
+        width: 25%;
+        border-right: 1px solid #000;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .service-description {
-        max-width: 600px;
-    }
-    
-    .nfe-protocol {
-        background-color: #f8f9fa;
-        padding: 8px;
-        margin-bottom: 15px;
-        border: 1px dashed #ddd;
+    .logo-box {
         text-align: center;
+    }
+    
+    .company-name {
+        font-weight: bold;
+        font-size: 14pt;
+        color: #006400;
+    }
+    
+    .company-slogan {
+        font-size: 7pt;
+    }
+    
+    .emitente-dados {
+        width: 40%;
+        border-right: 1px solid #000;
+        padding: 5px;
+        font-size: 8pt;
+    }
+    
+    .dados-row {
+        margin-bottom: 3px;
+    }
+    
+    .danfe-title {
+        width: 15%;
+        border-right: 1px solid #000;
+        padding: 5px;
+        text-align: center;
+        font-size: 12pt;
+        font-weight: bold;
+    }
+    
+    .danfe-subtitle {
+        font-size: 6pt;
+        font-weight: normal;
+        margin: 5px 0;
+    }
+    
+    .danfe-tipo {
+        font-size: 8pt;
+        margin: 2px 0;
+        border: 1px solid #000;
+        display: inline-block;
+        padding: 1px 3px;
+    }
+    
+    .danfe-numero, .danfe-serie, .danfe-pagina {
+        font-size: 8pt;
+        margin: 3px 0;
+    }
+    
+    .barcode-area {
+        width: 20%;
+        padding: 5px;
+        text-align: center;
+        font-size: 7pt;
+    }
+    
+    .barcode {
+        margin-bottom: 5px;
+    }
+    
+    .barcode-lines {
+        font-family: 'Courier New', monospace;
+        font-size: 24pt;
+        letter-spacing: -1px;
+        line-height: 0.8;
+    }
+    
+    .barcode-number {
+        font-size: 10pt;
+    }
+    
+    .barcode-info {
+        font-size: 6pt;
+    }
+    
+    /* Natureza de operação */
+    .natureza-block {
+        display: flex;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #000;
+        font-size: 8pt;
+    }
+    
+    .natureza-operacao-label, .protocolo-label {
+        width: 20%;
+        padding: 3px;
+        font-weight: bold;
+        border-right: 1px solid #000;
+    }
+    
+    .natureza-operacao-value {
+        width: 30%;
+        padding: 3px;
+        border-right: 1px solid #000;
+    }
+    
+    .protocolo-label {
+        width: 20%;
+    }
+    
+    .protocolo-value {
+        width: 30%;
+        padding: 3px;
+    }
+    
+    /* Blocos com título */
+    .block-header {
+        background-color: #d3d3d3;
+        padding: 2px 5px;
+        font-weight: bold;
+        font-size: 8pt;
+        border-bottom: 1px solid #000;
+    }
+    
+    /* Destinatário */
+    .destinatario-block, .fatura-block, .impostos-block, .transportador-block, .produtos-block, .dados-adicionais-block {
+        border-bottom: 1px solid #000;
+    }
+    
+    .destinatario-grid {
+        display: grid;
+        grid-template-columns: 15% 35% 15% 15% 10% 10%;
+        font-size: 8pt;
+    }
+    
+    .destinatario-grid > div {
+        padding: 3px;
+        border-right: 1px solid #000;
+        border-bottom: 1px solid #000;
+    }
+    
+    .destinatario-grid > div:nth-child(6n) {
+        border-right: none;
+    }
+    
+    [class$="-label"] {
+        font-weight: bold;
+        font-size: 7pt;
+    }
+    
+    /* Fatura */
+    .fatura-grid {
+        display: flex;
+        font-size: 8pt;
+        padding: 5px;
+    }
+    
+    .fatura-grid > div {
+        flex: 1;
+        padding: 2px 5px;
+        border-right: 1px solid #000;
+    }
+    
+    .fatura-grid > div:last-child {
+        border-right: none;
+    }
+    
+    /* Impostos */
+    .impostos-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        font-size: 8pt;
+    }
+    
+    .impostos-grid > div {
+        padding: 3px 5px;
+        border-right: 1px solid #000;
+        border-bottom: 1px solid #000;
+    }
+    
+    .impostos-grid > div:nth-child(2n) {
+        text-align: right;
+    }
+    
+    .impostos-grid > div:nth-child(10n) {
+        border-right: none;
+    }
+    
+    /* Transportador */
+    .transportador-grid {
+        display: grid;
+        grid-template-columns: 15% 25% 15% 15% 10% 10% 10%;
+        font-size: 8pt;
+    }
+    
+    .transportador-grid > div {
+        padding: 3px;
+        border-right: 1px solid #000;
+        border-bottom: 1px solid #000;
+    }
+    
+    .transportador-grid > div:nth-child(7n) {
+        border-right: none;
+    }
+    
+    .volumes-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        font-size: 8pt;
+    }
+    
+    .volumes-grid > div {
+        padding: 3px;
+        border-right: 1px solid #000;
+    }
+    
+    .volumes-grid > div:nth-child(12n) {
+        border-right: none;
+    }
+    
+    /* Produtos */
+    .produtos-grid {
+        min-height: 200px;
+        font-size: 7pt;
+    }
+    
+    .produtos-header {
+        display: grid;
+        grid-template-columns: 8% 30% 8% 6% 6% 4% 6% 10% 10% 4% 4% 4%;
+        font-weight: bold;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #000;
+    }
+    
+    .produtos-header > div {
+        padding: 3px;
+        border-right: 1px solid #000;
+        text-align: center;
+    }
+    
+    .produtos-header > div:last-child {
+        border-right: none;
+    }
+    
+    .produto-item {
+        display: grid;
+        grid-template-columns: 8% 30% 8% 6% 6% 4% 6% 10% 10% 4% 4% 4%;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .produto-item > div {
+        padding: 3px;
+        border-right: 1px solid #eee;
+    }
+    
+    .produto-item > div:last-child {
+        border-right: none;
+    }
+    
+    .prod-codigo, .prod-ncm, .prod-cst, .prod-cfop, .prod-un, .prod-qtde, .prod-bc-icms, .prod-valor-icms, .prod-aliq-icms {
+        text-align: center;
+    }
+    
+    .prod-valor-un, .prod-valor-total {
+        text-align: right;
+    }
+    
+    /* Dados adicionais */
+    .dados-adicionais-grid {
+        display: flex;
+        min-height: 100px;
+    }
+    
+    .info-complementar {
+        width: 65%;
+        border-right: 1px solid #000;
+    }
+    
+    .reservado-fisco {
+        width: 35%;
+    }
+    
+    .info-title, .fisco-title {
+        font-weight: bold;
+        font-size: 7pt;
+        padding: 2px 5px;
+        border-bottom: 1px solid #000;
+    }
+    
+    .info-content, .fisco-content {
+        padding: 5px;
+        font-size: 8pt;
+        min-height: 80px;
     }
 </style>
 {% endblock %}
