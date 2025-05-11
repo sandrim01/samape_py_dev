@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="light">
+<html lang="pt-BR" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -144,16 +144,16 @@
     
     <!-- Theme Detection -->
     <script>
-        // Check if system setting is 'auto', and if so, apply theme based on system preference
+        // Force dark theme as specified by user requirement
         document.addEventListener('DOMContentLoaded', function() {
-            // For now, use system preference directly
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.setAttribute('data-bs-theme', 'dark');
-            }
+            // Always use dark theme by default
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
             
-            // Listen for system theme changes
+            // We still keep the listener for system changes in case we want to implement
+            // auto theme switching in the future
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                document.documentElement.setAttribute('data-bs-theme', event.matches ? 'dark' : 'light');
+                // Uncomment this line to enable auto theme switching
+                // document.documentElement.setAttribute('data-bs-theme', event.matches ? 'dark' : 'light');
             });
         });
     </script>
