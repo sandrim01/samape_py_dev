@@ -898,6 +898,29 @@ def register_routes(app):
                     
                 current_user.email = form.email.data
                 
+            # Handle profile image upload
+            if form.profile_image.data:
+                # Save the image
+                import os
+                from werkzeug.utils import secure_filename
+                
+                # Create the profiles directory if it doesn't exist
+                os.makedirs('static/images/profiles', exist_ok=True)
+                
+                # Get the file extension
+                filename = secure_filename(form.profile_image.data.filename)
+                _, file_extension = os.path.splitext(filename)
+                
+                # Create a unique filename based on user ID
+                profile_image_filename = f"user_{current_user.id}{file_extension}"
+                
+                # Save the file
+                file_path = os.path.join('static/images/profiles', profile_image_filename)
+                form.profile_image.data.save(file_path)
+                
+                # Update the user's profile_image field
+                current_user.profile_image = profile_image_filename
+            
             # Update password if provided
             if form.new_password.data:
                 current_user.set_password(form.new_password.data)

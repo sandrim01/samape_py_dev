@@ -28,7 +28,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SAMAPE">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SAMAPE" class="logo-img" width="160">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -37,7 +37,14 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i> {{ current_user.name }}
+                            {% if current_user.profile_image %}
+                                <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
+                                     alt="Perfil" class="profile-avatar me-1">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/profiles/default_profile.svg') }}" 
+                                     alt="Perfil" class="profile-avatar me-1">
+                            {% endif %}
+                            {{ current_user.name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="fas fa-id-card me-2"></i>Meu Perfil</a></li>

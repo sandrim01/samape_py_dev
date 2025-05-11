@@ -1,147 +1,117 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Meu Perfil - SAMAPE{% endblock %}
+{% block title %}Meu Perfil | {{ super() }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Meu Perfil</h1>
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <!-- User Info Card -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-user me-1"></i> Informações do Usuário
-            </div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <div class="avatar-circle mb-3">
-                        <span class="initials">{{ current_user.name[:1] }}</span>
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">Meu Perfil</h1>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <div class="profile-image-container mb-3">
+                        {% if current_user.profile_image %}
+                            <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
+                                 alt="Foto de Perfil" class="rounded-circle profile-image">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/profiles/default_profile.svg') }}" 
+                                 alt="Foto de Perfil" class="rounded-circle profile-image">
+                        {% endif %}
                     </div>
-                    <h5>{{ current_user.name }}</h5>
-                    <p class="text-muted mb-0">{{ current_user.email }}</p>
-                    <span class="badge {% if current_user.role.name == 'admin' %}bg-danger{% elif current_user.role.name == 'gerente' %}bg-primary{% else %}bg-secondary{% endif %}">
-                        {{ current_user.role.value }}
-                    </span>
+                    <h5 class="card-title">{{ current_user.name }}</h5>
+                    <p class="card-text">{{ current_user.email }}</p>
+                    <p class="card-text">
+                        <span class="badge rounded-pill 
+                        {% if current_user.role == UserRole.admin %}bg-danger
+                        {% elif current_user.role == UserRole.gerente %}bg-warning
+                        {% else %}bg-primary{% endif %}">
+                            {{ current_user.role.value }}
+                        </span>
+                    </p>
                 </div>
-                
-                <div class="mb-3">
-                    <h6 class="fw-bold">Conta criada em</h6>
-                    <p>{{ current_user.created_at.strftime('%d/%m/%Y') }}</p>
-                </div>
-                
-                <div class="mb-3">
-                    <h6 class="fw-bold">Última atualização</h6>
-                    <p>{{ current_user.updated_at.strftime('%d/%m/%Y') }}</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Informações da Conta</h5>
+                    <p><strong>Nome de Usuário:</strong> {{ current_user.username }}</p>
+                    <p><strong>Data de Cadastro:</strong> {{ current_user.created_at.strftime('%d/%m/%Y') }}</p>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-8">
-        <!-- Edit Profile Card -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-edit me-1"></i> Editar Perfil
-            </div>
-            <div class="card-body">
-                <form method="post" novalidate>
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nome</label>
-                        {{ form.name(class="form-control", id="name") }}
-                        {% if form.name.errors %}
-                            <div class="invalid-feedback d-block">
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Editar Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
                                 {% for error in form.name.errors %}
-                                    {{ error }}
+                                    <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        {{ form.email(class="form-control", id="email") }}
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback d-block">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
                                 {% for error in form.email.errors %}
-                                    {{ error }}
+                                    <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             </div>
-                        {% endif %}
-                        <div class="form-text">A alteração de email requer a confirmação da senha atual.</div>
-                    </div>
-                    
-                    <hr class="my-4">
-                    <h5>Alterar Senha</h5>
-                    
-                    <div class="mb-3">
-                        <label for="current_password" class="form-label">Senha Atual</label>
-                        {{ form.current_password(class="form-control", id="current_password") }}
-                        {% if form.current_password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.current_password.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">Necessário para alterar email ou senha.</div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="new_password" class="form-label">Nova Senha</label>
-                            {{ form.new_password(class="form-control", id="new_password") }}
-                            {% if form.new_password.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.new_password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">Deixe em branco para manter a senha atual.</div>
                         </div>
                         
-                        <div class="col-md-6">
-                            <label for="confirm_password" class="form-label">Confirmar Nova Senha</label>
-                            {{ form.confirm_password(class="form-control", id="confirm_password") }}
-                            {% if form.confirm_password.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.confirm_password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                        <div class="mb-3">
+                            <label for="profile_image" class="form-label">{{ form.profile_image.label }}</label>
+                            {{ form.profile_image(class="form-control" + (" is-invalid" if form.profile_image.errors else "")) }}
+                            {% for error in form.profile_image.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Tamanho máximo: 2MB. Formatos permitidos: JPG, JPEG, PNG, GIF.</div>
                         </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                    </div>
-                </form>
+                        
+                        <hr>
+                        <h5>Alterar Senha</h5>
+                        
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">{{ form.current_password.label }}</label>
+                            {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else "")) }}
+                            {% for error in form.current_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Obrigatório para alterar o email ou a senha.</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="new_password" class="form-label">{{ form.new_password.label }}</label>
+                                {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else "")) }}
+                                {% for error in form.new_password.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">{{ form.confirm_password.label }}</label>
+                                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
+                                {% for error in form.confirm_password.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .avatar-circle {
-        width: 100px;
-        height: 100px;
-        background-color: var(--primary-color);
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-    }
-    
-    .initials {
-        font-size: 40px;
-        color: white;
-        font-weight: bold;
-    }
-</style>
 {% endblock %}
