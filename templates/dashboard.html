@@ -66,34 +66,35 @@
     </div>
 </div>
 
-<!-- Gráficos e Tabelas -->
+<!-- Gráficos -->
 <div class="row mt-4">
-    <!-- Distribuição de Ordens de Serviço -->
+    <!-- Distribuição de OS -->
     <div class="col-lg-6 mb-4">
-        <div class="card h-100">
+        <div class="card card-dark h-100">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Distribuição de Ordens de Serviço</h5>
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Distribuição de OS</h5>
             </div>
             <div class="card-body">
-                <canvas id="serviceOrdersDistribution" height="180" 
-                    data-labels='["Abertas", "Em Andamento", "Fechadas"]' 
-                    data-counts='[{{ so_stats.open }}, {{ so_stats.in_progress }}, {{ so_stats.closed }}]'>
-                </canvas>
+                <canvas id="serviceOrderDistributionChart" height="180"></canvas>
+                <!-- Dados para o gráfico -->
+                <div id="os-aberta" data-count="{{ so_stats.open }}" class="d-none"></div>
+                <div id="os-em-andamento" data-count="{{ so_stats.in_progress }}" class="d-none"></div>
+                <div id="os-fechada" data-count="{{ so_stats.closed }}" class="d-none"></div>
             </div>
         </div>
     </div>
     
-    <!-- Resumo Financeiro do Mês -->
+    <!-- Resumo Financeiro -->
     <div class="col-lg-6 mb-4">
-        <div class="card h-100">
+        <div class="card card-dark h-100">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Resumo Financeiro do Mês</h5>
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Resumo Financeiro</h5>
             </div>
             <div class="card-body">
-                <canvas id="monthlyFinancial" height="180" 
-                    data-income="{{ financial_summary.income }}" 
-                    data-expenses="{{ financial_summary.expenses }}">
-                </canvas>
+                <canvas id="monthlyFinancialChart" height="180"></canvas>
+                <!-- Dados para o gráfico -->
+                <div id="monthly-income" data-value="{{ financial_summary.income }}" class="d-none"></div>
+                <div id="monthly-expenses" data-value="{{ financial_summary.expenses }}" class="d-none"></div>
             </div>
         </div>
     </div>
@@ -186,93 +187,5 @@
     </div>
 </div>
 
-<!-- Script para configurar gráficos do Chart.js -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Configurar gráfico de distribuição de ordens de serviço
-    const soDistEl = document.getElementById('serviceOrdersDistribution');
-    if (soDistEl) {
-        const labels = JSON.parse(soDistEl.dataset.labels || '[]');
-        const counts = JSON.parse(soDistEl.dataset.counts || '[]');
-        
-        new Chart(soDistEl, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: counts,
-                    backgroundColor: ['#f85d8e', '#ff9353', '#37d09e'],
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#a0a0a0',
-                            padding: 10,
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Configurar gráfico de finanças
-    const finChartEl = document.getElementById('monthlyFinancial');
-    if (finChartEl) {
-        const income = parseFloat(finChartEl.dataset.income || 0);
-        const expenses = parseFloat(finChartEl.dataset.expenses || 0);
-        const balance = income - expenses;
-        
-        new Chart(finChartEl, {
-            type: 'bar',
-            data: {
-                labels: ['Entradas', 'Saídas', 'Saldo'],
-                datasets: [{
-                    data: [income, expenses, balance],
-                    backgroundColor: ['#37d09e', '#f85d8e', '#4285f4'],
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        },
-                        ticks: {
-                            color: '#a0a0a0'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#a0a0a0'
-                        }
-                    }
-                }
-            }
-        });
-    }
-});
-</script>
+<!-- Nenhum script aqui, os gráficos são renderizados pelo charts.js global -->
 {% endblock %}

@@ -121,12 +121,16 @@ def register_routes(app):
             ActionLog.timestamp.desc()
         ).limit(10).all()
         
+        # Add current timestamp to prevent caching
+        from datetime import datetime
+        
         return render_template(
             'dashboard.html',
             so_stats=so_stats,
             financial_summary=financial_summary,
             recent_orders=recent_orders,
-            recent_logs=recent_logs
+            recent_logs=recent_logs,
+            now=datetime.now().timestamp()
         )
 
     # Service Order routes
