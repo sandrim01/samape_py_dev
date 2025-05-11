@@ -1,149 +1,223 @@
-// Function to initialize charts on specific pages
+document.addEventListener('DOMContentLoaded', function() {
+    setupCharts();
+});
+
 function setupCharts() {
-    if (window.location.pathname === '/dashboard') {
+    // Dashboard Charts
+    if (document.getElementById('dashboard')) {
         setupDashboardCharts();
-    } else if (window.location.pathname === '/financeiro') {
+    }
+    
+    // Financial Charts
+    if (document.getElementById('financial-charts')) {
         setupFinancialCharts();
     }
 }
 
-// Dashboard charts
 function setupDashboardCharts() {
     setupServiceOrderDistributionChart();
     setupMonthlyFinancialChart();
 }
 
 function setupServiceOrderDistributionChart() {
-    const ctx = document.getElementById('serviceOrdersDistribution');
-    
+    const ctx = document.getElementById('serviceOrderDistributionChart');
     if (!ctx) return;
     
-    const labels = JSON.parse(ctx.getAttribute('data-labels'));
-    const counts = JSON.parse(ctx.getAttribute('data-counts'));
+    // Get data from elements
+    const aberta = parseInt(document.getElementById('os-aberta').dataset.count || 0);
+    const emAndamento = parseInt(document.getElementById('os-em-andamento').dataset.count || 0);
+    const fechada = parseInt(document.getElementById('os-fechada').dataset.count || 0);
     
-    new Chart(ctx, {
+    const data = {
+        labels: ['Aberta', 'Em Andamento', 'Fechada'],
+        datasets: [{
+            data: [aberta, emAndamento, fechada],
+            backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
+            borderWidth: 1
+        }]
+    };
+    
+    const config = {
         type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: counts,
-                backgroundColor: [
-                    '#ffc107', // Abertas
-                    '#17a2b8', // Em andamento
-                    '#28a745'  // Fechadas
-                ],
-                borderWidth: 1
-            }]
-        },
+        data: data,
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribuição de Ordens de Serviço'
                 }
             }
-        }
-    });
+        },
+    };
+    
+    new Chart(ctx, config);
 }
 
 function setupMonthlyFinancialChart() {
-    const ctx = document.getElementById('monthlyFinancial');
-    
+    const ctx = document.getElementById('monthlyFinancialChart');
     if (!ctx) return;
     
-    const income = parseFloat(ctx.getAttribute('data-income'));
-    const expenses = parseFloat(ctx.getAttribute('data-expenses'));
-    const balance = income - expenses;
+    // Get financial data
+    const income = parseFloat(document.getElementById('monthly-income').dataset.value || 0);
+    const expenses = parseFloat(document.getElementById('monthly-expenses').dataset.value || 0);
     
-    new Chart(ctx, {
+    const data = {
+        labels: ['Entradas', 'Saídas', 'Saldo'],
+        datasets: [{
+            label: 'Valor (R$)',
+            data: [income, expenses, income - expenses],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.7)',
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(14, 30, 64, 0.7)'
+            ],
+            borderColor: [
+                'rgb(40, 167, 69)',
+                'rgb(220, 53, 69)',
+                'rgb(14, 30, 64)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    const config = {
         type: 'bar',
-        data: {
-            labels: ['Receitas', 'Despesas', 'Saldo'],
-            datasets: [{
-                data: [income, expenses, balance],
-                backgroundColor: [
-                    '#28a745', // Receitas
-                    '#dc3545', // Despesas
-                    balance >= 0 ? '#17a2b8' : '#fd7e14' // Saldo
-                ],
-                borderWidth: 1
-            }]
-        },
+        data: data,
         options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.parsed.y;
-                            return 'R$ ' + value.toFixed(2).replace('.', ',');
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return 'R$ ' + value.toFixed(2).replace('.', ',');
-                        }
-                    }
+                title: {
+                    display: true,
+                    text: 'Resumo Financeiro do Mês'
                 }
             }
-        }
-    });
+        },
+    };
+    
+    new Chart(ctx, config);
 }
 
-// Financial page charts
 function setupFinancialCharts() {
     setupMonthlyBalanceChart();
 }
 
 function setupMonthlyBalanceChart() {
     const ctx = document.getElementById('monthlyBalanceChart');
-    
     if (!ctx) return;
     
-    const income = parseFloat(ctx.getAttribute('data-income'));
-    const expenses = parseFloat(ctx.getAttribute('data-expenses'));
+    // Get monthly data
+    const monthlyData = [];
+    const monthLabels = [];
     
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Receitas', 'Despesas'],
-            datasets: [{
-                data: [income, expenses],
-                backgroundColor: ['#28a745', '#dc3545'],
-                borderWidth: 1
-            }]
-        },
+    // Collect data from HTML
+    document.querySelectorAll('.monthly-data').forEach(el => {
+        const month = el.dataset.month;
+        const income = parseFloat(el.dataset.income || 0);
+        const expenses = parseFloat(el.dataset.expenses || 0);
+        const balance = income - expenses;
+        
+        monthLabels.push(month);
+        monthlyData.push({
+            income: income,
+            expenses: expenses,
+            balance: balance
+        });
+    });
+    
+    // Prepare chart data
+    const data = {
+        labels: monthLabels,
+        datasets: [
+            {
+                label: 'Entradas',
+                data: monthlyData.map(d => d.income),
+                backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                borderColor: 'rgb(40, 167, 69)',
+                borderWidth: 1,
+                type: 'bar'
+            },
+            {
+                label: 'Saídas',
+                data: monthlyData.map(d => d.expenses),
+                backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                borderColor: 'rgb(220, 53, 69)',
+                borderWidth: 1,
+                type: 'bar'
+            },
+            {
+                label: 'Saldo',
+                data: monthlyData.map(d => d.balance),
+                backgroundColor: 'rgba(14, 30, 64, 0.1)',
+                borderColor: 'rgb(14, 30, 64)',
+                borderWidth: 2,
+                type: 'line',
+                yAxisID: 'y1'
+            }
+        ]
+    };
+    
+    const config = {
+        data: data,
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom'
+                title: {
+                    display: true,
+                    text: 'Balanço Mensal'
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const value = context.parsed;
-                            const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
-                            const percentage = Math.round((value * 100) / total);
-                            return `R$ ${value.toFixed(2).replace('.', ',')} (${percentage}%)`;
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                            }
+                            return label;
                         }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Valor (R$)'
+                    }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Saldo (R$)'
                     }
                 }
             }
         }
-    });
+    };
+    
+    new Chart(ctx, config);
 }
-
-// Initialize charts when DOM is loaded
-document.addEventListener('DOMContentLoaded', setupCharts);

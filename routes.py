@@ -13,7 +13,7 @@ from models import (
 )
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
-    CloseServiceOrderForm, FinancialEntryForm, ProfileForm
+    CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm
 )
 from utils import (
     role_required, admin_required, manager_required, log_action,
@@ -42,13 +42,15 @@ def register_routes(app):
     # Context processors
     @app.context_processor
     def utility_processor():
+        from utils import get_system_setting
         return {
             'format_document': format_document,
             'format_currency': format_currency,
             'UserRole': UserRole,
             'ServiceOrderStatus': ServiceOrderStatus,
             'FinancialEntryType': FinancialEntryType,
-            'now': datetime.utcnow
+            'now': datetime.utcnow,
+            'get_system_setting': get_system_setting
         }
 
     # Authentication routes
