@@ -313,11 +313,32 @@ def register_routes(app):
             
         form = CloseServiceOrderForm()
         
+        # Pré-preencher com valor estimado, se disponível
+        if request.method == 'GET':
+            if service_order.estimated_value:
+                form.original_amount.data = service_order.estimated_value
+                form.invoice_amount.data = service_order.estimated_value
+            
         if form.validate_on_submit():
+            # Calcular o valor final após desconto
+            original_amount = form.original_amount.data
+            discount_amount = form.discount_amount.data or 0
+            
+            # Garantir que o desconto não seja maior que o valor original
+            if discount_amount and original_amount and float(discount_amount) >= float(original_amount):
+                flash('O desconto não pode ser maior ou igual ao valor original.', 'danger')
+                return render_template(
+                    'service_orders/view.html',
+                    service_order=service_order,
+                    close_form=form
+                )
+            
             service_order.status = ServiceOrderStatus.fechada
             service_order.closed_at = datetime.utcnow()
             service_order.invoice_number = form.invoice_number.data
             service_order.invoice_date = datetime.utcnow()
+            service_order.original_amount = original_amount
+            service_order.discount_amount = discount_amount
             service_order.invoice_amount = form.invoice_amount.data
             service_order.service_details = form.service_details.data
             
@@ -333,11 +354,16 @@ def register_routes(app):
             db.session.add(financial_entry)
             db.session.commit()
             
+            # Registrar no log, incluindo informações sobre desconto se aplicável
+            log_details = f"OS {id} fechada com NF-e {form.invoice_number.data}"
+            if discount_amount > 0:
+                log_details += f", aplicado desconto de {format_currency(discount_amount)}"
+            
             log_action(
                 'Fechamento de OS',
                 'service_order',
                 service_order.id,
-                f"OS {id} fechada com NF-e {form.invoice_number.data}"
+                log_details
             )
             
             flash('Ordem de serviço fechada com sucesso!', 'success')

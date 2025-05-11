@@ -344,15 +344,23 @@
                 </div>
             </div>
             <div class="row mt-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <strong>Valor dos Produtos:</strong><br>
                     {{ format_currency(0) }}
                 </div>
-                <div class="col-md-4">
-                    <strong>Valor dos Serviços:</strong><br>
-                    {{ format_currency(service_order.invoice_amount) }}
+                <div class="col-md-3">
+                    <strong>Valor Original dos Serviços:</strong><br>
+                    {{ format_currency(service_order.original_amount or service_order.invoice_amount) }}
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <strong>Desconto Aplicado:</strong><br>
+                    {% if service_order.discount_amount and service_order.discount_amount > 0 %}
+                        <span class="text-danger">-{{ format_currency(service_order.discount_amount) }}</span>
+                    {% else %}
+                        {{ format_currency(0) }}
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
                     <strong class="nfe-total">Valor Total da NF-e:</strong><br>
                     <span class="nfe-total">{{ format_currency(service_order.invoice_amount) }}</span>
                 </div>

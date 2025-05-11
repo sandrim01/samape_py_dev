@@ -103,6 +103,8 @@ class ServiceOrder(db.Model):
     invoice_number = db.Column(db.String(20))
     invoice_date = db.Column(db.DateTime)
     invoice_amount = db.Column(db.Numeric(10, 2))
+    discount_amount = db.Column(db.Numeric(10, 2), default=0)  # Novo campo para desconto
+    original_amount = db.Column(db.Numeric(10, 2))  # Valor original antes do desconto
     service_details = db.Column(db.Text)
     
     # Relations
