@@ -104,3 +104,27 @@ class FinancialEntryForm(FlaskForm):
     amount = DecimalField('Valor (R$)', validators=[DataRequired()], places=2)
     type = SelectField('Tipo', choices=[(t.name, t.value) for t in FinancialEntryType], validators=[DataRequired()])
     date = StringField('Data', validators=[DataRequired()])
+
+class SystemSettingsForm(FlaskForm):
+    theme = SelectField('Tema', choices=[
+        ('light', 'Claro'),
+        ('dark', 'Escuro'),
+        ('auto', 'Automático (Usar Configuração do Sistema)')
+    ], validators=[DataRequired()])
+    timezone = SelectField('Fuso Horário', choices=[
+        ('America/Sao_Paulo', 'Brasília (GMT-3)'),
+        ('America/Manaus', 'Manaus (GMT-4)'),
+        ('America/Cuiaba', 'Cuiabá (GMT-4)'),
+        ('America/Rio_Branco', 'Rio Branco (GMT-5)')
+    ], validators=[DataRequired()])
+    date_format = SelectField('Formato de Data', choices=[
+        ('DD/MM/YYYY', 'DD/MM/AAAA (ex: 31/12/2023)'),
+        ('MM/DD/YYYY', 'MM/DD/AAAA (ex: 12/31/2023)'),
+        ('YYYY-MM-DD', 'AAAA-MM-DD (ex: 2023-12-31)')
+    ], validators=[DataRequired()])
+    items_per_page = SelectField('Itens por Página', coerce=int, choices=[
+        (10, '10'),
+        (20, '20'),
+        (50, '50'),
+        (100, '100')
+    ], validators=[DataRequired()])

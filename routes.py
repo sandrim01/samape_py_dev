@@ -922,6 +922,44 @@ def register_routes(app):
             return redirect(url_for('view_service_order', id=id))
             
         return render_template('invoices/view.html', service_order=service_order)
+        
+    # System Settings
+    @app.route('/configuracoes', methods=['GET', 'POST'])
+    @login_required
+    def system_settings():
+        from utils import get_all_system_settings, get_default_system_settings, set_system_setting
+        
+        # Get current settings or use defaults
+        default_settings = get_default_system_settings()
+        current_settings = get_all_system_settings()
+        
+        # Merge defaults with current settings
+        for key, value in default_settings.items():
+            if key not in current_settings:
+                current_settings[key] = value
+        
+        form = SystemSettingsForm()
+        
+        # Pre-populate form with current settings
+        if request.method == 'GET':
+            form.theme.data = current_settings.get('theme', 'light')
+            form.timezone.data = current_settings.get('timezone', 'America/Sao_Paulo')
+            form.date_format.data = current_settings.get('date_format', 'DD/MM/YYYY')
+            form.items_per_page.data = int(current_settings.get('items_per_page', '20'))
+        
+        if form.validate_on_submit():
+            # Save settings
+            set_system_setting('theme', form.theme.data, current_user.id)
+            set_system_setting('timezone', form.timezone.data, current_user.id)
+            set_system_setting('date_format', form.date_format.data, current_user.id)
+            set_system_setting('items_per_page', str(form.items_per_page.data), current_user.id)
+            
+            log_action('Atualização de Configurações', 'system', None, 'Configurações do sistema atualizadas')
+            
+            flash('Configurações atualizadas com sucesso!', 'success')
+            return redirect(url_for('system_settings'))
+            
+        return render_template('settings/index.html', form=form, settings=current_settings)
 
     # Initialize the first admin user if no users exist
     def create_initial_admin():

@@ -139,3 +139,57 @@ def get_service_order_stats():
         'closed': closed_count,
         'total': open_count + in_progress_count + closed_count
     }
+
+def get_system_setting(name, default=None):
+    """Get a system setting by name"""
+    from models import SystemSettings
+    from app import db
+    
+    setting = SystemSettings.query.filter_by(name=name).first()
+    if setting:
+        return setting.value
+    
+    # If setting doesn't exist and default is provided, create it
+    if default is not None:
+        setting = SystemSettings(name=name, value=default)
+        db.session.add(setting)
+        db.session.commit()
+        return default
+    
+    return None
+
+def set_system_setting(name, value, user_id=None):
+    """Set a system setting by name"""
+    from models import SystemSettings
+    from app import db
+    
+    setting = SystemSettings.query.filter_by(name=name).first()
+    if setting:
+        setting.value = value
+        if user_id:
+            setting.updated_by = user_id
+    else:
+        setting = SystemSettings(name=name, value=value, updated_by=user_id)
+        db.session.add(setting)
+    
+    db.session.commit()
+    return True
+
+def get_all_system_settings():
+    """Get all system settings as a dictionary"""
+    from models import SystemSettings
+    
+    settings = {}
+    for setting in SystemSettings.query.all():
+        settings[setting.name] = setting.value
+    
+    return settings
+
+def get_default_system_settings():
+    """Get default system settings"""
+    return {
+        'theme': 'light',
+        'timezone': 'America/Sao_Paulo',
+        'date_format': 'DD/MM/YYYY',
+        'items_per_page': '20'
+    }
