@@ -139,6 +139,7 @@ class SupplierForm(FlaskForm):
     address = StringField('Endereço', validators=[Optional(), Length(max=200)])
     website = StringField('Website', validators=[Optional(), Length(max=100)])
     notes = TextAreaField('Observações', validators=[Optional()])
+    id = HiddenField()
     
     def validate_document(self, field):
         if field.data:
@@ -148,15 +149,13 @@ class SupplierForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(SupplierForm, self).__init__(*args, **kwargs)
-        # Campo oculto para edição
-        self.id = HiddenField()
 
 
 class PartForm(FlaskForm):
     name = StringField('Nome da Peça', validators=[DataRequired(), Length(min=3, max=100)])
     description = TextAreaField('Descrição', validators=[Optional()])
     part_number = StringField('Número da Peça', validators=[Optional(), Length(max=50)])
-    supplier_id = SelectField('Fornecedor', coerce=int, validators=[Optional()])
+    supplier_id = SelectField('Fornecedor', validators=[Optional()], coerce=lambda x: int(x) if x else None)
     category = SelectField('Categoria', validators=[Optional()])
     subcategory = StringField('Subcategoria', validators=[Optional(), Length(max=50)])
     cost_price = DecimalField('Preço de Custo (R$)', validators=[Optional()], places=2)
@@ -168,6 +167,7 @@ class PartForm(FlaskForm):
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas!')
     ])
+    id = HiddenField()
     
     def __init__(self, *args, **kwargs):
         super(PartForm, self).__init__(*args, **kwargs)
@@ -191,15 +191,12 @@ class PartForm(FlaskForm):
             ('seguranca', 'Segurança'),
             ('outro', 'Outro')
         ]
-        
-        # Campo oculto para edição
-        self.id = HiddenField()
 
 
 class PartSaleForm(FlaskForm):
     part_id = SelectField('Peça', coerce=int, validators=[DataRequired()])
-    client_id = SelectField('Cliente', coerce=int, validators=[Optional()])
-    service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
+    client_id = SelectField('Cliente', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    service_order_id = SelectField('Ordem de Serviço', validators=[Optional()], coerce=lambda x: int(x) if x else None)
     quantity = IntegerField('Quantidade', validators=[DataRequired(), NumberRange(min=1)], default=1)
     unit_price = DecimalField('Preço Unitário (R$)', validators=[DataRequired()], places=2)
     total_price = DecimalField('Preço Total (R$)', validators=[DataRequired()], places=2)
@@ -210,8 +207,12 @@ class PartSaleForm(FlaskForm):
         super(PartSaleForm, self).__init__(*args, **kwargs)
         # Peças para o dropdown
         from models import Part
-        self.part_id.choices = [(p.id, f"{p.name} - {p.part_number or 'S/N'} - R$ {p.selling_price or 0:.2f}") 
-                               for p in Part.query.filter(Part.stock_quantity > 0).order_by(Part.name).all()]
+        part_choices = [(p.id, f"{p.name} - {p.part_number or 'S/N'} - R$ {p.selling_price or 0:.2f}") 
+                       for p in Part.query.filter(Part.stock_quantity > 0).order_by(Part.name).all()]
+        if part_choices:
+            self.part_id.choices = part_choices
+        else:
+            self.part_id.choices = [(0, 'Nenhuma peça disponível em estoque')]
         
         # Clientes para o dropdown
         from models import Client
