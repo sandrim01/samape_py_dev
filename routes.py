@@ -238,7 +238,8 @@ def register_routes(app):
     @login_required
     def view_service_order(id):
         service_order = ServiceOrder.query.get_or_404(id)
-        return render_template('service_orders/view.html', service_order=service_order)
+        close_form = CloseServiceOrderForm()
+        return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
 
     @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
