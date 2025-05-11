@@ -1,0 +1,220 @@
+1. 🔐 Página de Login (/login)
+Campos:
+Email
+
+Senha
+
+Funcionalidade:
+Autentica usuário com hash de senha (bcrypt)
+
+Inicia sessão segura (Flask-Login ou session com secure_cookie)
+
+Redireciona para o Dashboard com base no papel do usuário (admin, gerente, funcionário)
+
+Segurança:
+Senhas criptografadas com bcrypt
+
+Rate limiting (limitar tentativas de login)
+
+CSRF Token no formulário
+
+Proteção contra XSS com Jinja2 autoescaping
+
+Sessão expira por inatividade (uso de PERMANENT_SESSION_LIFETIME)
+
+2. 🏠 Dashboard (/dashboard)
+Exibe:
+Total de OS por status (abertas, em andamento, fechadas)
+
+Faturamento do mês
+
+Últimas ações (logs)
+
+Alertas (ex: OS vencidas, clientes inativos)
+
+Segurança:
+Acesso apenas com login
+
+Autorização por papel (@login_required + checagem do tipo de usuário)
+
+Todas as variáveis do Jinja2 autoescapadas
+
+3. 📁 Ordens de Serviço (/os)
+Funcionalidades:
+Criar nova OS
+
+Editar OS existente
+
+Fechar OS (gera info da NF-e)
+
+Listagem com filtros por:
+
+Cliente
+
+Responsável
+
+Status
+
+Data
+
+Segurança:
+Proteção contra SQL Injection via SQLAlchemy
+
+CSRF nos formulários de criação/edição
+
+Escapamento de entrada do usuário nos templates
+
+Verificação de sessão e permissão antes de qualquer ação
+
+4. 👤 Cadastro de Clientes (/clientes)
+Funcionalidades:
+Adicionar novo cliente
+
+Editar cliente existente
+
+Visualizar maquinários de um cliente
+
+Excluir cliente (somente admin)
+
+Campos:
+Nome
+
+CNPJ ou CPF
+
+Email
+
+Telefone
+
+Endereço
+
+Segurança:
+Validação de CNPJ/CPF
+
+Sanitização e escapamento de dados nos templates
+
+Proteção contra CSRF
+
+Ações restritas por papel
+
+5. 🛠️ Cadastro de Maquinários (/maquinarios)
+Funcionalidades:
+Listar maquinários de um cliente
+
+Adicionar novo equipamento
+
+Editar dados de equipamento
+
+Histórico de manutenções
+
+Campos:
+Tipo
+
+Marca
+
+Modelo
+
+Nº de Série
+
+Ano
+
+Última manutenção
+
+Segurança:
+Dados vinculados ao cliente via chave estrangeira segura
+
+Escapamento no template
+
+CSRF nos formulários
+
+6. 👷 Gestão de Funcionários (/funcionarios)
+Funcionalidades:
+Listar todos os funcionários
+
+Adicionar novo funcionário
+
+Editar dados (nome, cargo, email)
+
+Ativar/desativar conta
+
+Acesso:
+Gerente: pode ver
+
+Admin: pode editar/criar/desativar
+
+Segurança:
+Apenas admin pode alterar cargos ou desativar usuários
+
+Emails únicos validados
+
+Ações registradas no log
+
+7. 💰 Financeiro (/financeiro)
+Funcionalidades:
+Registrar entrada (vinculada à OS)
+
+Registrar saída (gastos diversos)
+
+Filtrar por período
+
+Exportar relatório (CSV)
+
+Resumo mensal: receita x despesa
+
+Segurança:
+Apenas administradores e gerentes podem acessar
+
+Proteção contra CSRF
+
+Exportação só por usuários autenticados
+
+Logs de todas as ações financeiras
+
+8. 📜 Logs de Ação (/logs)
+Exibe:
+Login/logout de usuários
+
+Criação/edição de OS, clientes, maquinários
+
+Ações financeiras
+
+Segurança:
+Apenas administradores têm acesso
+
+Imutável (somente leitura)
+
+9. 🧾 Geração de NF-e (PDF ou visualização)
+Detalhes:
+Geração automática após fechamento de OS
+
+Layout responsivo para impressão
+
+Possível exportar em PDF
+
+Segurança:
+NF-e só acessível por usuários com permissão
+
+Campos validados e escapados
+
+10. 🧰 Configurações e Perfil (/perfil)
+Funcionalidades:
+Alterar nome
+
+Alterar email
+
+Alterar senha (com verificação da senha atual)
+
+Segurança:
+Hash da nova senha com bcrypt
+
+Verificação da senha atual antes da troca
+
+Tokens CSRF
+
+🔒 Segurança Detalhada por Tipo de Ameaça
+Ameaça	Ação de Mitigação
+SQL Injection	Uso exclusivo do SQLAlchemy ORM e parâmetros preparados
+CSRF	Uso de Flask-WTF ou manual via tokens com {{ csrf_token() }} nos formulários
+XSS	Uso de {{ variable }} (autoescapado) no Jinja2 + validação/sanitização manual
+Sessão/Hijack	Sessão via cookie seguro (secure, httponly, samesite='Lax') + expiração
+Força Bruta	Rate limit em login + captcha opcional + bloqueio após N tentativas
+Acesso indevido	Decoradores @login_required e @role_required('admin') em rotas críticas
