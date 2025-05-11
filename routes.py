@@ -966,6 +966,41 @@ def register_routes(app):
         return render_template('profile/index.html', form=form)
 
     # Invoice/NF-e routes
+    @app.route('/notas-fiscais')
+    @login_required
+    def invoices():
+        search = request.args.get('search', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = 20  # Número de itens por página
+        
+        # Consulta base para obter apenas ordens de serviço fechadas com nota fiscal
+        query = ServiceOrder.query.filter(
+            ServiceOrder.status == ServiceOrderStatus.fechada,
+            ServiceOrder.invoice_number.isnot(None)
+        )
+        
+        # Aplicar filtro de busca se fornecido
+        if search:
+            query = query.join(Client).filter(
+                or_(
+                    ServiceOrder.invoice_number.ilike(f'%{search}%'),
+                    Client.name.ilike(f'%{search}%')
+                )
+            )
+        
+        # Ordenar por data de emissão de nota fiscal, mais recentes primeiro
+        query = query.order_by(ServiceOrder.invoice_date.desc())
+        
+        # Paginar os resultados
+        service_orders = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        return render_template(
+            'invoices/index.html', 
+            service_orders=service_orders,
+            pagination=service_orders,
+            search=search
+        )
+    
     @app.route('/os/<int:id>/nfe')
     @login_required
     def view_invoice(id):

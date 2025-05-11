@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}OS #{{ service_order.id }} - {{ service_order.client.name }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Ordem de Serviço #{{ service_order.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if service_order.status.name == 'fechada' %}
+            <a href="{{ url_for('view_invoice', id=service_order.id) }}" class="btn btn-primary me-2">
+                <i class="fas fa-file-invoice-dollar me-1"></i> Ver NF-e
+            </a>
+        {% else %}
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#closeOrderModal">
+                <i class="fas fa-check-circle me-1"></i> Fechar OS
+            </button>
+            <a href="{{ url_for('edit_service_order', id=service_order.id) }}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-1"></i> Editar
+            </a>
+        {% endif %}
+        <a href="{{ url_for('service_orders') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-info-circle me-1"></i> Detalhes da OS
+                    </span>
+                    <span class="badge {{ service_order.status.name == 'aberta' ? 'bg-danger' : service_order.status.name == 'em_andamento' ? 'bg-warning' : 'bg-success' }}">
+                        {{ service_order.status.value }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-2">
+                            <strong><i class="fas fa-calendar-alt me-1"></i> Data de Abertura:</strong>
+                            {{ service_order.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                        <p class="mb-2">
+                            <strong><i class="fas fa-user me-1"></i> Responsável:</strong>
+                            {{ service_order.responsible.name if service_order.responsible else 'Não definido' }}
+                        </p>
+                        {% if service_order.status.name == 'fechada' %}
+                        <p class="mb-2">
+                            <strong><i class="fas fa-calendar-check me-1"></i> Data de Fechamento:</strong>
+                            {{ service_order.closed_at.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if service_order.estimated_value %}
+                        <p class="mb-2">
+                            <strong><i class="fas fa-tag me-1"></i> Valor Estimado:</strong>
+                            {{ format_currency(service_order.estimated_value) }}
+                        </p>
+                        {% endif %}
+                        {% if service_order.status.name == 'fechada' %}
+                        <p class="mb-2">
+                            <strong><i class="fas fa-file-invoice me-1"></i> Nº da NF-e:</strong>
+                            {{ service_order.invoice_number }}
+                        </p>
+                        {% if service_order.original_amount and service_order.original_amount != service_order.invoice_amount %}
+                        <p class="mb-2">
+                            <strong><i class="fas fa-dollar-sign me-1"></i> Valor Original:</strong>
+                            {{ format_currency(service_order.original_amount) }}
+                        </p>
+                        <p class="mb-2">
+                            <strong><i class="fas fa-percentage me-1"></i> Desconto Aplicado:</strong>
+                            <span class="text-danger">-{{ format_currency(service_order.discount_amount) }}</span>
+                        </p>
+                        {% endif %}
+                        <p class="mb-2">
+                            <strong><i class="fas fa-hand-holding-usd me-1"></i> Valor Final:</strong>
+                            <span class="fw-bold">{{ format_currency(service_order.invoice_amount) }}</span>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <h5 class="card-title">Descrição do Serviço</h5>
+                <p class="card-text">{{ service_order.description }}</p>
+                
+                {% if service_order.status.name == 'fechada' and service_order.service_details %}
+                <h5 class="card-title mt-4">Serviço Executado</h5>
+                <p class="card-text">{{ service_order.service_details }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-tools me-1"></i> Equipamentos
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Nº de Série</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if service_order.equipment %}
+                                {% for equipment in service_order.equipment %}
+                                <tr>
+                                    <td>{{ equipment.type }}</td>
+                                    <td>{{ equipment.brand }}</td>
+                                    <td>{{ equipment.model }}</td>
+                                    <td>
+                                        {% if equipment.serial_number %}
+                                        <div class="d-flex align-items-center">
+                                            <span>{{ equipment.serial_number }}</span>
+                                            <button class="btn btn-sm btn-link btn-copy ms-2" 
+                                                    data-copy="{{ equipment.serial_number }}" 
+                                                    title="Copiar Número de Série">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_equipment', id=equipment.id) }}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Nenhum equipamento associado</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-1"></i> Cliente
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ service_order.client.name }}</h5>
+                <p class="mb-2">
+                    <strong><i class="fas fa-id-card me-1"></i> CPF/CNPJ:</strong>
+                    {{ format_document(service_order.client.document) }}
+                </p>
+                {% if service_order.client.email %}
+                <p class="mb-2">
+                    <strong><i class="fas fa-envelope me-1"></i> Email:</strong>
+                    {{ service_order.client.email }}
+                </p>
+                {% endif %}
+                {% if service_order.client.phone %}
+                <p class="mb-2">
+                    <strong><i class="fas fa-phone me-1"></i> Telefone:</strong>
+                    {{ service_order.client.phone }}
+                </p>
+                {% endif %}
+                {% if service_order.client.address %}
+                <p>
+                    <strong><i class="fas fa-map-marker-alt me-1"></i> Endereço:</strong><br>
+                    {{ service_order.client.address }}
+                </p>
+                {% endif %}
+                
+                <a href="{{ url_for('view_client', id=service_order.client.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-user me-1"></i> Ver Cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Service Order Modal -->
+{% if service_order.status.name != 'fechada' %}
+<div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeOrderModalLabel">Fechar Ordem de Serviço #{{ service_order.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('close_service_order', id=service_order.id) }}">
+                {{ close_form.hidden_tag() if close_form }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">Número da NF-e *</label>
+                        {{ close_form.invoice_number(class="form-control", id="invoice_number") if close_form }}
+                        {% if close_form and close_form.invoice_number.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.invoice_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="original_amount" class="form-label">Valor Original (R$) *</label>
+                        {{ close_form.original_amount(class="form-control", id="original_amount", type="number", step="0.01", onchange="updateFinalValue()") if close_form }}
+                        {% if close_form and close_form.original_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.original_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="discount_amount" class="form-label">Desconto (R$)</label>
+                        {{ close_form.discount_amount(class="form-control", id="discount_amount", type="number", step="0.01", onchange="updateFinalValue()") if close_form }}
+                        {% if close_form and close_form.discount_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.discount_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Deixe em branco ou 0 se não houver desconto.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Final com Desconto (R$) *</label>
+                        {{ close_form.invoice_amount(class="form-control", id="invoice_amount", type="number", step="0.01") if close_form }}
+                        {% if close_form and close_form.invoice_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.invoice_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_details" class="form-label">Detalhes do Serviço Executado *</label>
+                        {{ close_form.service_details(class="form-control", id="service_details", rows=5) if close_form }}
+                        {% if close_form and close_form.service_details.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.service_details.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Fechar OS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copiar texto para a área de transferência
+        document.querySelectorAll('.btn-copy').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const textToCopy = this.getAttribute('data-copy');
+                
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            // Animação de sucesso
+                            const originalHtml = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-check"></i>';
+                            
+                            setTimeout(() => {
+                                this.innerHTML = originalHtml;
+                            }, 1500);
+                        })
+                        .catch(err => {
+                            console.error('Erro ao copiar texto: ', err);
+                        });
+                }
+            });
+        });
+
+        // Inicializar o cálculo de valores na abertura do modal
+        const closeModal = document.getElementById('closeOrderModal');
+        if (closeModal) {
+            closeModal.addEventListener('shown.bs.modal', function() {
+                updateFinalValue();
+            });
+        }
+    });
+    
+    // Função para atualizar o valor final após o desconto
+    function updateFinalValue() {
+        const originalAmount = document.getElementById('original_amount');
+        const discountAmount = document.getElementById('discount_amount');
+        const invoiceAmount = document.getElementById('invoice_amount');
+        
+        if (originalAmount && invoiceAmount) {
+            let original = parseFloat(originalAmount.value) || 0;
+            let discount = parseFloat(discountAmount.value) || 0;
+            
+            // Garantir que o desconto não seja maior que o valor original
+            if (discount > original) {
+                discount = original;
+                discountAmount.value = original.toFixed(2);
+            }
+            
+            // Calcular valor final
+            let final = original - discount;
+            
+            // Garantir que o valor final não seja negativo
+            if (final < 0) final = 0;
+            
+            // Atualizar o valor final no formulário
+            invoiceAmount.value = final.toFixed(2);
+        }
+    }
+</script>
+{% endblock %}

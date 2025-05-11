@@ -236,7 +236,32 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="invoice_amount" class="form-label">Valor Total (R$) *</label>
+                        <label for="original_amount" class="form-label">Valor Original (R$) *</label>
+                        {{ close_form.original_amount(class="form-control", id="original_amount", type="number", step="0.01", onchange="updateFinalValue()") if close_form }}
+                        {% if close_form and close_form.original_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.original_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="discount_amount" class="form-label">Desconto (R$)</label>
+                        {{ close_form.discount_amount(class="form-control", id="discount_amount", type="number", step="0.01", onchange="updateFinalValue()") if close_form }}
+                        {% if close_form and close_form.discount_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.discount_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Deixe em branco ou 0 se não houver desconto.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Final com Desconto (R$) *</label>
                         {{ close_form.invoice_amount(class="form-control", id="invoice_amount", type="number", step="0.01") if close_form }}
                         {% if close_form and close_form.invoice_amount.errors %}
                             <div class="invalid-feedback d-block">
