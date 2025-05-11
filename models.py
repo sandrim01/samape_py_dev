@@ -36,6 +36,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(Enum(UserRole), default=UserRole.funcionario, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    profile_image = db.Column(db.String(255), default='default_profile.png')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

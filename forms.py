@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError
 import re
@@ -45,6 +46,10 @@ class UserForm(FlaskForm):
 class ProfileForm(FlaskForm):
     name = StringField('Nome', validators=[DataRequired(), Length(min=3, max=100)])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    profile_image = FileField('Foto de Perfil', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Apenas imagens são permitidas!')
+    ])
     current_password = PasswordField('Senha Atual', validators=[Optional()])
     new_password = PasswordField('Nova Senha', validators=[
         Optional(),
