@@ -605,23 +605,54 @@ def register_routes(app):
         # Load clients for dropdown
         form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
         
+        # Adicionar os valores atuais do equipamento às listas de seleção se não estiverem presentes
+        from sqlalchemy import distinct
+        
+        # Se o tipo do equipamento não estiver nas opções, adicionar
+        types = [choice[0] for choice in form.type_select.choices if choice[0]]
+        if equipment.type and equipment.type not in types:
+            form.type_select.choices.append((equipment.type, equipment.type))
+            
+        # Se a marca do equipamento não estiver nas opções, adicionar
+        brands = [choice[0] for choice in form.brand_select.choices if choice[0]]
+        if equipment.brand and equipment.brand not in brands:
+            form.brand_select.choices.append((equipment.brand, equipment.brand))
+            
+        # Adicionar modelos da marca atual para o campo model_select
+        if equipment.brand:
+            models = db.session.query(distinct(Equipment.model))\
+                .filter(Equipment.brand == equipment.brand)\
+                .order_by(Equipment.model)\
+                .all()
+            model_choices = [('', 'Selecione um modelo')] + [(m[0], m[0]) for m in models if m[0]]
+            form.model_select.choices = model_choices
+            
         # Preencher o formulário na primeira vez
         if request.method == 'GET':
             form.client_id.data = equipment.client_id
-            form.type.data = equipment.type
-            form.brand.data = equipment.brand
-            form.model.data = equipment.model
+            
+            # Preencher os campos de seleção, se possível
+            if equipment.type:
+                form.type_select.data = equipment.type
+            else:
+                form.type.data = equipment.type
+                
+            if equipment.brand:
+                form.brand_select.data = equipment.brand
+            else:
+                form.brand.data = equipment.brand
+                
+            if equipment.model:
+                # Adicionar o modelo atual às opções se ainda não estiver presente
+                model_values = [choice[0] for choice in form.model_select.choices]
+                if equipment.model not in model_values and equipment.model:
+                    form.model_select.choices.append((equipment.model, equipment.model))
+                form.model_select.data = equipment.model
+            else:
+                form.model.data = equipment.model
+                
             form.serial_number.data = equipment.serial_number
             form.year.data = equipment.year
-            
-            # Tentar selecionar valores nos dropdowns se possível
-            if equipment.type in [choice[0] for choice in form.type_select.choices]:
-                form.type_select.data = equipment.type
-                form.type.data = ''
-            
-            if equipment.brand in [choice[0] for choice in form.brand_select.choices]:
-                form.brand_select.data = equipment.brand
-                form.brand.data = ''
         
         if form.validate_on_submit():
             equipment.client_id = form.client_id.data

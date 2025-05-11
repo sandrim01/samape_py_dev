@@ -147,6 +147,9 @@
     <script src="{{ url_for('static', filename='js/main.js') }}?v={{ now }}"></script>
     <script src="{{ url_for('static', filename='js/charts.js') }}?v={{ now }}"></script>
     
+    <!-- Script block for child templates -->
+    {% block scripts %}{% endblock %}
+    
     <!-- Theme Detection -->
     <script>
         // Force dark theme as specified by user requirement
