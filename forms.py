@@ -10,6 +10,7 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Lembrar-me')
 
 class UserForm(FlaskForm):
+    username = StringField('Nome de Usuário', validators=[DataRequired(), Length(min=3, max=64)])
     name = StringField('Nome', validators=[DataRequired(), Length(min=3, max=100)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     role = SelectField('Função', choices=[(role.name, role.value) for role in UserRole], validators=[DataRequired()])
@@ -21,6 +22,15 @@ class UserForm(FlaskForm):
         EqualTo('password', message='As senhas devem ser iguais')
     ])
     active = BooleanField('Ativo', default=True)
+    
+    def validate_username(self, field):
+        if self.user_id is None:  # Novo usuário
+            if User.query.filter_by(username=field.data).first():
+                raise ValidationError('Este nome de usuário já está em uso.')
+        else:  # Usuário existente
+            user = User.query.filter_by(username=field.data).first()
+            if user and user.id != self.user_id:
+                raise ValidationError('Este nome de usuário já está em uso.')
     
     def validate_email(self, field):
         user = User.query.filter_by(email=field.data).first()

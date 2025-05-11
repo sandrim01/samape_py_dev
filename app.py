@@ -40,6 +40,11 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
+# Configure CSRF protection
+app.config["WTF_CSRF_ENABLED"] = True
+app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
+app.config["WTF_CSRF_SSL_STRICT"] = False  # Para ambiente de desenvolvimento
+
 # Initialize extensions with app
 db.init_app(app)
 login_manager.init_app(app)
