@@ -135,6 +135,56 @@ class LoginAttempt(db.Model):
     ip_address = db.Column(db.String(45))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Supplier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    document = db.Column(db.String(18), unique=True)  # CPF or CNPJ
+    contact_name = db.Column(db.String(100))
+    email = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    address = db.Column(db.String(200))
+    website = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    parts = db.relationship('Part', backref='supplier', lazy=True)
+    
+class Part(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    part_number = db.Column(db.String(50))
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'))
+    category = db.Column(db.String(50))
+    subcategory = db.Column(db.String(50))
+    cost_price = db.Column(db.Numeric(10, 2))  # Preço de custo
+    selling_price = db.Column(db.Numeric(10, 2))  # Preço de venda
+    stock_quantity = db.Column(db.Integer, default=0)
+    minimum_stock = db.Column(db.Integer, default=0)
+    location = db.Column(db.String(50))  # Localização no estoque/almoxarifado
+    image = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    sales = db.relationship('PartSale', backref='part', lazy=True)
+
+class PartSale(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    part_id = db.Column(db.Integer, db.ForeignKey('part.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'))
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'))
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)  # Preço unitário na venda
+    total_price = db.Column(db.Numeric(10, 2), nullable=False)  # Preço total (quantidade * preço unitário)
+    sale_date = db.Column(db.DateTime, default=datetime.utcnow)
+    invoice_number = db.Column(db.String(20))
+    notes = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
 class SystemSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)

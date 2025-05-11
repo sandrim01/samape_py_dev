@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError
+from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
 import re
-from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType
+from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part
 
 class LoginForm(FlaskForm):
     username = StringField('Nome de Usuário', validators=[DataRequired()])
@@ -129,6 +129,106 @@ class FinancialEntryForm(FlaskForm):
     amount = DecimalField('Valor (R$)', validators=[DataRequired()], places=2)
     type = SelectField('Tipo', choices=[(t.name, t.value) for t in FinancialEntryType], validators=[DataRequired()])
     date = StringField('Data', validators=[DataRequired()])
+
+class SupplierForm(FlaskForm):
+    name = StringField('Nome/Razão Social', validators=[DataRequired(), Length(min=3, max=100)])
+    document = StringField('CPF/CNPJ', validators=[Optional(), Length(min=11, max=18)])
+    contact_name = StringField('Nome do Contato', validators=[Optional(), Length(max=100)])
+    email = StringField('Email', validators=[Optional(), Email()])
+    phone = StringField('Telefone', validators=[Optional(), Length(max=20)])
+    address = StringField('Endereço', validators=[Optional(), Length(max=200)])
+    website = StringField('Website', validators=[Optional(), Length(max=100)])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    
+    def validate_document(self, field):
+        if field.data:
+            supplier = Supplier.query.filter_by(document=field.data).first()
+            if supplier and (not self.id.data or supplier.id != int(self.id.data)):
+                raise ValidationError('Este CPF/CNPJ já está cadastrado.')
+    
+    def __init__(self, *args, **kwargs):
+        super(SupplierForm, self).__init__(*args, **kwargs)
+        # Campo oculto para edição
+        self.id = HiddenField()
+
+
+class PartForm(FlaskForm):
+    name = StringField('Nome da Peça', validators=[DataRequired(), Length(min=3, max=100)])
+    description = TextAreaField('Descrição', validators=[Optional()])
+    part_number = StringField('Número da Peça', validators=[Optional(), Length(max=50)])
+    supplier_id = SelectField('Fornecedor', coerce=int, validators=[Optional()])
+    category = SelectField('Categoria', validators=[Optional()])
+    subcategory = StringField('Subcategoria', validators=[Optional(), Length(max=50)])
+    cost_price = DecimalField('Preço de Custo (R$)', validators=[Optional()], places=2)
+    selling_price = DecimalField('Preço de Venda (R$)', validators=[Optional()], places=2)
+    stock_quantity = IntegerField('Quantidade em Estoque', validators=[Optional()], default=0)
+    minimum_stock = IntegerField('Estoque Mínimo', validators=[Optional()], default=0)
+    location = StringField('Localização no Estoque', validators=[Optional(), Length(max=50)])
+    image = FileField('Imagem da Peça', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas!')
+    ])
+    
+    def __init__(self, *args, **kwargs):
+        super(PartForm, self).__init__(*args, **kwargs)
+        # Fornecedores para o dropdown
+        from models import Supplier
+        self.supplier_id.choices = [('', 'Selecione um fornecedor')] + [
+            (s.id, s.name) for s in Supplier.query.order_by(Supplier.name).all()
+        ]
+        
+        # Categorias predefinidas para o dropdown
+        self.category.choices = [('', 'Selecione uma categoria')] + [
+            ('motor', 'Motor'),
+            ('transmissao', 'Transmissão'),
+            ('hidraulica', 'Sistema Hidráulico'),
+            ('eletrica', 'Sistema Elétrico'),
+            ('estrutura', 'Estrutura/Chassi'),
+            ('rodante', 'Sistema Rodante'),
+            ('limpeza', 'Limpeza/Manutenção'),
+            ('vedacao', 'Vedação/Selagem'),
+            ('perfuracao', 'Perfuração'),
+            ('seguranca', 'Segurança'),
+            ('outro', 'Outro')
+        ]
+        
+        # Campo oculto para edição
+        self.id = HiddenField()
+
+
+class PartSaleForm(FlaskForm):
+    part_id = SelectField('Peça', coerce=int, validators=[DataRequired()])
+    client_id = SelectField('Cliente', coerce=int, validators=[Optional()])
+    service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
+    quantity = IntegerField('Quantidade', validators=[DataRequired(), NumberRange(min=1)], default=1)
+    unit_price = DecimalField('Preço Unitário (R$)', validators=[DataRequired()], places=2)
+    total_price = DecimalField('Preço Total (R$)', validators=[DataRequired()], places=2)
+    invoice_number = StringField('Número da NF-e', validators=[Optional(), Length(max=20)])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(PartSaleForm, self).__init__(*args, **kwargs)
+        # Peças para o dropdown
+        from models import Part
+        self.part_id.choices = [(p.id, f"{p.name} - {p.part_number or 'S/N'} - R$ {p.selling_price or 0:.2f}") 
+                               for p in Part.query.filter(Part.stock_quantity > 0).order_by(Part.name).all()]
+        
+        # Clientes para o dropdown
+        from models import Client
+        self.client_id.choices = [('', 'Selecione um cliente')] + [
+            (c.id, c.name) for c in Client.query.order_by(Client.name).all()
+        ]
+        
+        # Ordens de serviço para o dropdown
+        from models import ServiceOrder
+        from models import ServiceOrderStatus
+        self.service_order_id.choices = [('', 'Selecione uma OS')] + [
+            (o.id, f"OS #{o.id} - {o.client.name}") 
+            for o in ServiceOrder.query.filter(
+                ServiceOrder.status != ServiceOrderStatus.fechada
+            ).order_by(ServiceOrder.id.desc()).all()
+        ]
+
 
 class SystemSettingsForm(FlaskForm):
     theme = SelectField('Tema', choices=[
