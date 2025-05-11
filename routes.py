@@ -657,10 +657,24 @@ def register_routes(app):
         if form.validate_on_submit():
             equipment.client_id = form.client_id.data
             
-            # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
-            equipment.type = form.type_select.data if form.type_select.data else form.type.data
-            equipment.brand = form.brand_select.data if form.brand_select.data else form.brand.data
-            equipment.model = form.model_select.data if form.model_select.data else form.model.data
+            # Processar o tipo (usar o campo de texto se 'outro' for selecionado)
+            if form.type_select.data == 'outro':
+                equipment.type = form.type.data
+            else:
+                equipment.type = form.type_select.data
+                
+            # Processar a marca (usar o campo de texto se 'outro' for selecionado)
+            if form.brand_select.data == 'outro':
+                equipment.brand = form.brand.data
+            else:
+                equipment.brand = form.brand_select.data
+                
+            # Processar o modelo (usar o campo de texto se 'outro' for selecionado)
+            if form.model_select.data == 'outro':
+                equipment.model = form.model.data
+            else:
+                equipment.model = form.model_select.data
+                
             equipment.serial_number = form.serial_number.data
             equipment.year = form.year.data
             
