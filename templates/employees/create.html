@@ -29,6 +29,20 @@
                 </div>
                 
                 <div class="col-md-6">
+                    <label for="username" class="form-label">Nome de Usuário *</label>
+                    {{ form.username(class="form-control", id="username") }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
                     <label for="email" class="form-label">Email *</label>
                     {{ form.email(class="form-control", id="email", placeholder="nome@exemplo.com") }}
                     {% if form.email.errors %}
@@ -39,9 +53,7 @@
                         </div>
                     {% endif %}
                 </div>
-            </div>
-            
-            <div class="row mb-3">
+                
                 <div class="col-md-6">
                     <label for="role" class="form-label">Função *</label>
                     {{ form.role(class="form-control", id="role") }}
@@ -53,7 +65,9 @@
                         </div>
                     {% endif %}
                 </div>
-                
+            </div>
+            
+            <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="active" class="form-label d-block">Status</label>
                     <div class="form-check form-switch">
