@@ -284,12 +284,6 @@ body {
     color: var(--text-muted);
 }
 
-.input-group-text {
-    background-color: var(--dark-color);
-    color: var(--white-color);
-    border-color: var(--dark-color);
-}
-
 /* Cards */
 .card {
     border-radius: 0.25rem;
@@ -955,4 +949,224 @@ body {
 .theme-preview.auto {
     background: linear-gradient(to right, #ffffff 50%, #212529 50%);
     border: 1px solid #dee2e6;
+}
+
+/* Dashboard Stats */
+.stat-card {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-top: 3px solid;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card.pink,
+.stat-card.primary {
+    border-top-color: var(--pink);
+}
+
+.stat-card.green,
+.stat-card.success {
+    border-top-color: var(--green);
+}
+
+.stat-card.orange,
+.stat-card.warning {
+    border-top-color: var(--orange);
+}
+
+.stat-card.blue,
+.stat-card.info {
+    border-top-color: var(--blue);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-white);
+    letter-spacing: -0.5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    font-size: 1.5rem;
+    opacity: 0.7;
+}
+
+.stat-card.pink .stat-icon,
+.stat-card.primary .stat-icon {
+    color: var(--pink);
+}
+
+.stat-card.green .stat-icon,
+.stat-card.success .stat-icon {
+    color: var(--green);
+}
+
+.stat-card.orange .stat-icon,
+.stat-card.warning .stat-icon {
+    color: var(--orange);
+}
+
+.stat-card.blue .stat-icon,
+.stat-card.info .stat-icon {
+    color: var(--blue);
+}
+
+.stat-trend {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.stat-trend.up {
+    background-color: rgba(55, 208, 158, 0.15);
+    color: var(--green);
+}
+
+.stat-trend.down {
+    background-color: rgba(248, 93, 142, 0.15);
+    color: var(--pink);
+}
+
+.stat-trend i {
+    margin-right: 0.3rem;
+    font-size: 0.7rem;
+}
+
+/* Tables */
+.table {
+    --bs-table-color: var(--text-light);
+    --bs-table-bg: var(--bg-card);
+    --bs-table-border-color: var(--border-light);
+    --bs-table-accent-bg: transparent;
+    --bs-table-striped-color: var(--text-light);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    --bs-table-hover-color: var(--text-white);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-bottom-width: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.table-sm th, 
+.table-sm td {
+    padding: 0.5rem 0.75rem;
+}
+
+/* Charts styling for dark mode */
+.chart-container {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-white);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* Custom map styling */
+.map-container {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+    height: 100%;
+    min-height: 300px;
+}
+
+/* Hexagon grid for stats */
+.hexagon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.hexagon {
+    position: relative;
+    width: 80px;
+    height: 90px;
+    margin: 0.5rem;
+    background-color: var(--bg-darker);
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.hexagon:hover {
+    transform: scale(1.05);
+}
+
+.hexagon-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-white);
+}
+
+.hexagon-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hexagon-pink {
+    background-color: var(--pink);
+}
+
+.hexagon-green {
+    background-color: var(--green);
+}
+
+.hexagon-orange {
+    background-color: var(--orange);
+}
+
+.hexagon-blue {
+    background-color: var(--blue);
 }
