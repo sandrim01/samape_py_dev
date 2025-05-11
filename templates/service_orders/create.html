@@ -63,6 +63,18 @@
             
             <div class="row mb-3">
                 <div class="col-md-6">
+                    <label for="estimated_value" class="form-label">Valor Estimado (R$)</label>
+                    {{ form.estimated_value(class="form-control", id="estimated_value") }}
+                    {% if form.estimated_value.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.estimated_value.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
                     <label for="status" class="form-label">Status *</label>
                     {{ form.status(class="form-control", id="status") }}
                     {% if form.status.errors %}

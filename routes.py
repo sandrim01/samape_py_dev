@@ -265,6 +265,7 @@ def register_routes(app):
             service_order.client_id = form.client_id.data
             service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
             service_order.description = form.description.data
+            service_order.estimated_value = form.estimated_value.data
             service_order.status = ServiceOrderStatus[form.status.data]
             
             # Update equipment relationships
