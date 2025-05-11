@@ -1053,8 +1053,20 @@ def register_routes(app):
                     
                     # Cria arquivo PDF temporário
                     with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp:
-                        # Gera PDF do HTML
-                        HTML(string=html_content).write_pdf(temp.name)
+                        # Configurar tamanho A4 e outras opções para impressão
+                        pdf_options = {
+                            'page-size': 'A4',
+                            'margin-top': '0.5cm',
+                            'margin-right': '0.5cm',
+                            'margin-bottom': '0.5cm',
+                            'margin-left': '0.5cm',
+                            'encoding': 'UTF-8',
+                            'print-media-type': '',
+                            'no-outline': None
+                        }
+                        
+                        # Gera PDF do HTML com tamanho A4
+                        HTML(string=html_content).write_pdf(temp.name, presentational_hints=True, stylesheets=[], **pdf_options)
                     
                     # Lê o arquivo PDF e adiciona ao ZIP
                     with open(temp.name, 'rb') as pdf_file:
@@ -1131,8 +1143,20 @@ def register_routes(app):
         try:
             # Create a temporary file
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp:
-                # Generate PDF from HTML content
-                HTML(string=html_content).write_pdf(temp.name)
+                # Configurar tamanho A4 e outras opções para impressão
+                pdf_options = {
+                    'page-size': 'A4',
+                    'margin-top': '0.5cm',
+                    'margin-right': '0.5cm',
+                    'margin-bottom': '0.5cm',
+                    'margin-left': '0.5cm',
+                    'encoding': 'UTF-8',
+                    'print-media-type': '',
+                    'no-outline': None
+                }
+                
+                # Generate PDF from HTML content with A4 size
+                HTML(string=html_content).write_pdf(temp.name, presentational_hints=True, stylesheets=[], **pdf_options)
             
             # Create a response with the PDF file
             with open(temp.name, 'rb') as pdf_file:

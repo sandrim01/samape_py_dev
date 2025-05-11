@@ -544,7 +544,7 @@
         body {
             background-color: white !important;
             color: black !important;
-            font-size: 8pt !important;
+            font-size: 9pt !important;
         }
         
         .navbar, .sidebar, .btn, .alert, header, .nfe-card-view {
@@ -564,10 +564,47 @@
         
         .nfe-document {
             border: none !important;
-            width: 100% !important;
-            max-width: 210mm !important;
+            width: 210mm !important;
+            height: 297mm !important;
             margin: 0 auto !important;
             display: block !important;
+            color: black !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Garantir que todas as bordas e textos sejam pretos */
+        .nfe-document div, .nfe-document span, .nfe-document p, 
+        .nfe-document table, .nfe-document tr, .nfe-document td,
+        .nfe-document th, .nfe-document h1, .nfe-document h2,
+        .nfe-document h3, .nfe-document h4, .nfe-document h5, 
+        .nfe-document h6 {
+            color: black !important;
+            border-color: black !important;
+        }
+        
+        /* Preservar as cores da logo */
+        .company-logo {
+            max-height: 80px !important;
+        }
+        
+        /* Certificar que o QR code está preto */
+        .qrcode-symbol {
+            color: black !important;
+            background-color: white !important;
+            border: 2px solid black !important;
+        }
+        
+        /* Bordas mais escuras para melhor definição */
+        [class$="-block"], .destinatario-grid > div, .impostos-grid > div,
+        .transportador-grid > div, .volumes-grid > div {
+            border-color: black !important;
+        }
+        
+        /* Background cinza mais escuro para os cabeçalhos */
+        .block-header {
+            background-color: #cccccc !important;
+            color: black !important;
+            border-bottom: 1px solid black !important;
         }
     }
     
@@ -650,9 +687,12 @@
     .company-logo {
         max-width: 100%;
         height: auto;
-        max-height: 60px;
+        max-height: 70px;
         display: block;
         margin: 0 auto;
+        /* Garantir que a imagem seja colorida */
+        filter: none !important;
+        -webkit-filter: none !important;
     }
     
     .emitente-dados {
