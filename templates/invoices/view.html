@@ -2,6 +2,164 @@
 
 {% block title %}NF-e: OS #{{ service_order.id }} - SAMAPE{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Estilos especiais para página de NF-e */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .invoice-print-area, .invoice-print-area * {
+            visibility: visible;
+        }
+        .invoice-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    .nfe-container {
+        border: 1px solid #ddd;
+        background-color: white;
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .nfe-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .nfe-section {
+        border: 1px solid #ddd;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem;
+    }
+    
+    .nfe-section-title {
+        background-color: #f5f5f5;
+        margin: -0.75rem -0.75rem 0.75rem -0.75rem;
+        padding: 0.5rem;
+        border-bottom: 1px solid #ddd;
+        font-weight: 600;
+    }
+    
+    .nfe-section table {
+        margin-bottom: 0;
+    }
+    
+    .nfe-id {
+        position: absolute;
+        top: 1.5rem;
+        right: 2rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .nfe-title {
+        text-align: center;
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .nfe-title h2 {
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+    }
+    
+    .nfe-title p {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .danfe-box {
+        border: 1px solid #000;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .danfe-header {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .logo-container {
+        width: 25%;
+        padding-right: 1rem;
+    }
+    
+    .company-info {
+        width: 50%;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        padding: 0 1rem;
+    }
+    
+    .nfe-code {
+        width: 25%;
+        padding-left: 1rem;
+        text-align: center;
+    }
+    
+    .qrcode-placeholder {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    
+    .barcode-placeholder {
+        height: 50px;
+        margin: 1rem 0;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    
+    .nfe-values {
+        border-top: 1px solid #ddd;
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+    
+    .nfe-values .row {
+        margin-bottom: 0.5rem;
+    }
+    
+    .nfe-total {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .nfe-footer {
+        margin-top: 2rem;
+        font-size: 0.8rem;
+        color: #666;
+        text-align: center;
+        border-top: 1px solid #ddd;
+        padding-top: 1rem;
+    }
+    
+    .centered-text {
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom no-print">
     <h1 class="h2">NF-e: OS #{{ service_order.id }}</h1>
@@ -15,131 +173,207 @@
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body invoice-container">
-        <div class="row mb-4">
-            <div class="col-6">
-                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SAMAPE" style="height: 80px;">
+<div class="invoice-print-area">
+    <div class="nfe-container">
+        <!-- Cabeçalho DANFE -->
+        <div class="danfe-header">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo com sombra maior.png') }}" alt="SAMAPE" style="max-width: 100%; height: auto;">
             </div>
-            <div class="col-6 text-end">
-                <h4 class="mb-0">NOTA FISCAL ELETRÔNICA</h4>
-                <p class="mb-0">Nº {{ service_order.invoice_number }}</p>
-                <p>Data: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+            <div class="company-info">
+                <h5 class="mb-1">SAMAPE</h5>
+                <p class="mb-1">Serviços de Manutenção e Peças</p>
+                <p class="mb-1">CNPJ: 00.000.000/0000-00</p>
+                <p class="mb-1">Inscrição Estadual: 000.000.000</p>
+                <p class="mb-0">Av. Exemplo, 1234 - Cidade/UF - CEP: 00000-000</p>
             </div>
-        </div>
-        
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <h5>Prestador de Serviço</h5>
-                <address>
-                    <strong>SAMAPE</strong><br>
-                    Serviços de Manutenção e Maquinários<br>
-                    CNPJ: 00.000.000/0000-00<br>
-                    contato@samape.com<br>
-                    (00) 0000-0000
-                </address>
-            </div>
-            <div class="col-md-6">
-                <h5>Cliente</h5>
-                <address>
-                    <strong>{{ service_order.client.name }}</strong><br>
-                    {{ format_document(service_order.client.document) }}<br>
-                    {% if service_order.client.email %}{{ service_order.client.email }}<br>{% endif %}
-                    {% if service_order.client.phone %}{{ service_order.client.phone }}<br>{% endif %}
-                    {% if service_order.client.address %}{{ service_order.client.address }}{% endif %}
-                </address>
-            </div>
-        </div>
-        
-        <div class="row mb-4">
-            <div class="col-12">
-                <h5>Ordem de Serviço #{{ service_order.id }}</h5>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Data Abertura</th>
-                            <th>Data Fechamento</th>
-                            <th>Responsável</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ service_order.created_at.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ service_order.closed_at.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ service_order.responsible.name if service_order.responsible else 'Não definido' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="row mb-4">
-            <div class="col-12">
-                <h5>Equipamentos</h5>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Tipo</th>
-                            <th>Marca</th>
-                            <th>Modelo</th>
-                            <th>Nº Série</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if service_order.equipment %}
-                            {% for eq in service_order.equipment %}
-                            <tr>
-                                <td>{{ eq.type }}</td>
-                                <td>{{ eq.brand or '-' }}</td>
-                                <td>{{ eq.model or '-' }}</td>
-                                <td>{{ eq.serial_number or '-' }}</td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center">Nenhum equipamento associado</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="row mb-4">
-            <div class="col-12">
-                <h5>Descrição do Serviço</h5>
-                <div class="border p-3 bg-light">
-                    {{ service_order.description }}
+            <div class="nfe-code">
+                <div class="danfe-box centered-text">
+                    <strong>DANFE</strong>
+                    <p class="mb-0">DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA</p>
+                </div>
+                <div class="qrcode-placeholder">
+                    <small>QR Code NF-e</small>
                 </div>
             </div>
         </div>
         
-        <div class="row mb-4">
-            <div class="col-12">
-                <h5>Serviço Executado</h5>
-                <div class="border p-3 bg-light">
-                    {{ service_order.service_details }}
+        <div class="nfe-title">
+            <h2>NOTA FISCAL ELETRÔNICA - NF-e</h2>
+            <p>Nº {{ service_order.invoice_number }} | SÉRIE 001 | EMISSÃO: {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+        
+        <div class="barcode-placeholder centered-text">
+            <small>Código de barras da NF-e</small>
+        </div>
+        
+        <!-- Dados do Destinatário -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">DESTINATÁRIO / TOMADOR DO SERVIÇO</div>
+            <div class="row">
+                <div class="col-md-8">
+                    <strong>Nome/Razão Social:</strong> {{ service_order.client.name }}
+                </div>
+                <div class="col-md-4">
+                    <strong>CPF/CNPJ:</strong> {{ format_document(service_order.client.document) }}
+                </div>
+            </div>
+            {% if service_order.client.address %}
+            <div class="row mt-2">
+                <div class="col-12">
+                    <strong>Endereço:</strong> {{ service_order.client.address }}
+                </div>
+            </div>
+            {% endif %}
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    {% if service_order.client.phone %}
+                    <strong>Telefone:</strong> {{ service_order.client.phone }}
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if service_order.client.email %}
+                    <strong>E-mail:</strong> {{ service_order.client.email }}
+                    {% endif %}
                 </div>
             </div>
         </div>
         
-        <div class="row">
-            <div class="col-md-8">
-                <p>Esta NF-e foi emitida em conformidade com as leis fiscais vigentes.</p>
-                <p class="mb-0">
-                    <small>
-                        SAMAPE - Sistema de Gestão de Serviços<br>
-                        NF-e gerada em {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}
-                    </small>
-                </p>
-            </div>
-            <div class="col-md-4">
-                <div class="d-flex flex-column align-items-end">
-                    <p class="mb-1">Subtotal: {{ format_currency(service_order.invoice_amount) }}</p>
-                    <p class="mb-1">Impostos: {{ format_currency(0) }}</p>
-                    <h4 class="border-top pt-2">Total: {{ format_currency(service_order.invoice_amount) }}</h4>
+        <!-- Ordem de Serviço -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">DADOS DA ORDEM DE SERVIÇO</div>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Nº OS:</strong> {{ service_order.id }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Data Abertura:</strong> {{ service_order.created_at.strftime('%d/%m/%Y') }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Data Fechamento:</strong> {{ service_order.closed_at.strftime('%d/%m/%Y') }}
                 </div>
             </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <strong>Responsável Técnico:</strong> {{ service_order.responsible.name if service_order.responsible else 'Não definido' }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipamentos -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">EQUIPAMENTOS</div>
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="5%">Item</th>
+                        <th width="30%">Tipo</th>
+                        <th width="20%">Marca</th>
+                        <th width="25%">Modelo</th>
+                        <th width="20%">Nº Série</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if service_order.equipment %}
+                        {% for eq in service_order.equipment %}
+                        <tr>
+                            <td class="text-center">{{ loop.index }}</td>
+                            <td>{{ eq.type }}</td>
+                            <td>{{ eq.brand or '-' }}</td>
+                            <td>{{ eq.model or '-' }}</td>
+                            <td>{{ eq.serial_number or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">Nenhum equipamento associado</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Detalhes do Serviço -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">DESCRIÇÃO DOS SERVIÇOS</div>
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="5%">Item</th>
+                        <th width="55%">Descrição</th>
+                        <th class="text-center" width="10%">Qtd</th>
+                        <th class="text-center" width="15%">Valor Unit.</th>
+                        <th class="text-center" width="15%">Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-center">1</td>
+                        <td>
+                            <div class="fw-bold">Serviço de Manutenção</div>
+                            <div class="small">{{ service_order.service_details }}</div>
+                        </td>
+                        <td class="text-center">1</td>
+                        <td class="text-end">{{ format_currency(service_order.invoice_amount) }}</td>
+                        <td class="text-end">{{ format_currency(service_order.invoice_amount) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Valores -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">VALORES TOTAIS</div>
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Base de Cálculo ICMS:</strong><br>
+                    {{ format_currency(0) }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Valor do ICMS:</strong><br>
+                    {{ format_currency(0) }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Base de Cálculo ISS:</strong><br>
+                    {{ format_currency(service_order.invoice_amount) }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Valor do ISS:</strong><br>
+                    {% set iss_value = service_order.invoice_amount * 0.05 %}
+                    {{ format_currency(iss_value) }}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <strong>Valor dos Produtos:</strong><br>
+                    {{ format_currency(0) }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Valor dos Serviços:</strong><br>
+                    {{ format_currency(service_order.invoice_amount) }}
+                </div>
+                <div class="col-md-4">
+                    <strong class="nfe-total">Valor Total da NF-e:</strong><br>
+                    <span class="nfe-total">{{ format_currency(service_order.invoice_amount) }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações Adicionais -->
+        <div class="nfe-section">
+            <div class="nfe-section-title">INFORMAÇÕES ADICIONAIS</div>
+            <div class="row">
+                <div class="col-12">
+                    <p><strong>Descrição Original do Serviço:</strong> {{ service_order.description }}</p>
+                    <p class="mb-0">Esta NF-e foi emitida conforme regulamentação da SEFAZ. Não deixe de consultar sua autenticidade no portal nacional da NF-e: www.nfe.fazenda.gov.br</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rodapé -->
+        <div class="nfe-footer">
+            <p class="mb-1">SAMAPE - Sistema de Gestão de Serviços - NF-e gerada em {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+            <p class="mb-0">Documento emitido por ME ou EPP optante pelo Simples Nacional | NF-e não permite aproveitamento de crédito de ICMS</p>
         </div>
     </div>
 </div>
