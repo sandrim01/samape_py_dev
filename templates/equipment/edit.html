@@ -29,41 +29,80 @@
             
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="type" class="form-label">Tipo *</label>
-                    {{ form.type(class="form-control", id="type") }}
-                    {% if form.type.errors %}
+                    <label for="type_select" class="form-label">Tipo *</label>
+                    {{ form.type_select(class="form-select", id="type_select") }}
+                    {% if form.type_select.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.type.errors %}
+                            {% for error in form.type_select.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
+                    
+                    <!-- Campo extra para outro tipo não listado -->
+                    <div class="mt-2" id="other_type_container" style="display: none;">
+                        <label for="type" class="form-label">Outro Tipo</label>
+                        {{ form.type(class="form-control", id="type", placeholder="Informe o tipo") }}
+                        {% if form.type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <label for="brand" class="form-label">Marca</label>
-                    {{ form.brand(class="form-control", id="brand") }}
-                    {% if form.brand.errors %}
+                    <label for="brand_select" class="form-label">Marca *</label>
+                    {{ form.brand_select(class="form-select", id="brand_select") }}
+                    {% if form.brand_select.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.brand.errors %}
+                            {% for error in form.brand_select.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
+                    
+                    <!-- Campo extra para outra marca não listada -->
+                    <div class="mt-2" id="other_brand_container" style="display: none;">
+                        <label for="brand" class="form-label">Outra Marca</label>
+                        {{ form.brand(class="form-control", id="brand", placeholder="Informe a marca") }}
+                        {% if form.brand.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.brand.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="model" class="form-label">Modelo</label>
-                    {{ form.model(class="form-control", id="model") }}
-                    {% if form.model.errors %}
+                    <label for="model_select" class="form-label">Modelo</label>
+                    {{ form.model_select(class="form-select", id="model_select") }}
+                    {% if form.model_select.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.model.errors %}
+                            {% for error in form.model_select.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
+                    
+                    <!-- Campo extra para outro modelo não listado -->
+                    <div class="mt-2" id="other_model_container" style="display: none;">
+                        <label for="model" class="form-label">Outro Modelo</label>
+                        {{ form.model(class="form-control", id="model", placeholder="Informe o modelo") }}
+                        {% if form.model.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.model.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <div class="col-md-6">
@@ -98,4 +137,101 @@
         </form>
     </div>
 </div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const brandSelect = document.getElementById('brand_select');
+        const modelSelect = document.getElementById('model_select');
+        const typeSelect = document.getElementById('type_select');
+        
+        const otherBrandContainer = document.getElementById('other_brand_container');
+        const otherModelContainer = document.getElementById('other_model_container');
+        const otherTypeContainer = document.getElementById('other_type_container');
+        
+        // Adicionar opção "Outro" ao final de cada select
+        function addOtherOption(selectElement) {
+            const otherOption = document.createElement('option');
+            otherOption.value = 'outro';
+            otherOption.textContent = 'Outro (especificar)';
+            selectElement.appendChild(otherOption);
+        }
+        
+        addOtherOption(brandSelect);
+        addOtherOption(typeSelect);
+        addOtherOption(modelSelect);
+        
+        // Função para mostrar/ocultar o campo de texto dependendo da seleção
+        function toggleOtherField(selectElement, otherContainer) {
+            if (selectElement.value === 'outro') {
+                otherContainer.style.display = 'block';
+            } else {
+                otherContainer.style.display = 'none';
+            }
+        }
+        
+        // Event listeners para os campos select
+        brandSelect.addEventListener('change', function() {
+            toggleOtherField(brandSelect, otherBrandContainer);
+            
+            // Se não for "Outro", buscar modelos para a marca selecionada
+            if (brandSelect.value && brandSelect.value !== 'outro') {
+                // Limpar e desabilitar o select de modelos enquanto carrega
+                modelSelect.innerHTML = '<option value="">Carregando...</option>';
+                modelSelect.disabled = true;
+                
+                // Buscar modelos da API
+                fetch(`/api/equipamentos/modelos-por-marca?brand=${encodeURIComponent(brandSelect.value)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Limpar o select
+                        modelSelect.innerHTML = '<option value="">Selecione um modelo</option>';
+                        
+                        // Adicionar modelos retornados pela API
+                        data.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.value;
+                            option.textContent = model.text;
+                            modelSelect.appendChild(option);
+                        });
+                        
+                        // Adicionar a opção "Outro"
+                        addOtherOption(modelSelect);
+                        
+                        // Habilitar novamente o select
+                        modelSelect.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar modelos:', error);
+                        modelSelect.innerHTML = '<option value="">Erro ao carregar modelos</option>';
+                        modelSelect.disabled = false;
+                    });
+            } else if (brandSelect.value === 'outro') {
+                // Se for "Outro", mostrar o campo de texto e limpar o select de modelos
+                modelSelect.innerHTML = '<option value="">Primeiro especifique a marca</option>';
+                modelSelect.disabled = true;
+            }
+        });
+        
+        typeSelect.addEventListener('change', function() {
+            toggleOtherField(typeSelect, otherTypeContainer);
+        });
+        
+        modelSelect.addEventListener('change', function() {
+            toggleOtherField(modelSelect, otherModelContainer);
+        });
+        
+        // Inicializar os campos com base nos valores atuais (se houver)
+        toggleOtherField(brandSelect, otherBrandContainer);
+        toggleOtherField(typeSelect, otherTypeContainer);
+        toggleOtherField(modelSelect, otherModelContainer);
+        
+        // Acionar o evento change da marca para carregar os modelos se já tiver uma marca selecionada
+        if (brandSelect.value && brandSelect.value !== 'outro') {
+            brandSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}
