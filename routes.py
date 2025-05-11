@@ -197,6 +197,7 @@ def register_routes(app):
                 client_id=form.client_id.data,
                 responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                 description=form.description.data,
+                estimated_value=form.estimated_value.data,
                 status=ServiceOrderStatus[form.status.data]
             )
             
@@ -626,6 +627,7 @@ def register_routes(app):
         
         if form.validate_on_submit():
             user = User(
+                username=form.username.data,
                 name=form.name.data,
                 email=form.email.data,
                 role=UserRole[form.role.data],
@@ -662,6 +664,7 @@ def register_routes(app):
         form.password.validators = [Optional()]
         
         if form.validate_on_submit():
+            user.username = form.username.data
             user.name = form.name.data
             user.email = form.email.data
             user.role = UserRole[form.role.data]

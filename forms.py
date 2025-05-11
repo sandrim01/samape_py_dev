@@ -90,6 +90,7 @@ class ServiceOrderForm(FlaskForm):
     equipment_ids = SelectField('Equipamentos', validators=[Optional()], render_kw={"multiple": True})
     responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
+    estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
 
 class CloseServiceOrderForm(FlaskForm):
