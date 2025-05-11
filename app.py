@@ -9,6 +9,8 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from jinja_filters import nl2br
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -67,6 +69,9 @@ with app.app_context():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+
+# Register Jinja filters
+app.jinja_env.filters['nl2br'] = nl2br
 
 # Import and register routes
 from routes import register_routes
