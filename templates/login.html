@@ -28,11 +28,11 @@
                 {{ form.hidden_tag() }}
                 
                 <div class="mb-4">
-                    <label for="email" class="form-label">{{ form.email.label }}</label>
-                    {{ form.email(class="form-control", id="email", placeholder="Digite seu email", autocomplete="email") }}
-                    {% if form.email.errors %}
+                    <label for="username" class="form-label">{{ form.username.label }}</label>
+                    {{ form.username(class="form-control", id="username", placeholder="Digite seu usuário", autocomplete="username") }}
+                    {% if form.username.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.email.errors %}
+                            {% for error in form.username.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
