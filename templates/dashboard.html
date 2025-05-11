@@ -26,61 +26,6 @@
             <div class="stat-icon">
                 <i class="fas fa-clipboard-list"></i>
             </div>
-            <div class="stat-value">{{ format_currency(523000) }}</div>
-            <div class="stat-label">Faturamento</div>
-            <div class="stat-trend up">
-                <i class="fas fa-arrow-up"></i> 8.2%
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card green">
-            <div class="stat-icon">
-                <i class="fas fa-cogs"></i>
-            </div>
-            <div class="stat-value">{{ format_currency(808000) }}</div>
-            <div class="stat-label">Produtividade</div>
-            <div class="stat-trend up">
-                <i class="fas fa-arrow-up"></i> 5.3%
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card orange">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-value">{{ format_currency(1012000) }}</div>
-            <div class="stat-label">Investimentos</div>
-            <div class="stat-trend down">
-                <i class="fas fa-arrow-down"></i> 2.7%
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card blue">
-            <div class="stat-icon">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-value">{{ format_currency(2343000) }}</div>
-            <div class="stat-label">Operações</div>
-            <div class="stat-trend up">
-                <i class="fas fa-arrow-up"></i> 12.1%
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Real System Stats -->
-<div class="row mt-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card pink">
-            <div class="stat-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
             <div class="stat-value">{{ so_stats.open }}</div>
             <div class="stat-label">OS Abertas</div>
             <a href="{{ url_for('service_orders', status='aberta') }}" class="stretched-link"></a>
@@ -121,96 +66,43 @@
     </div>
 </div>
 
-<!-- Charts Row -->
-<div class="row mb-4 mt-4">
-    <!-- Chart: Faturamento e Impacto -->
+<!-- Gráficos e Tabelas -->
+<div class="row mt-4">
+    <!-- Distribuição de Ordens de Serviço -->
     <div class="col-lg-6 mb-4">
-        <div class="chart-container">
-            <h5 class="chart-title">Faturamento e Impacto</h5>
-            <canvas id="serviceOrdersDistribution" height="250" 
-                data-labels='["Abertas", "Em Andamento", "Fechadas"]' 
-                data-counts='[{{ so_stats.open }}, {{ so_stats.in_progress }}, {{ so_stats.closed }}]'>
-            </canvas>
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Distribuição de Ordens de Serviço</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="serviceOrdersDistribution" height="180" 
+                    data-labels='["Abertas", "Em Andamento", "Fechadas"]' 
+                    data-counts='[{{ so_stats.open }}, {{ so_stats.in_progress }}, {{ so_stats.closed }}]'>
+                </canvas>
+            </div>
         </div>
     </div>
     
-    <!-- Region Analysis with Hexagon Visualization -->
+    <!-- Resumo Financeiro do Mês -->
     <div class="col-lg-6 mb-4">
-        <div class="chart-container">
-            <h5 class="chart-title">Análise Regional</h5>
-            <div class="row align-items-center h-100">
-                <div class="col-md-6">
-                    <div class="hexagon-grid">
-                        <div class="hexagon hexagon-pink">
-                            <div class="hexagon-value">56</div>
-                            <div class="hexagon-label">Norte</div>
-                        </div>
-                        <div class="hexagon hexagon-green">
-                            <div class="hexagon-value">78</div>
-                            <div class="hexagon-label">Nordeste</div>
-                        </div>
-                        <div class="hexagon hexagon-green">
-                            <div class="hexagon-value">313</div>
-                            <div class="hexagon-label">Sudeste</div>
-                        </div>
-                        <div class="hexagon hexagon-blue">
-                            <div class="hexagon-value">56</div>
-                            <div class="hexagon-label">Centro-Oeste</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="text-center mb-3">
-                        <div class="hexagon hexagon-white mx-auto" style="width: 100px; height: 110px;">
-                            <div class="hexagon-value">506</div>
-                            <div class="hexagon-label">Total</div>
-                        </div>
-                    </div>
-                    <div class="d-flex flex-column">
-                        <div class="mb-2 p-2 rounded" style="background-color: rgba(248, 93, 142, 0.1);">
-                            <small class="text-muted">Penetração</small>
-                            <div class="fw-bold text-white">18,2%</div>
-                        </div>
-                        <div class="p-2 rounded" style="background-color: rgba(55, 208, 158, 0.1);">
-                            <small class="text-muted">Cobertura</small>
-                            <div class="fw-bold text-white">81,8%</div>
-                        </div>
-                    </div>
-                </div>
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Resumo Financeiro do Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyFinancial" height="180" 
+                    data-income="{{ financial_summary.income }}" 
+                    data-expenses="{{ financial_summary.expenses }}">
+                </canvas>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Product Charts -->
-<div class="row mb-4">
-    <!-- Production Products -->
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h5 class="chart-title">Produto A</h5>
-            <canvas id="productA" height="220"></canvas>
-        </div>
-    </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h5 class="chart-title">Produto B</h5>
-            <canvas id="productB" height="220"></canvas>
-        </div>
-    </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="chart-container">
-            <h5 class="chart-title">Produto C</h5>
-            <canvas id="productC" height="220"></canvas>
-        </div>
-    </div>
-</div>
-
 <div class="row">
-    <!-- Data Tables -->
+    <!-- Ordens de Serviço Recentes -->
     <div class="col-lg-6 mb-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> Ordens de Serviço Recentes</h5>
             </div>
@@ -259,9 +151,9 @@
         </div>
     </div>
     
-    <!-- Recent Activity -->
+    <!-- Atividades Recentes -->
     <div class="col-lg-6 mb-4">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-history me-2"></i> Atividades Recentes</h5>
             </div>
@@ -294,143 +186,93 @@
     </div>
 </div>
 
-<!-- Chart scripts for the new bar charts -->
+<!-- Script para configurar gráficos do Chart.js -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Product A Chart
-    const ctxProductA = document.getElementById('productA').getContext('2d');
-    new Chart(ctxProductA, {
-        type: 'bar',
-        data: {
-            labels: ['Trim1', 'Trim2', 'Trim3', 'Trim4'],
-            datasets: [{
-                label: 'Vendas',
-                data: [117500, 143800, 127600, 143500],
-                backgroundColor: '#f85d8e',
-                borderColor: '#f85d8e',
-                borderWidth: 0,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    // Configurar gráfico de distribuição de ordens de serviço
+    const soDistEl = document.getElementById('serviceOrdersDistribution');
+    if (soDistEl) {
+        const labels = JSON.parse(soDistEl.dataset.labels || '[]');
+        const counts = JSON.parse(soDistEl.dataset.counts || '[]');
+        
+        new Chart(soDistEl, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: ['#f85d8e', '#ff9353', '#37d09e'],
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    ticks: {
-                        color: '#a0a0a0'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#a0a0a0'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#a0a0a0',
+                            padding: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
     
-    // Product B Chart
-    const ctxProductB = document.getElementById('productB').getContext('2d');
-    new Chart(ctxProductB, {
-        type: 'bar',
-        data: {
-            labels: ['Trim1', 'Trim2', 'Trim3', 'Trim4'],
-            datasets: [{
-                label: 'Vendas',
-                data: [126500, 105800, 151500, 134800],
-                backgroundColor: '#37d09e',
-                borderColor: '#37d09e',
-                borderWidth: 0,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    // Configurar gráfico de finanças
+    const finChartEl = document.getElementById('monthlyFinancial');
+    if (finChartEl) {
+        const income = parseFloat(finChartEl.dataset.income || 0);
+        const expenses = parseFloat(finChartEl.dataset.expenses || 0);
+        const balance = income - expenses;
+        
+        new Chart(finChartEl, {
+            type: 'bar',
+            data: {
+                labels: ['Entradas', 'Saídas', 'Saldo'],
+                datasets: [{
+                    data: [income, expenses, balance],
+                    backgroundColor: ['#37d09e', '#f85d8e', '#4285f4'],
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    ticks: {
-                        color: '#a0a0a0'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#a0a0a0'
+                        }
                     },
-                    ticks: {
-                        color: '#a0a0a0'
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#a0a0a0'
+                        }
                     }
                 }
             }
-        }
-    });
-    
-    // Product C Chart
-    const ctxProductC = document.getElementById('productC').getContext('2d');
-    new Chart(ctxProductC, {
-        type: 'bar',
-        data: {
-            labels: ['Trim1', 'Trim2', 'Trim3', 'Trim4'],
-            datasets: [{
-                label: 'Vendas',
-                data: [105500, 114800, 95300, 141600],
-                backgroundColor: '#ff9353',
-                borderColor: '#ff9353',
-                borderWidth: 0,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    ticks: {
-                        color: '#a0a0a0'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#a0a0a0'
-                    }
-                }
-            }
-        }
-    });
+        });
+    }
 });
 </script>
 {% endblock %}
