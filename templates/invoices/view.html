@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}NF-e: OS #{{ service_order.id }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom no-print">
+    <h1 class="h2">NF-e: OS #{{ service_order.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-outline-primary me-2" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Imprimir
+        </button>
+        <a href="{{ url_for('view_service_order', id=service_order.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body invoice-container">
+        <div class="row mb-4">
+            <div class="col-6">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SAMAPE" style="height: 80px;">
+            </div>
+            <div class="col-6 text-end">
+                <h4 class="mb-0">NOTA FISCAL ELETRÔNICA</h4>
+                <p class="mb-0">Nº {{ service_order.invoice_number }}</p>
+                <p>Data: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Prestador de Serviço</h5>
+                <address>
+                    <strong>SAMAPE</strong><br>
+                    Serviços de Manutenção e Maquinários<br>
+                    CNPJ: 00.000.000/0000-00<br>
+                    contato@samape.com<br>
+                    (00) 0000-0000
+                </address>
+            </div>
+            <div class="col-md-6">
+                <h5>Cliente</h5>
+                <address>
+                    <strong>{{ service_order.client.name }}</strong><br>
+                    {{ format_document(service_order.client.document) }}<br>
+                    {% if service_order.client.email %}{{ service_order.client.email }}<br>{% endif %}
+                    {% if service_order.client.phone %}{{ service_order.client.phone }}<br>{% endif %}
+                    {% if service_order.client.address %}{{ service_order.client.address }}{% endif %}
+                </address>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5>Ordem de Serviço #{{ service_order.id }}</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Data Abertura</th>
+                            <th>Data Fechamento</th>
+                            <th>Responsável</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ service_order.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ service_order.closed_at.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ service_order.responsible.name if service_order.responsible else 'Não definido' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5>Equipamentos</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Nº Série</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if service_order.equipment %}
+                            {% for eq in service_order.equipment %}
+                            <tr>
+                                <td>{{ eq.type }}</td>
+                                <td>{{ eq.brand or '-' }}</td>
+                                <td>{{ eq.model or '-' }}</td>
+                                <td>{{ eq.serial_number or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum equipamento associado</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5>Descrição do Serviço</h5>
+                <div class="border p-3 bg-light">
+                    {{ service_order.description }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5>Serviço Executado</h5>
+                <div class="border p-3 bg-light">
+                    {{ service_order.service_details }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <p>Esta NF-e foi emitida em conformidade com as leis fiscais vigentes.</p>
+                <p class="mb-0">
+                    <small>
+                        SAMAPE - Sistema de Gestão de Serviços<br>
+                        NF-e gerada em {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}
+                    </small>
+                </p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex flex-column align-items-end">
+                    <p class="mb-1">Subtotal: {{ format_currency(service_order.invoice_amount) }}</p>
+                    <p class="mb-1">Impostos: {{ format_currency(0) }}</p>
+                    <h4 class="border-top pt-2">Total: {{ format_currency(service_order.invoice_amount) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

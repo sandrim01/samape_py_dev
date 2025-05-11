@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Cliente - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Editar Cliente</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user-edit me-1"></i> Editar Cliente: {{ client.name }}
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Nome/Razão Social *</label>
+                    {{ form.name(class="form-control", id="name") }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="document" class="form-label">CPF/CNPJ *</label>
+                    {{ form.document(class="form-control", id="document") }}
+                    {% if form.document.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.document.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    {{ form.email(class="form-control", id="email") }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">Telefone</label>
+                    {{ form.phone(class="form-control", id="phone") }}
+                    {% if form.phone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.phone.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="address" class="form-label">Endereço</label>
+                {{ form.address(class="form-control", id="address") }}
+                {% if form.address.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.address.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Atualizar</button>
+                <a href="{{ url_for('view_client', id=client.id) }}" class="btn btn-secondary ms-2">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

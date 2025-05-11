@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <!-- Gears -->
+  <g transform="translate(100, 75)">
+    <!-- Big gear -->
+    <circle cx="-15" cy="0" r="25" fill="#444" stroke="#222" stroke-width="2"/>
+    <circle cx="-15" cy="0" r="15" fill="none" stroke="#222" stroke-width="3"/>
+    
+    <!-- Medium gear -->
+    <circle cx="-50" cy="-5" r="20" fill="#555" stroke="#222" stroke-width="2"/>
+    <circle cx="-50" cy="-5" r="12" fill="none" stroke="#222" stroke-width="3"/>
+    
+    <!-- Small gear -->
+    <circle cx="-80" cy="-10" r="15" fill="#666" stroke="#222" stroke-width="2"/>
+    <circle cx="-80" cy="-10" r="8" fill="none" stroke="#222" stroke-width="3"/>
+    
+    <!-- Gear teeth -->
+    <!-- Big gear teeth -->
+    <path d="M -15,25 L -10,32 L -20,32 Z" fill="#444" stroke="#222" stroke-width="1"/>
+    <path d="M -15,-25 L -10,-32 L -20,-32 Z" fill="#444" stroke="#222" stroke-width="1"/>
+    <path d="M 10,0 L 17,5 L 17,-5 Z" fill="#444" stroke="#222" stroke-width="1"/>
+    <path d="M -40,0 L -47,5 L -47,-5 Z" fill="#444" stroke="#222" stroke-width="1"/>
+    
+    <!-- Medium gear teeth -->
+    <path d="M -50,15 L -45,20 L -55,20 Z" fill="#555" stroke="#222" stroke-width="1"/>
+    <path d="M -50,-25 L -45,-30 L -55,-30 Z" fill="#555" stroke="#222" stroke-width="1"/>
+    <path d="M -30,-5 L -25,-10 L -25,0 Z" fill="#555" stroke="#222" stroke-width="1"/>
+    <path d="M -70,-5 L -75,-10 L -75,0 Z" fill="#555" stroke="#222" stroke-width="1"/>
+    
+    <!-- Small gear teeth -->
+    <path d="M -80,5 L -75,10 L -85,10 Z" fill="#666" stroke="#222" stroke-width="1"/>
+    <path d="M -80,-25 L -75,-30 L -85,-30 Z" fill="#666" stroke="#222" stroke-width="1"/>
+    <path d="M -65,-10 L -60,-15 L -60,-5 Z" fill="#666" stroke="#222" stroke-width="1"/>
+    <path d="M -95,-10 L -100,-15 L -100,-5 Z" fill="#666" stroke="#222" stroke-width="1"/>
+  </g>
+  
+  <!-- Upward arrow graph -->
+  <path d="M 20,100 L 40,80 L 60,90 L 80,70 L 100,50 L 120,30" fill="none" stroke="#FF5252" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Arrow head -->
+  <path d="M 115,30 L 130,15 L 135,35 Z" fill="#FF5252"/>
+  
+  <!-- SAMAPE Text -->
+  <text x="100" y="120" font-family="Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#FF5252">SAMAPE</text>
+</svg>

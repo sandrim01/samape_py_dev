@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Cliente: {{ client.name }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Cliente: {{ client.name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('edit_client', id=client.id) }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-edit me-1"></i> Editar
+        </a>
+        <a href="{{ url_for('new_equipment') }}?client_id={{ client.id }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-plus me-1"></i> Adicionar Equipamento
+        </a>
+        <a href="{{ url_for('new_service_order') }}" class="btn btn-primary me-2">
+            <i class="fas fa-clipboard-list me-1"></i> Nova OS
+        </a>
+        <a href="{{ url_for('clients') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Client Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-1"></i> Dados do Cliente
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="fw-bold">Nome/Razão Social</h6>
+                    <p>{{ client.name }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">CPF/CNPJ</h6>
+                    <p>{{ format_document(client.document) }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Email</h6>
+                    <p>{{ client.email or 'Não informado' }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Telefone</h6>
+                    <p>{{ client.phone or 'Não informado' }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Endereço</h6>
+                    <p>{{ client.address or 'Não informado' }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Cadastrado em</h6>
+                    <p>{{ client.created_at.strftime('%d/%m/%Y') }}</p>
+                </div>
+                
+                {% if current_user.is_admin() %}
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteClientModal">
+                        <i class="fas fa-trash me-1"></i> Excluir Cliente
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Equipment List -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-tools me-1"></i> Equipamentos
+                </div>
+                <a href="{{ url_for('new_equipment') }}?client_id={{ client.id }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i> Adicionar Equipamento
+                </a>
+            </div>
+            <div class="card-body">
+                {% if equipment %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Nº Série</th>
+                                <th>Ano</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eq in equipment %}
+                            <tr>
+                                <td>{{ eq.type }}</td>
+                                <td>{{ eq.brand or '-' }}</td>
+                                <td>{{ eq.model or '-' }}</td>
+                                <td>{{ eq.serial_number or '-' }}</td>
+                                <td>{{ eq.year or '-' }}</td>
+                                <td class="table-actions">
+                                    <a href="{{ url_for('view_equipment', id=eq.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_equipment', id=eq.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center my-4">Nenhum equipamento cadastrado para este cliente.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Service Orders -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-clipboard-list me-1"></i> Ordens de Serviço
+                </div>
+                <a href="{{ url_for('new_service_order') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i> Nova OS
+                </a>
+            </div>
+            <div class="card-body">
+                {% if service_orders %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Responsável</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in service_orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.responsible.name if order.responsible else 'Não definido' }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ order.status.name }}">
+                                        {{ order.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td class="table-actions">
+                                    <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if order.status.name != 'fechada' %}
+                                    <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center my-4">Nenhuma ordem de serviço para este cliente.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Client Modal -->
+{% if current_user.is_admin() %}
+<div class="modal fade" id="deleteClientModal" tabindex="-1" aria-labelledby="deleteClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteClientModalLabel">Excluir Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o cliente <strong>{{ client.name }}</strong>?</p>
+                <p class="text-danger">Esta ação não poderá ser desfeita.</p>
+                {% if equipment %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Este cliente possui {{ equipment|length }} equipamento(s) cadastrado(s). 
+                    É necessário remover todos os equipamentos antes de excluir o cliente.
+                </div>
+                {% endif %}
+                {% if service_orders %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Este cliente possui {{ service_orders|length }} ordem(ns) de serviço.
+                    Não é possível excluir um cliente com ordens de serviço associadas.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{{ url_for('delete_client', id=client.id) }}">
+                    <button type="submit" class="btn btn-danger" {% if equipment or service_orders %}disabled{% endif %}>Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

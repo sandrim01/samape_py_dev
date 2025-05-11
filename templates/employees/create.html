@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Funcionário - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Novo Funcionário</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user-plus me-1"></i> Cadastrar Novo Funcionário
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Nome *</label>
+                    {{ form.name(class="form-control", id="name") }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email *</label>
+                    {{ form.email(class="form-control", id="email", placeholder="nome@exemplo.com") }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="role" class="form-label">Função *</label>
+                    {{ form.role(class="form-control", id="role") }}
+                    {% if form.role.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.role.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="active" class="form-label d-block">Status</label>
+                    <div class="form-check form-switch">
+                        {{ form.active(class="form-check-input", id="active") }}
+                        <label class="form-check-label" for="active">Ativo</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="password" class="form-label">Senha *</label>
+                    {{ form.password(class="form-control", id="password") }}
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">A senha deve ter pelo menos 8 caracteres.</div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="confirm_password" class="form-label">Confirmar Senha *</label>
+                    {{ form.confirm_password(class="form-control", id="confirm_password") }}
+                    {% if form.confirm_password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.confirm_password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{{ url_for('employees') }}" class="btn btn-secondary ms-2">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
