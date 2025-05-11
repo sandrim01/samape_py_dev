@@ -1,5 +1,5 @@
 import os
-from main import app, db
+from app import app, db
 from sqlalchemy import Column, Numeric, text
 
 def add_discount_columns():
