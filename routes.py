@@ -429,42 +429,54 @@ def register_routes(app):
         form = CloseServiceOrderForm()
         
         if form.validate_on_submit():
-            # Gerar o número da nota automaticamente
-            from utils import get_next_invoice_number
-            
-            service_order.status = ServiceOrderStatus.fechada
-            service_order.closed_at = datetime.utcnow()
-            service_order.invoice_number = get_next_invoice_number()
-            service_order.invoice_date = datetime.utcnow()
-            service_order.invoice_amount = form.invoice_amount.data
-            service_order.service_details = form.service_details.data
-            
-            # Create financial entry
-            financial_entry = FinancialEntry(
-                service_order_id=service_order.id,
-                description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
-                amount=form.invoice_amount.data,
-                type=FinancialEntryType.entrada,
-                created_by=current_user.id
-            )
-            
-            db.session.add(financial_entry)
-            db.session.commit()
-            
-            log_action(
-                'Fechamento de OS',
-                'service_order',
-                service_order.id,
-                f"OS {id} fechada com NF-e {service_order.invoice_number}"
-            )
-            
-            flash('Ordem de serviço fechada com sucesso!', 'success')
-            return redirect(url_for('view_service_order', id=id))
+            try:
+                # Gerar o número da nota automaticamente
+                from utils import get_next_invoice_number
+                
+                service_order.status = ServiceOrderStatus.fechada
+                service_order.closed_at = datetime.utcnow()
+                service_order.invoice_number = get_next_invoice_number()
+                service_order.invoice_date = datetime.utcnow()
+                service_order.invoice_amount = form.invoice_amount.data
+                service_order.service_details = form.service_details.data
+                
+                # Verificamos se o cliente existe antes de tentar criar a entrada financeira
+                if not service_order.client:
+                    flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
+                    return redirect(url_for('view_service_order', id=id))
+                
+                # Create financial entry
+                financial_entry = FinancialEntry(
+                    service_order_id=service_order.id,
+                    description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
+                    amount=form.invoice_amount.data,
+                    type=FinancialEntryType.entrada,
+                    created_by=current_user.id
+                )
+                
+                db.session.add(financial_entry)
+                db.session.commit()
+                
+                flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
+                log_action(
+                    'Fechamento de OS',
+                    'service_order',
+                    service_order.id,
+                    f"OS fechada - Valor: R${form.invoice_amount.data}"
+                )
+                
+                return redirect(url_for('view_service_order', id=id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao fechar OS: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao fechar OS {id}: {str(e)}")
+                return redirect(url_for('view_service_order', id=id))
             
         return render_template(
-            'service_orders/view.html',
+            'service_orders/close.html',
             service_order=service_order,
-            close_form=form
+            form=form
         )
 
     @app.route('/api/cliente/<int:client_id>/equipamentos')
