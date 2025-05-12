@@ -328,3 +328,29 @@ def get_next_invoice_number():
     
     # Retorna o próximo valor da sequência
     return counter.next_value()
+    
+def recalculate_supplier_order_total(order_id):
+    """
+    Recalcula o valor total do pedido de fornecedor com base nos itens
+    
+    Args:
+        order_id: ID do pedido de fornecedor
+        
+    Returns:
+        Decimal: O novo valor total calculado
+    """
+    from models import SupplierOrder, OrderItem
+    from sqlalchemy import func
+    
+    # Calcula a soma dos valores totais dos itens
+    total = db.session.query(func.sum(OrderItem.total_price)).filter(
+        OrderItem.order_id == order_id
+    ).scalar() or 0
+    
+    # Atualiza o valor total no pedido
+    order = SupplierOrder.query.get(order_id)
+    if order:
+        order.total_value = total
+        db.session.commit()
+        
+    return total

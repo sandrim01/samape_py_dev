@@ -25,7 +25,7 @@ from utils import (
     check_login_attempts, record_login_attempt, format_document,
     format_currency, get_monthly_summary, get_service_order_stats,
     save_service_order_images, delete_service_order_image,
-    identify_and_format_document
+    identify_and_format_document, recalculate_supplier_order_total
 )
 
 def register_routes(app):
@@ -2047,7 +2047,7 @@ def register_routes(app):
             order = SupplierOrder(
                 supplier_id=form.supplier_id.data,
                 order_number=form.order_number.data,
-                total_value=form.total_value.data if form.total_value.data is not None else 0,
+                total_value=0,  # Inicialmente zero, será calculado ao adicionar itens
                 status=form.status.data,
                 expected_delivery_date=expected_delivery_date,
                 delivery_date=delivery_date,
