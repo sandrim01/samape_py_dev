@@ -301,3 +301,30 @@ def delete_service_order_image(image_id):
     except Exception as e:
         db.session.rollback()
         return False, f"Erro ao remover imagem: {str(e)}"
+        
+def get_next_invoice_number():
+    """
+    Gera um número sequencial para nota fiscal
+    
+    Returns:
+        String formatada com o próximo número de nota fiscal
+    """
+    from models import SequenceCounter
+    from flask import current_app
+    
+    # Busca o contador de NF-e ou cria se não existir
+    counter = SequenceCounter.query.filter_by(name='nfe').first()
+    if not counter:
+        # Inicializa o contador de NF-e
+        counter = SequenceCounter(
+            name='nfe',
+            prefix='NF',
+            current_value=0,  # Começará do 1 ao chamar next_value()
+            padding=8,
+            description='Contador de notas fiscais eletrônicas'
+        )
+        db.session.add(counter)
+        db.session.commit()
+    
+    # Retorna o próximo valor da sequência
+    return counter.next_value()

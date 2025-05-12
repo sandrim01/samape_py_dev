@@ -238,3 +238,25 @@ class SystemSettings(db.Model):
     value = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+# Modelo para controle de sequências numéricas (NFe, OS, etc)
+class SequenceCounter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    prefix = db.Column(db.String(10), nullable=True)
+    current_value = db.Column(db.Integer, default=1, nullable=False)
+    padding = db.Column(db.Integer, default=6, nullable=False)  # número de dígitos com zeros à esquerda
+    description = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def next_value(self):
+        """Incrementa e retorna o próximo valor da sequência"""
+        self.current_value += 1
+        db.session.commit()
+        
+        # Formatação com zeros à esquerda e prefixo, se existir
+        formatted_number = str(self.current_value).zfill(self.padding)
+        if self.prefix:
+            return f"{self.prefix}{formatted_number}"
+        return formatted_number
