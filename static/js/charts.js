@@ -8,6 +8,12 @@ const chartColors = {
     green: '#37d09e',
     orange: '#ff9353',
     blue: '#4285f4',
+    cyan: '#00bcd4',
+    teal: '#009688',
+    purple: '#9c27b0',
+    lime: '#cddc39',
+    amber: '#ffc107',
+    greenLight: '#8bc34a',
     darkBg: '#1e1e1e',
     cardBg: '#242424',
     textColor: '#f0f0f0',
@@ -94,6 +100,7 @@ function setupAreaChart() {
 function setupDashboardCharts() {
     setupServiceOrderDistributionChart();
     setupMonthlyFinancialChart();
+    setupSupplierOrderStatusChart();
 }
 
 function setupServiceOrderDistributionChart() {
@@ -182,6 +189,66 @@ function setupMonthlyFinancialChart() {
             plugins: {
                 legend: {
                     display: false
+                }
+            }
+        },
+    };
+    
+    new Chart(ctx, config);
+}
+
+function setupSupplierOrderStatusChart() {
+    const ctx = document.getElementById('supplierOrderStatusChart');
+    if (!ctx) return;
+    
+    // Get data from elements
+    const pendingCount = parseInt(document.getElementById('supplier-pending')?.dataset.count || 0);
+    const approvedCount = parseInt(document.getElementById('supplier-approved')?.dataset.count || 0);
+    const sentCount = parseInt(document.getElementById('supplier-sent')?.dataset.count || 0);
+    const receivedCount = parseInt(document.getElementById('supplier-received')?.dataset.count || 0);
+    const canceledCount = parseInt(document.getElementById('supplier-canceled')?.dataset.count || 0);
+    
+    const data = {
+        labels: ['Pendente', 'Aprovado', 'Enviado', 'Recebido', 'Cancelado'],
+        datasets: [{
+            data: [pendingCount, approvedCount, sentCount, receivedCount, canceledCount],
+            backgroundColor: [
+                chartColors.amber,
+                chartColors.cyan,
+                chartColors.teal,
+                chartColors.greenLight,
+                chartColors.pink
+            ],
+            borderWidth: 0,
+            borderRadius: 4
+        }]
+    };
+    
+    const config = {
+        type: 'pie',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: chartColors.textColor,
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
                 }
             }
         },
