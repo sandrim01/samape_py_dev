@@ -67,8 +67,8 @@
                 </div>
                 
                 <div class="col-md-4">
-                    <label for="total_value" class="form-label">Valor Total (R$)</label>
-                    {{ form.total_value(class="form-control", id="total_value", placeholder="0,00") }}
+                    <label for="total_value" class="form-label">Valor Total (R$) <small class="text-muted">(Calculado automaticamente)</small></label>
+                    {{ form.total_value(class="form-control", id="total_value", placeholder="0,00", readonly=true) }}
                     {% if form.total_value.errors %}
                         <div class="invalid-feedback d-block">
                             {% for error in form.total_value.errors %}

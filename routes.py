@@ -2139,9 +2139,9 @@ def register_routes(app):
             order.supplier_id = form.supplier_id.data
             order.order_number = form.order_number.data
             
-            # Garantir que o valor total seja tratado corretamente
-            # Se não houver valor informado, definir como 0
-            order.total_value = form.total_value.data if form.total_value.data is not None else 0
+            # Calcular o valor total automaticamente com base nos itens
+            total = db.session.query(func.sum(OrderItem.total_price)).filter(OrderItem.order_id == order.id).scalar() or 0
+            order.total_value = total
             
             order.status = form.status.data
             order.expected_delivery_date = expected_delivery_date
@@ -2160,7 +2160,9 @@ def register_routes(app):
             flash('Pedido atualizado com sucesso!', 'success')
             return redirect(url_for('view_supplier_order', id=order.id))
         
-        return render_template('supplier_orders/edit.html', form=form, order=order)
+        # Formulário para adicionar novos itens
+        item_form = OrderItemForm()
+        return render_template('supplier_orders/edit.html', form=form, order=order, item_form=item_form)
     
     @app.route('/pedidos-fornecedor/<int:id>/excluir', methods=['POST'])
     @login_required
