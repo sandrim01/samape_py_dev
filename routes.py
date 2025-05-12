@@ -25,7 +25,8 @@ from utils import (
     check_login_attempts, record_login_attempt, format_document,
     format_currency, get_monthly_summary, get_service_order_stats,
     save_service_order_images, delete_service_order_image,
-    identify_and_format_document, recalculate_supplier_order_total
+    identify_and_format_document, recalculate_supplier_order_total,
+    get_supplier_order_stats, get_maintenance_in_progress, is_order_paid
 )
 
 def register_routes(app):
