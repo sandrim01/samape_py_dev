@@ -248,3 +248,37 @@ def save_service_order_images(service_order, images, descriptions=None):
         db.session.commit()
         
     return saved_images
+
+def delete_service_order_image(image_id):
+    """
+    Remove uma imagem de ordem de serviço do sistema de arquivos e do banco de dados
+    
+    Args:
+        image_id: ID da imagem a ser removida
+        
+    Returns:
+        Tupla (sucesso, mensagem)
+    """
+    from models import ServiceOrderImage
+    
+    # Buscar imagem no banco de dados
+    image = ServiceOrderImage.query.get(image_id)
+    if not image:
+        return False, "Imagem não encontrada"
+    
+    try:
+        # Obter o caminho físico do arquivo
+        file_path = os.path.join(current_app.static_folder, image.filename)
+        
+        # Remover arquivo do sistema de arquivos se existir
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Remover registro do banco de dados
+        db.session.delete(image)
+        db.session.commit()
+        
+        return True, "Imagem removida com sucesso"
+    except Exception as e:
+        db.session.rollback()
+        return False, f"Erro ao remover imagem: {str(e)}"

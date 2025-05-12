@@ -18,11 +18,11 @@ from forms import (
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
     SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm
 )
-from utils import log_action, save_service_order_images
 from utils import (
     role_required, admin_required, manager_required, log_action,
     check_login_attempts, record_login_attempt, format_document,
-    format_currency, get_monthly_summary, get_service_order_stats
+    format_currency, get_monthly_summary, get_service_order_stats,
+    save_service_order_images, delete_service_order_image
 )
 
 def register_routes(app):
@@ -333,6 +333,36 @@ def register_routes(app):
             service_order=service_order
         )
 
+    @app.route('/os/imagem/<int:image_id>/excluir', methods=['POST'])
+    @login_required
+    def delete_service_order_image_route(image_id):
+        """Rota para excluir uma imagem de ordem de serviço"""
+        # Buscar imagem para obter o service_order_id
+        image = ServiceOrderImage.query.get_or_404(image_id)
+        service_order_id = image.service_order_id
+        
+        # Verificar se a OS está fechada
+        service_order = ServiceOrder.query.get(service_order_id)
+        if service_order and service_order.status == ServiceOrderStatus.fechada:
+            flash('Não é possível excluir imagens de uma OS fechada.', 'warning')
+            return redirect(url_for('view_service_order', id=service_order_id))
+        
+        # Excluir a imagem
+        success, message = delete_service_order_image(image_id)
+        
+        if success:
+            flash('Imagem excluída com sucesso!', 'success')
+            log_action(
+                'Exclusão de imagem',
+                'service_order_image',
+                image_id,
+                f"Imagem removida da OS #{service_order_id}"
+            )
+        else:
+            flash(f'Erro ao excluir imagem: {message}', 'danger')
+            
+        return redirect(url_for('view_service_order', id=service_order_id))
+    
     @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
     def close_service_order(id):
