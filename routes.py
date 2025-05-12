@@ -2193,7 +2193,6 @@ def register_routes(app):
     
     @app.route('/pedidos-fornecedor/item/<int:id>/adicionar', methods=['POST'])
     @login_required
-    @admin_or_manager_required
     def add_order_item(id):
         order = SupplierOrder.query.get_or_404(id)
         form = OrderItemForm()
@@ -2227,7 +2226,6 @@ def register_routes(app):
         
     @app.route('/pedidos-fornecedor/item/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
-    @admin_or_manager_required
     def edit_order_item(id):
         item = OrderItem.query.get_or_404(id)
         order_id = item.order_id
@@ -2265,7 +2263,6 @@ def register_routes(app):
     
     @app.route('/pedidos-fornecedor/item/<int:id>/excluir', methods=['POST'])
     @login_required
-    @admin_or_manager_required
     def delete_order_item(id):
         item = OrderItem.query.get_or_404(id)
         order_id = item.order_id
