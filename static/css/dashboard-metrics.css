@@ -1,0 +1,64 @@
+/* Dashboard Metrics Card Styling */
+.dashboard-metrics .stat-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+}
+
+.dashboard-metrics .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-metrics .metric-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.dashboard-metrics .metric-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Background icon styling */
+.dashboard-metrics .card-icon {
+    position: absolute;
+    bottom: -15px;
+    right: -15px;
+    font-size: 5rem;
+    opacity: 0.2;
+    transform: rotate(-10deg);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dashboard-metrics .stat-card:hover .card-icon {
+    opacity: 0.3;
+    transform: rotate(-5deg) scale(1.1);
+}
+
+/* Mobile enhancements for stat cards */
+@media (max-width: 768px) {
+    .dashboard-metrics .stat-card {
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+    }
+    
+    .dashboard-metrics .metric-value {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-metrics .metric-label {
+        font-size: 0.8rem;
+    }
+    
+    .dashboard-metrics .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+}

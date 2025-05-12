@@ -68,21 +68,27 @@
             <div class="stat-icon">
                 <i class="fas fa-clock"></i>
             </div>
-            <div class="stat-value">{{ so_stats.avg_completion_time }}</div>
-            <div class="stat-label">Média de Dias p/ Conclusão</div>
+            <div class="stat-value metric-value">{{ so_stats.avg_completion_time }}</div>
+            <div class="stat-label metric-label">Média de Dias p/ Conclusão</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Stats Cards Row 2 - Supplier Orders and Financial -->
-<div class="row">
+<div class="row dashboard-metrics">
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card cyan">
             <div class="stat-icon">
                 <i class="fas fa-dolly-flatbed"></i>
             </div>
-            <div class="stat-value">{{ supplier_stats.open }}</div>
-            <div class="stat-label">Pedidos Abertos</div>
+            <div class="stat-value metric-value">{{ supplier_stats.open }}</div>
+            <div class="stat-label metric-label">Pedidos Abertos</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
             <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
         </div>
     </div>
@@ -92,8 +98,11 @@
             <div class="stat-icon">
                 <i class="fas fa-truck-loading"></i>
             </div>
-            <div class="stat-value">{{ supplier_stats.closed }}</div>
-            <div class="stat-label">Pedidos Fechados</div>
+            <div class="stat-value metric-value">{{ supplier_stats.closed }}</div>
+            <div class="stat-label metric-label">Pedidos Fechados</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-check-circle"></i>
+            </div>
             <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
         </div>
     </div>
@@ -103,8 +112,11 @@
             <div class="stat-icon">
                 <i class="fas fa-hand-holding-usd"></i>
             </div>
-            <div class="stat-value">{{ format_currency(financial_summary.income) }}</div>
-            <div class="stat-label">Receitas do Mês</div>
+            <div class="stat-value metric-value">{{ format_currency(financial_summary.income) }}</div>
+            <div class="stat-label metric-label">Receitas do Mês</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-arrow-up"></i>
+            </div>
             <a href="{{ url_for('financial') }}" class="stretched-link"></a>
         </div>
     </div>
@@ -114,8 +126,11 @@
             <div class="stat-icon">
                 <i class="fas fa-dollar-sign"></i>
             </div>
-            <div class="stat-value">{{ format_currency(financial_summary.balance) }}</div>
-            <div class="stat-label">Balanço do Mês</div>
+            <div class="stat-value metric-value">{{ format_currency(financial_summary.balance) }}</div>
+            <div class="stat-label metric-label">Balanço do Mês</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-wallet"></i>
+            </div>
             <a href="{{ url_for('financial') }}" class="stretched-link"></a>
         </div>
     </div>
