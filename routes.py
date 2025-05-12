@@ -683,32 +683,48 @@ def register_routes(app):
         form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
         
         if form.validate_on_submit():
-            # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
-            equipment_type = form.type_select.data if form.type_select.data else form.type.data
-            equipment_brand = form.brand_select.data if form.brand_select.data else form.brand.data
-            equipment_model = form.model_select.data if form.model_select.data else form.model.data
-            
-            equipment = Equipment(
-                client_id=form.client_id.data,
-                type=equipment_type,
-                brand=equipment_brand,
-                model=equipment_model,
-                serial_number=form.serial_number.data,
-                year=form.year.data
-            )
-            
-            db.session.add(equipment)
-            db.session.commit()
-            
-            log_action(
-                'Criação de Equipamento',
-                'equipment',
-                equipment.id,
-                f"Equipamento {equipment.type} {equipment.brand} {equipment.model} criado para cliente {equipment.client.name}"
-            )
-            
-            flash('Equipamento cadastrado com sucesso!', 'success')
-            return redirect(url_for('equipment'))
+            try:
+                # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
+                equipment_type = form.type_select.data if form.type_select.data else form.type.data
+                equipment_brand = form.brand_select.data if form.brand_select.data else form.brand.data
+                equipment_model = form.model_select.data if form.model_select.data else form.model.data
+                
+                # Verificar se todos os campos necessários estão preenchidos
+                if not equipment_type:
+                    flash('Tipo de equipamento é obrigatório. Selecione um tipo ou preencha o campo "Outro Tipo".', 'danger')
+                    return render_template('equipment/create.html', form=form)
+                
+                equipment = Equipment(
+                    client_id=form.client_id.data,
+                    type=equipment_type,
+                    brand=equipment_brand,
+                    model=equipment_model,
+                    serial_number=form.serial_number.data,
+                    year=form.year.data
+                )
+                
+                db.session.add(equipment)
+                db.session.commit()
+                
+                try:
+                    log_action(
+                        'Criação de Equipamento',
+                        'equipment',
+                        equipment.id,
+                        f"Equipamento {equipment.type} {equipment.brand} {equipment.model} criado para cliente {equipment.client.name}"
+                    )
+                except Exception:
+                    # Se falhar ao registrar o log, não interromper o fluxo principal
+                    pass
+                
+                flash('Equipamento cadastrado com sucesso!', 'success')
+                return redirect(url_for('equipment'))
+            except IntegrityError:
+                db.session.rollback()
+                flash('Erro de integridade ao criar o equipamento. O ID pode estar duplicado.', 'danger')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao cadastrar equipamento: {str(e)}', 'danger')
             
         # Pre-fill client_id if provided in query string
         client_id = request.args.get('client_id', type=int)

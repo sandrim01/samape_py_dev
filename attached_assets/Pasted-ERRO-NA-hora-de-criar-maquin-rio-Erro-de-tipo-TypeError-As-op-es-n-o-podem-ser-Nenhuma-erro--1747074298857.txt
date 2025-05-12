@@ -1,0 +1,24 @@
+ERRO NA hora de criar maquinário
+Erro de tipo
+TypeError: As opções não podem ser Nenhuma.
+
+erro na hora de excluir maquinário
+Pedido ruim
+O token CSRF está faltando.
+
+erro na hora de criar  fornecedor
+Erro de integridade
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) valor de chave duplicado viola restrição exclusiva "supplier_pkey" DETALHE: A chave (id)=(1) já existe. [SQL: INSERT INTO supplier (nome, documento, nome_do_contato, e-mail, telefone, endereço, site, notas, criado_em, atualizado_em) VALORES (%(nome)s, %(documento)s, %(nome_do_contato)s, %(e-mail)s, %(telefone)s, %(endereço)s, %(site)s, %(notas)s, %(criado_em)s, %(atualizado_em)s) RETORNANDO supplier.id] [parâmetros: {'nome': 'Maria RSF Andrade', 'documento': '054.106.516-66', 'nome_do_contato': 'Maria RSF Andrade', 'e-mail': 'admin@samape.com', 'telefone': '28999330320', 'endereço': 'Rua Walace De Melo Pereira Barreto, 60', 'site': 'lys-rouge-boutique-mp8vvoe3yphqgmrk.builder-preview.com/loja', 'notes': 'dasda', 'created_at': datetime.datetime(2025, 5, 12, 18, 11, 9, 459592), 'updated_at': datetime.datetime(2025, 5, 12, 18, 11, 9, 459597)}] (Informações sobre este erro em: https://sqlalche.me/e/20/gkpj)
+
+Traceback (última chamada mais r
+
+erro na hora de cadastrar peça
+
+Erro de integridade
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) valor de chave duplicado viola restrição exclusiva "supplier_pkey" DETALHE: A chave (id)=(1) já existe. [SQL: INSERT INTO supplier (nome, documento, nome_do_contato, e-mail, telefone, endereço, site, notas, criado_em, atualizado_em) VALORES (%(nome)s, %(documento)s, %(nome_do_contato)s, %(e-mail)s, %(telefone)s, %(endereço)s, %(site)s, %(notas)s, %(criado_em)s, %(atualizado_em)s) RETORNANDO supplier.id] [parâmetros: {'nome': 'Maria RSF Andrade', 'documento': '054.106.516-66', 'nome_do_contato': 'Maria RSF Andrade', 'e-mail': 'admin@samape.com', 'telefone': '28999330320', 'endereço': 'Rua Walace De Melo Pereira Barreto, 60', 'site': 'lys-rouge-boutique-mp8vvoe3yphqgmrk.builder-preview.com/loja', 'notes': 'dasda', 'created_at': datetime.datetime(2025, 5, 12, 18, 11, 9, 459592), 'updated_at': datetime.datetime(2025, 5, 12, 18, 11, 9, 459597)}] (Informações sobre este erro em: https://sqlalche.me/e/20/gkpj)
+
+Traceback (última chamada mais r
+
+erro na hora de ajustar estoque
+Pedido ruim
+O token CSRF está faltando.
