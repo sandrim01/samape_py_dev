@@ -260,6 +260,7 @@ def delete_service_order_image(image_id):
         Tupla (sucesso, mensagem)
     """
     from models import ServiceOrderImage
+    from flask import current_app
     
     # Buscar imagem no banco de dados
     image = ServiceOrderImage.query.get(image_id)
