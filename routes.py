@@ -2019,7 +2019,6 @@ def register_routes(app):
     
     @app.route('/pedidos-fornecedor/novo', methods=['GET', 'POST'])
     @login_required
-    @admin_or_manager_required
     def new_supplier_order():
         form = SupplierOrderForm()
         
@@ -2107,7 +2106,6 @@ def register_routes(app):
     
     @app.route('/pedidos-fornecedor/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
-    @admin_or_manager_required
     def edit_supplier_order(id):
         order = SupplierOrder.query.get_or_404(id)
         form = SupplierOrderForm(obj=order)
@@ -2166,7 +2164,6 @@ def register_routes(app):
     
     @app.route('/pedidos-fornecedor/<int:id>/excluir', methods=['POST'])
     @login_required
-    @admin_required
     def delete_supplier_order(id):
         order = SupplierOrder.query.get_or_404(id)
         supplier_name = order.supplier.name
