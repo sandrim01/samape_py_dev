@@ -411,7 +411,7 @@ def register_routes(app):
                 'Fechamento de OS',
                 'service_order',
                 service_order.id,
-                f"OS {id} fechada com NF-e {form.invoice_number.data}"
+                f"OS {id} fechada com NF-e {service_order.invoice_number}"
             )
             
             flash('Ordem de serviço fechada com sucesso!', 'success')
