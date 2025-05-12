@@ -335,6 +335,176 @@ body {
     text-overflow: ellipsis;
 }
 
+/* Ajustes responsivos para dispositivos móveis */
+@media (max-width: 768px) {
+    /* Ajustes para o sidebar */
+    .sidebar-user-info {
+        padding: 10px 5px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: left;
+    }
+    
+    .sidebar-profile-image {
+        width: 50px;
+        height: 50px;
+        margin: 0 10px 0 0;
+        border-width: 2px;
+    }
+    
+    .sidebar-user-name {
+        font-size: 0.9rem;
+        margin-top: 0;
+    }
+    
+    /* Ajustes para o dropdown do usuário */
+    .user-info-header {
+        padding: 20px 10px;
+    }
+    
+    .user-info-header .profile-image {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .user-info-header .user-name {
+        font-size: 1.1rem;
+    }
+    
+    .user-info-header .user-email {
+        font-size: 0.8rem;
+    }
+    
+    .user-info-header .user-role {
+        font-size: 0.65rem;
+        padding: 4px 12px;
+    }
+    
+    /* Ajustes para o menu principal */
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    .profile-avatar {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .dropdown-menu {
+        width: 280px;
+    }
+    
+    /* Ajustes para o menu lateral em visão mobile */
+    .sidebar {
+        max-width: 100%;
+        padding-top: 0;
+    }
+    
+    .nav-link {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+    }
+    
+    .nav-link i {
+        width: 24px;
+    }
+    
+    /* Melhorias para dispositivos realmente pequenos */
+    .navbar-toggler {
+        padding: 0.25rem 0.5rem;
+        border: none;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: none;
+    }
+}
+
+/* Ajustes adicionais para smartphones */
+@media (max-width: 576px) {
+    .sidebar-user-info {
+        padding: 8px 5px;
+    }
+    
+    .sidebar-profile-image {
+        width: 40px;
+        height: 40px;
+        border-width: 1px;
+    }
+    
+    .sidebar-user-name {
+        font-size: 0.8rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .profile-avatar {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .dropdown-menu {
+        width: 250px;
+        right: -10px;
+    }
+    
+    .user-info-header {
+        padding: 15px 10px;
+    }
+    
+    .user-info-header .profile-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* Ajustes nos cards e tabelas para dispositivos móveis */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Melhora na visualização de conteúdo em telas pequenas */
+    .container-fluid {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+    
+    .row {
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    
+    .col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, 
+    .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, 
+    .col-sm, .col-md, .col-lg, .col-xl {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+}
+
 .profile-image-container {
     width: 160px;
     height: 160px;
