@@ -262,16 +262,11 @@
             <form method="post" action="{{ url_for('close_service_order', id=service_order.id) }}">
                 {{ close_form.hidden_tag() if close_form }}
                 <div class="modal-body">
+                    <!-- O número da NF-e agora é gerado automaticamente -->
                     <div class="mb-3">
-                        <label for="invoice_number" class="form-label">Número da NF-e *</label>
-                        {{ close_form.invoice_number(class="form-control", id="invoice_number") if close_form }}
-                        {% if close_form and close_form.invoice_number.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in close_form.invoice_number.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O número da nota fiscal será gerado automaticamente.
+                        </p>
                     </div>
                     
                     <div class="mb-3">
