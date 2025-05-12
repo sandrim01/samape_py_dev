@@ -222,17 +222,16 @@ def save_service_order_images(service_order, images, descriptions=None):
     
     # Processar cada imagem
     for i, image in enumerate(images):
-        if image and image.filename:
+        if image:
             # Gerar nome de arquivo único
-            original_filename = secure_filename(image.filename)
-            extension = os.path.splitext(original_filename)[1]
-            unique_filename = f"{uuid.uuid4()}{extension}"
+            unique_filename = f"{uuid.uuid4()}.jpg"
             
             # Caminho completo para salvar
             filepath = os.path.join(upload_folder, unique_filename)
             
             # Salvar arquivo
-            image.save(filepath)
+            with open(filepath, 'wb') as f:
+                f.write(image)
             
             # Criar entrada no banco de dados
             description = desc_list[i] if i < len(desc_list) else None

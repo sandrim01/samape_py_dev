@@ -226,8 +226,8 @@ def register_routes(app):
             db.session.commit()
             
             # Processar imagens
-            if form.images.data and any(img.filename for img in form.images.data):
-                image_files = [img for img in form.images.data if img.filename]
+            if form.images.data and form.images.data[0]:
+                image_files = form.images.data
                 if image_files:
                     saved_images = save_service_order_images(
                         service_order, 
