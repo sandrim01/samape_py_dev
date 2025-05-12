@@ -149,17 +149,73 @@ def get_monthly_summary():
 def get_service_order_stats():
     """Get service order statistics"""
     from models import ServiceOrder, ServiceOrderStatus
+    from sqlalchemy import func
     
     open_count = ServiceOrder.query.filter_by(status=ServiceOrderStatus.aberta).count()
     in_progress_count = ServiceOrder.query.filter_by(status=ServiceOrderStatus.em_andamento).count()
     closed_count = ServiceOrder.query.filter_by(status=ServiceOrderStatus.fechada).count()
     
+    # Calcular o tempo médio de conclusão (em dias)
+    avg_completion_time = 0
+    closed_orders_with_dates = ServiceOrder.query.filter(
+        ServiceOrder.status == ServiceOrderStatus.fechada,
+        ServiceOrder.created_at.isnot(None),
+        ServiceOrder.closed_at.isnot(None)
+    ).all()
+    
+    if closed_orders_with_dates:
+        total_days = 0
+        for order in closed_orders_with_dates:
+            # Calcular a diferença em dias
+            delta = order.closed_at - order.created_at
+            total_days += delta.days
+        
+        if len(closed_orders_with_dates) > 0:
+            avg_completion_time = round(total_days / len(closed_orders_with_dates), 1)
+    
     return {
         'open': open_count,
         'in_progress': in_progress_count,
         'closed': closed_count,
-        'total': open_count + in_progress_count + closed_count
+        'total': open_count + in_progress_count + closed_count,
+        'avg_completion_time': avg_completion_time
     }
+    
+def get_supplier_order_stats():
+    """Get supplier order statistics"""
+    from models import SupplierOrder, OrderStatus
+    
+    pending_count = SupplierOrder.query.filter_by(status=OrderStatus.pendente).count()
+    approved_count = SupplierOrder.query.filter_by(status=OrderStatus.aprovado).count()
+    sent_count = SupplierOrder.query.filter_by(status=OrderStatus.enviado).count()
+    received_count = SupplierOrder.query.filter_by(status=OrderStatus.recebido).count()
+    canceled_count = SupplierOrder.query.filter_by(status=OrderStatus.cancelado).count()
+    
+    open_orders = pending_count + approved_count + sent_count
+    closed_orders = received_count + canceled_count
+    
+    return {
+        'pending': pending_count,
+        'approved': approved_count,
+        'sent': sent_count,
+        'received': received_count,
+        'canceled': canceled_count,
+        'open': open_orders,
+        'closed': closed_orders,
+        'total': open_orders + closed_orders
+    }
+    
+def get_maintenance_in_progress():
+    """Get a list of maintenance orders in progress"""
+    from models import ServiceOrder, ServiceOrderStatus
+    
+    in_progress_orders = ServiceOrder.query.filter_by(
+        status=ServiceOrderStatus.em_andamento
+    ).order_by(
+        ServiceOrder.created_at.desc()
+    ).limit(5).all()
+    
+    return in_progress_orders
 
 def get_system_setting(name, default=None):
     """Get a system setting by name"""

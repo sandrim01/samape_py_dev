@@ -19,9 +19,9 @@
     </div>
 </div>
 
-<!-- Stats Cards -->
+<!-- Stats Cards Row 1 - Service Orders -->
 <div class="row">
-    <div class="col-xl-3 col-md-6">
+    <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card pink">
             <div class="stat-icon">
                 <i class="fas fa-clipboard-list"></i>
@@ -32,7 +32,7 @@
         </div>
     </div>
     
-    <div class="col-xl-3 col-md-6">
+    <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card orange">
             <div class="stat-icon">
                 <i class="fas fa-cogs"></i>
@@ -43,7 +43,7 @@
         </div>
     </div>
     
-    <div class="col-xl-3 col-md-6">
+    <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card green">
             <div class="stat-icon">
                 <i class="fas fa-check-circle"></i>
@@ -54,7 +54,53 @@
         </div>
     </div>
     
-    <div class="col-xl-3 col-md-6">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card purple">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value">{{ so_stats.avg_completion_time }}</div>
+            <div class="stat-label">Média de Dias p/ Conclusão</div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards Row 2 - Supplier Orders and Financial -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card cyan">
+            <div class="stat-icon">
+                <i class="fas fa-dolly-flatbed"></i>
+            </div>
+            <div class="stat-value">{{ supplier_stats.open }}</div>
+            <div class="stat-label">Pedidos Abertos</div>
+            <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card teal">
+            <div class="stat-icon">
+                <i class="fas fa-truck-loading"></i>
+            </div>
+            <div class="stat-value">{{ supplier_stats.closed }}</div>
+            <div class="stat-label">Pedidos Fechados</div>
+            <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card green-light">
+            <div class="stat-icon">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="stat-value">{{ format_currency(financial_summary.income) }}</div>
+            <div class="stat-label">Receitas do Mês</div>
+            <a href="{{ url_for('financial') }}" class="stretched-link"></a>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card blue">
             <div class="stat-icon">
                 <i class="fas fa-dollar-sign"></i>
@@ -66,8 +112,85 @@
     </div>
 </div>
 
-<!-- Gráficos -->
+<!-- Manutenções Em Andamento -->
 <div class="row mt-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Manutenções em Andamento</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if maintenance_in_progress %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>OS</th>
+                                <th>Cliente</th>
+                                <th>Equipamento</th>
+                                <th>Desde</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in maintenance_in_progress %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.client.name }}</td>
+                                <td>
+                                    {% if order.equipment %}
+                                    {{ order.equipment[0].model if order.equipment[0].model else order.equipment[0].model_select }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center p-3">Nenhuma manutenção em andamento.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="{{ url_for('service_orders', status='em_andamento') }}" class="text-decoration-none">Ver Todas</a>
+                <div><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status dos Pedidos a Fornecedores -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-dark">
+                <h5 class="mb-0"><i class="fas fa-truck-loading me-2"></i> Status dos Pedidos a Fornecedores</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="supplierOrderStatusChart" height="180"></canvas>
+                <!-- Dados para o gráfico -->
+                <div id="supplier-pending" data-count="{{ supplier_stats.pending }}" class="d-none"></div>
+                <div id="supplier-approved" data-count="{{ supplier_stats.approved }}" class="d-none"></div>
+                <div id="supplier-sent" data-count="{{ supplier_stats.sent }}" class="d-none"></div>
+                <div id="supplier-received" data-count="{{ supplier_stats.received }}" class="d-none"></div>
+                <div id="supplier-canceled" data-count="{{ supplier_stats.canceled }}" class="d-none"></div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="{{ url_for('supplier_orders') }}" class="text-decoration-none">Ver Todos os Pedidos</a>
+                <div><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mt-2">
     <!-- Distribuição de OS -->
     <div class="col-lg-6 mb-4">
         <div class="card card-dark h-100">

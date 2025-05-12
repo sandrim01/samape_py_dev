@@ -118,8 +118,14 @@ def register_routes(app):
         # Get service order statistics
         so_stats = get_service_order_stats()
         
+        # Get supplier order statistics
+        supplier_stats = get_supplier_order_stats()
+        
         # Get financial summary
         financial_summary = get_monthly_summary()
+        
+        # Get maintenance in progress
+        maintenance_in_progress = get_maintenance_in_progress()
         
         # Get recent service orders
         recent_orders = ServiceOrder.query.order_by(
@@ -137,7 +143,9 @@ def register_routes(app):
         return render_template(
             'dashboard.html',
             so_stats=so_stats,
+            supplier_stats=supplier_stats,
             financial_summary=financial_summary,
+            maintenance_in_progress=maintenance_in_progress,
             recent_orders=recent_orders,
             recent_logs=recent_logs,
             now=datetime.now().timestamp()
