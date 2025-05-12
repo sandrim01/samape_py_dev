@@ -3,6 +3,7 @@ import sys
 from sqlalchemy import create_engine, Table, MetaData, text
 from sqlalchemy.orm import sessionmaker
 from app import db
+from app import Base  # Importando a classe Base do app.py
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
@@ -22,18 +23,18 @@ print("Iniciando migração de dados para o Railway...")
 print(f"Banco de dados de origem: {SOURCE_DB_URL}")
 print(f"Banco de dados de destino: {TARGET_DB_URL}")
 
-# Conectar ao banco de dados de origem
-source_engine = create_engine(SOURCE_DB_URL)
-SourceSession = sessionmaker(bind=source_engine)
-source_session = SourceSession()
-
-# Conectar ao banco de dados de destino
-target_engine = create_engine(TARGET_DB_URL)
-TargetSession = sessionmaker(bind=target_engine)
-target_session = TargetSession()
-
-# Verificar conexão com os bancos de dados
 try:
+    # Conectar ao banco de dados de origem
+    source_engine = create_engine(SOURCE_DB_URL)
+    SourceSession = sessionmaker(bind=source_engine)
+    source_session = SourceSession()
+
+    # Conectar ao banco de dados de destino
+    target_engine = create_engine(TARGET_DB_URL)
+    TargetSession = sessionmaker(bind=target_engine)
+    target_session = TargetSession()
+
+    # Verificar conexão com os bancos de dados
     # Testar conexão ao banco de origem
     source_session.execute(text("SELECT 1"))
     print("Conexão com o banco de dados de origem estabelecida com sucesso.")
@@ -47,13 +48,11 @@ except Exception as e:
 
 # Criar todas as tabelas no banco de dados de destino
 print("Criando estrutura de tabelas no banco de dados de destino...")
-# Usando a definição de tabelas do SQLAlchemy que já existe no aplicativo
-from app import app
-with app.app_context():
-    # Criar todas as tabelas no banco de destino
-    # Usando sqlalchemy diretamente
-    from models import Base
-    Base.metadata.create_all(target_engine)
+
+# Criação das tabelas usando a Base
+metadata = MetaData()
+metadata.reflect(bind=source_engine)  # Lê a estrutura do banco de origem
+Base.metadata.create_all(target_engine)  # Cria as tabelas no banco de destino
 
 print("Estrutura de tabelas criada no banco de dados de destino.")
 
@@ -79,11 +78,11 @@ models = [
 # Limpar os dados existentes no banco de destino para evitar conflitos
 print("Limpando dados existentes no banco de destino...")
 try:
-    with app.app_context():
-        for model in reversed(models):  # Reverso para remover tabelas com chaves estrangeiras primeiro
-            print(f"Removendo registros de {model.__name__}...")
-            target_session.query(model).delete()
-        target_session.commit()
+    # Não precisamos de um app_context aqui pois estamos usando a sessão diretamente
+    for model in reversed(models):  # Reverso para remover tabelas com chaves estrangeiras primeiro
+        print(f"Removendo registros de {model.__name__}...")
+        target_session.query(model).delete()
+    target_session.commit()
     print("Dados existentes limpos com sucesso.")
 except Exception as e:
     print(f"Erro ao limpar dados existentes: {e}")
