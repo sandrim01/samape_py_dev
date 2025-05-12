@@ -2094,14 +2094,18 @@ def register_routes(app):
     @app.route('/pedidos-fornecedor/<int:id>')
     @login_required
     def view_supplier_order(id):
+        from utils import is_order_paid
+        
         order = SupplierOrder.query.get_or_404(id)
         item_form = OrderItemForm()
+        is_paid = is_order_paid(id)
         
         return render_template(
             'supplier_orders/view.html', 
             order=order,
             item_form=item_form,
-            order_statuses=OrderStatus
+            order_statuses=OrderStatus,
+            is_paid=is_paid
         )
     
     @app.route('/pedidos-fornecedor/<int:id>/editar', methods=['GET', 'POST'])

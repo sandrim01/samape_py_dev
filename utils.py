@@ -354,3 +354,20 @@ def recalculate_supplier_order_total(order_id):
         db.session.commit()
         
     return total
+    
+def is_order_paid(order_id):
+    """
+    Verifica se um pedido já tem pagamento registrado no financeiro
+    
+    Args:
+        order_id: ID do pedido de fornecedor
+        
+    Returns:
+        Boolean: True se o pedido já foi pago, False caso contrário
+    """
+    financial_entry = FinancialEntry.query.filter_by(
+        entry_type='pedido_fornecedor',
+        reference_id=order_id
+    ).first()
+    
+    return financial_entry is not None
