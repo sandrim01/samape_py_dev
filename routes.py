@@ -1083,8 +1083,32 @@ def register_routes(app):
                 filename = secure_filename(form.profile_image.data.filename)
                 _, file_extension = os.path.splitext(filename)
                 
-                # Create a unique filename based on user ID
-                profile_image_filename = f"user_{current_user.id}{file_extension}"
+                # Verificar extensão de arquivo
+                if file_extension.lower() not in ['.jpg', '.jpeg', '.png', '.gif']:
+                    flash('Formato de arquivo não permitido. Apenas JPG, JPEG, PNG e GIF são aceitos.', 'danger')
+                    return render_template('profile/index.html', form=form)
+                
+                # Verificar tamanho do arquivo (max 2MB)
+                form.profile_image.data.seek(0, os.SEEK_END)
+                file_size = form.profile_image.data.tell()
+                form.profile_image.data.seek(0)  # Retornar para o início do arquivo
+                
+                if file_size > 2 * 1024 * 1024:  # 2MB em bytes
+                    flash('Tamanho do arquivo maior que 2MB. Por favor, escolha uma imagem menor.', 'danger')
+                    return render_template('profile/index.html', form=form)
+                
+                # Remover imagem anterior se existir e não for a padrão
+                if current_user.profile_image and current_user.profile_image != 'default_profile.svg':
+                    old_file_path = os.path.join('static/images/profiles', current_user.profile_image)
+                    if os.path.exists(old_file_path):
+                        try:
+                            os.remove(old_file_path)
+                        except:
+                            pass  # Se não conseguir remover, apenas continue
+                
+                # Create a unique filename based on user ID and timestamp para evitar cache do navegador
+                timestamp = int(datetime.now().timestamp())
+                profile_image_filename = f"user_{current_user.id}_{timestamp}{file_extension}"
                 
                 # Save the file
                 file_path = os.path.join('static/images/profiles', profile_image_filename)
@@ -1092,6 +1116,14 @@ def register_routes(app):
                 
                 # Update the user's profile_image field
                 current_user.profile_image = profile_image_filename
+                
+                # Log da alteração da imagem
+                log_action(
+                    'Atualização de Foto de Perfil',
+                    'user',
+                    current_user.id,
+                    'Foto de perfil atualizada'
+                )
             
             # Update password if provided
             if form.new_password.data:
