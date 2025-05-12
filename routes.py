@@ -603,23 +603,63 @@ def register_routes(app):
     @app.route('/clientes/<int:id>/excluir', methods=['POST'])
     @admin_required
     def delete_client(id):
-        # Não usamos o FlaskForm aqui pois ele verificaria o token CSRF que vem 
-        # no request e estamos tendo problemas com isso
-        # Em vez disso, verificamos manualmente se o cliente pode ser excluído
-            
-        client = Client.query.get_or_404(id)
-        
-        # Check if client has service orders
-        if ServiceOrder.query.filter_by(client_id=id).count() > 0:
-            flash('Não é possível excluir um cliente com ordens de serviço.', 'danger')
-            return redirect(url_for('view_client', id=id))
-            
-        # Check if client has equipment
-        if Equipment.query.filter_by(client_id=id).count() > 0:
-            flash('Não é possível excluir um cliente com equipamentos. Remova os equipamentos primeiro.', 'danger')
-            return redirect(url_for('view_client', id=id))
-        
         try:
+            client = Client.query.get_or_404(id)
+            
+            # Check if client has service orders
+            if ServiceOrder.query.filter_by(client_id=id).count() > 0:
+                flash('Não é possível excluir um cliente com ordens de serviço.', 'danger')
+                return redirect(url_for('view_client', id=id))
+                
+            # Check if client has equipment
+            if Equipment.query.filter_by(client_id=id).count() > 0:
+                flash('Não é possível excluir um cliente com equipamentos. Remova os equipamentos primeiro.', 'danger')
+                return redirect(url_for('view_client', id=id))
+            
+            client_name = client.name
+            db.session.delete(client)
+            db.session.commit()
+            
+            try:
+                log_action(
+                    'Exclusão de Cliente',
+                    'client',
+                    id,
+                    f"Cliente {client_name} excluído"
+                )
+            except Exception as log_error:
+                app.logger.error(f"Erro ao registrar log de exclusão de cliente: {str(log_error)}")
+            
+            flash('Cliente excluído com sucesso!', 'success')
+            return redirect(url_for('clients'))
+            
+        except IntegrityError:
+            db.session.rollback()
+            flash('Erro de integridade ao excluir cliente. Pode haver registros vinculados a este cliente.', 'danger')
+            return redirect(url_for('view_client', id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao excluir cliente: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao excluir cliente {id}: {str(e)}")
+            return redirect(url_for('view_client', id=id))
+            
+    @app.route('/admin/clientes/<int:id>/excluir-direto')
+    @admin_required
+    def delete_client_direct(id):
+        """Rota alternativa para exclusão de clientes"""
+        try:
+            client = Client.query.get_or_404(id)
+            
+            # Check if client has service orders
+            if ServiceOrder.query.filter_by(client_id=id).count() > 0:
+                flash('Não é possível excluir um cliente com ordens de serviço.', 'danger')
+                return redirect(url_for('view_client', id=id))
+                
+            # Check if client has equipment
+            if Equipment.query.filter_by(client_id=id).count() > 0:
+                flash('Não é possível excluir um cliente com equipamentos. Remova os equipamentos primeiro.', 'danger')
+                return redirect(url_for('view_client', id=id))
+            
             client_name = client.name
             db.session.delete(client)
             db.session.commit()
