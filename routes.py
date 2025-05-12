@@ -226,17 +226,16 @@ def register_routes(app):
             db.session.add(service_order)
             db.session.commit()
             
-            # Processar imagens
-            if form.images.data and form.images.data.filename:
-                image_files = [form.images.data]
-                if image_files:
-                    saved_images = save_service_order_images(
-                        service_order, 
-                        image_files, 
-                        form.image_descriptions.data
-                    )
-                    if saved_images:
-                        flash(f'{len(saved_images)} imagem(ns) anexada(s) com sucesso!', 'info')
+            # Processar imagens - verificar se há arquivos enviados
+            image_files = request.files.getlist('images')
+            if image_files and any(f.filename for f in image_files):
+                saved_images = save_service_order_images(
+                    service_order, 
+                    image_files, 
+                    form.image_descriptions.data
+                )
+                if saved_images:
+                    flash(f'{len(saved_images)} imagem(ns) anexada(s) com sucesso!', 'info')
             
             log_action(
                 'Criação de OS',
@@ -306,17 +305,16 @@ def register_routes(app):
             
             db.session.commit()
             
-            # Processar imagens
-            if form.images.data and form.images.data.filename:
-                image_files = [form.images.data]
-                if image_files:
-                    saved_images = save_service_order_images(
-                        service_order, 
-                        image_files, 
-                        form.image_descriptions.data
-                    )
-                    if saved_images:
-                        flash(f'{len(saved_images)} imagem(ns) adicional(is) anexada(s) com sucesso!', 'info')
+            # Processar imagens - verificar se há arquivos enviados
+            image_files = request.files.getlist('images')
+            if image_files and any(f.filename for f in image_files):
+                saved_images = save_service_order_images(
+                    service_order, 
+                    image_files, 
+                    form.image_descriptions.data
+                )
+                if saved_images:
+                    flash(f'{len(saved_images)} imagem(ns) adicional(is) anexada(s) com sucesso!', 'info')
             
             log_action(
                 'Edição de OS',
@@ -2004,7 +2002,7 @@ def register_routes(app):
             order = SupplierOrder(
                 supplier_id=form.supplier_id.data,
                 order_number=form.order_number.data,
-                total_value=form.total_value.data or 0,
+                total_value=form.total_value.data if form.total_value.data is not None else 0,
                 status=form.status.data,
                 expected_delivery_date=expected_delivery_date,
                 delivery_date=delivery_date,
