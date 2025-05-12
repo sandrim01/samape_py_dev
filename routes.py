@@ -1975,12 +1975,18 @@ def register_routes(app):
     @login_required
     def view_part_sale(id):
         sale = PartSale.query.get_or_404(id)
-        return render_template('part_sales/view.html', sale=sale)
+        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
+        return render_template('part_sales/view.html', sale=sale, form=form)
     
     @app.route('/vendas-pecas/<int:id>/cancelar', methods=['POST'])
     @login_required
     @admin_required
     def cancel_part_sale(id):
+        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
+        if not form.validate_on_submit():
+            flash('Erro de segurança: Token CSRF inválido. Tente novamente.', 'danger')
+            return redirect(url_for('view_part_sale', id=id))
+            
         sale = PartSale.query.get_or_404(id)
         
         # Restaurar estoque
