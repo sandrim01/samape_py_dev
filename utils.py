@@ -1,9 +1,12 @@
 import re
+import os
+import uuid
 from functools import wraps
 from datetime import datetime, timedelta
 from flask import request, abort, session, redirect, url_for, flash, current_app
 from flask_login import current_user
-from models import ActionLog, LoginAttempt, db, UserRole
+from werkzeug.utils import secure_filename
+from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage
 
 def role_required(*roles):
     """Decorator for view functions that require specific roles"""
@@ -193,3 +196,56 @@ def get_default_system_settings():
         'date_format': 'DD/MM/YYYY',
         'items_per_page': '20'
     }
+    
+def save_service_order_images(service_order, images, descriptions=None):
+    """
+    Salva as imagens enviadas para uma ordem de serviço
+    
+    Args:
+        service_order: Objeto ServiceOrder para o qual as imagens serão salvas
+        images: Lista de objetos FileStorage (arquivos enviados)
+        descriptions: String com descrições separadas por ponto e vírgula ou None
+    
+    Returns:
+        Lista de objetos ServiceOrderImage criados
+    """
+    # Criar diretório para imagens se não existir
+    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'service_orders', str(service_order.id))
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    # Preparar descrições se fornecidas
+    desc_list = []
+    if descriptions:
+        desc_list = [d.strip() for d in descriptions.split(';') if d.strip()]
+    
+    saved_images = []
+    
+    # Processar cada imagem
+    for i, image in enumerate(images):
+        if image and image.filename:
+            # Gerar nome de arquivo único
+            original_filename = secure_filename(image.filename)
+            extension = os.path.splitext(original_filename)[1]
+            unique_filename = f"{uuid.uuid4()}{extension}"
+            
+            # Caminho completo para salvar
+            filepath = os.path.join(upload_folder, unique_filename)
+            
+            # Salvar arquivo
+            image.save(filepath)
+            
+            # Criar entrada no banco de dados
+            description = desc_list[i] if i < len(desc_list) else None
+            image_record = ServiceOrderImage(
+                service_order_id=service_order.id,
+                filename=f"uploads/service_orders/{service_order.id}/{unique_filename}",
+                description=description
+            )
+            
+            db.session.add(image_record)
+            saved_images.append(image_record)
+    
+    if saved_images:
+        db.session.commit()
+        
+    return saved_images
