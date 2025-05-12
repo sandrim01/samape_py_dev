@@ -107,8 +107,26 @@ def register_routes(app):
     @app.route('/logout')
     @login_required
     def logout():
-        log_action('Logout', 'user', current_user.id)
+        # Capturar o ID do usuário antes de fazer logout
+        user_id = current_user.id
+        # Primeiro fazer logout do usuário
         logout_user()
+        # Depois registrar a ação (sem depender do current_user que já foi removido)
+        try:
+            # Criar o log manualmente sem depender do current_user
+            log = ActionLog(
+                user_id=user_id,
+                action='Logout',
+                entity_type='user',
+                entity_id=user_id,
+                ip_address=request.remote_addr
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception as e:
+            # Em caso de erro, apenas continuar sem interromper o fluxo de logout
+            db.session.rollback()
+            
         flash('Você foi desconectado com sucesso.', 'success')
         return redirect(url_for('login'))
 
