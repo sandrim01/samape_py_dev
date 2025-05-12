@@ -1320,7 +1320,7 @@ def register_routes(app):
             return redirect(url_for('view_service_order', id=id))
         
         # Passamos o tipo Decimal para o template para facilitar operações matemáticas
-        return render_template('invoices/view.html', 
+        return render_template('invoices/clean_invoice.html', 
                               service_order=service_order,
                               Decimal=Decimal)
     
