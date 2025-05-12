@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from functools import wraps
 from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort
@@ -2055,6 +2056,27 @@ def register_routes(app):
             
             db.session.add(order)
             db.session.commit()
+            
+            # Processar itens do pedido (enviados como JSON)
+            items_json = request.form.get('items_json', '[]')
+            try:
+                items_data = json.loads(items_json)
+                for item_data in items_data:
+                    # Criar item de pedido
+                    item = OrderItem(
+                        order_id=order.id,
+                        part_id=item_data.get('part_id') if item_data.get('part_id') else None,
+                        description=item_data.get('description', ''),
+                        quantity=item_data.get('quantity', 1),
+                        unit_price=item_data.get('unit_price', 0),
+                        total_price=item_data.get('total_price', 0),
+                        status=OrderStatus.pendente
+                    )
+                    db.session.add(item)
+                
+                db.session.commit()
+            except Exception as e:
+                app.logger.error(f"Erro ao processar itens do pedido: {str(e)}")
             
             log_action(
                 'Criação de Pedido',
