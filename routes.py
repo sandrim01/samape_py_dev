@@ -6,6 +6,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
+from sqlalchemy.exc import IntegrityError
 
 from wtforms.validators import Optional
 
@@ -235,45 +236,61 @@ def register_routes(app):
         ]
         
         if form.validate_on_submit():
-            service_order = ServiceOrder(
-                client_id=form.client_id.data,
-                responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
-                description=form.description.data,
-                estimated_value=form.estimated_value.data,
-                status=ServiceOrderStatus[form.status.data]
-            )
-            
-            # Add equipment relationships if selected
-            if form.equipment_ids.data:
-                equipment_ids = form.equipment_ids.data.split(',')
-                for eq_id in equipment_ids:
-                    equipment = Equipment.query.get(int(eq_id))
-                    if equipment and equipment.client_id == service_order.client_id:
-                        service_order.equipment.append(equipment)
-            
-            db.session.add(service_order)
-            db.session.commit()
-            
-            # Processar imagens - verificar se há arquivos enviados
-            image_files = request.files.getlist('images')
-            if image_files and any(f.filename for f in image_files):
-                saved_images = save_service_order_images(
-                    service_order, 
-                    image_files, 
-                    form.image_descriptions.data
+            try:
+                service_order = ServiceOrder(
+                    client_id=form.client_id.data,
+                    responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
+                    description=form.description.data,
+                    estimated_value=form.estimated_value.data,
+                    status=ServiceOrderStatus[form.status.data]
                 )
-                if saved_images:
-                    flash(f'{len(saved_images)} imagem(ns) anexada(s) com sucesso!', 'info')
+                
+                # Add equipment relationships if selected
+                if form.equipment_ids.data:
+                    equipment_ids = form.equipment_ids.data.split(',')
+                    for eq_id in equipment_ids:
+                        equipment = Equipment.query.get(int(eq_id))
+                        if equipment and equipment.client_id == service_order.client_id:
+                            service_order.equipment.append(equipment)
+                
+                db.session.add(service_order)
+                db.session.commit()
+                
+                # Processar imagens - verificar se há arquivos enviados
+                try:
+                    image_files = request.files.getlist('images')
+                    if image_files and any(f.filename for f in image_files):
+                        saved_images = save_service_order_images(
+                            service_order, 
+                            image_files, 
+                            form.image_descriptions.data
+                        )
+                        if saved_images:
+                            flash(f'{len(saved_images)} imagem(ns) anexada(s) com sucesso!', 'info')
+                except Exception as img_error:
+                    # Se falhar ao salvar as imagens, registre o erro mas não interrompa o fluxo
+                    flash(f'Aviso: Não foi possível salvar as imagens: {str(img_error)}', 'warning')
+                
+                try:
+                    log_action(
+                        'Criação de OS',
+                        'service_order',
+                        service_order.id,
+                        f"OS criada para cliente {service_order.client.name}"
+                    )
+                except Exception:
+                    # Se falhar ao registrar o log, não interromper o fluxo principal
+                    pass
+                
+                flash('Ordem de serviço criada com sucesso!', 'success')
+                return redirect(url_for('service_orders'))
             
-            log_action(
-                'Criação de OS',
-                'service_order',
-                service_order.id,
-                f"OS criada para cliente {service_order.client.name}"
-            )
-            
-            flash('Ordem de serviço criada com sucesso!', 'success')
-            return redirect(url_for('service_orders'))
+            except IntegrityError:
+                db.session.rollback()
+                flash('Erro de integridade ao criar a ordem de serviço. O ID pode estar duplicado.', 'danger')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao criar ordem de serviço: {str(e)}', 'danger')
             
         return render_template(
             'service_orders/create.html',
