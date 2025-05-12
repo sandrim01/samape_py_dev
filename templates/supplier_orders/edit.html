@@ -183,6 +183,7 @@
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                             <form action="{{ url_for('delete_order_item', id=item.id) }}" method="post" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                 <button type="submit" class="btn btn-danger">Excluir</button>
                                             </form>
                                         </div>
@@ -219,7 +220,7 @@
             </div>
             <form action="{{ url_for('add_order_item', id=order.id) }}" method="post">
                 <div class="modal-body">
-                    {{ item_form.hidden_tag() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
