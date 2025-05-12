@@ -1,14 +1,16 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-  <!-- Círculo de fundo -->
-  <circle cx="80" cy="80" r="80" fill="#4285f4"/>
-  
-  <!-- Usuário silhueta -->
-  <g fill="#ffffff">
-    <!-- Cabeça -->
-    <circle cx="80" cy="60" r="30"/>
-    
-    <!-- Corpo -->
-    <path d="M80,95 C51,95 30,115 30,145 L130,145 C130,115 109,95 80,95 Z"/>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="160px" height="160px" viewBox="0 0 160 160" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Default Profile</title>
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="profileGradient">
+            <stop stop-color="#4E54C8" offset="0%"></stop>
+            <stop stop-color="#8F5DB7" offset="50%"></stop>
+            <stop stop-color="#CF65AA" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle fill="url(#profileGradient)" cx="80" cy="80" r="80"></circle>
+        <path d="M80,90 C97.346,90 111.538,77.308 111.538,61.538 C111.538,45.769 97.346,33.077 80,33.077 C62.654,33.077 48.462,45.769 48.462,61.538 C48.462,77.308 62.654,90 80,90 Z" fill="#FFFFFF" opacity="0.9"></path>
+        <path d="M80,90 C47.115,90 20,113.462 20,142.308 C35.769,153.846 56.923,160 80,160 C103.077,160 124.231,153.846 140,142.308 C140,113.462 112.885,90 80,90 Z" fill="#FFFFFF" opacity="0.8"></path>
+    </g>
 </svg>
