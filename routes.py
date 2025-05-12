@@ -107,16 +107,13 @@ def register_routes(app):
     @app.route('/logout')
     @login_required
     def logout():
-        # Capturar o ID do usuário antes de fazer logout
-        user_id = current_user.id
-        
-        # Primeiro fazer logout do usuário
+        # Executar o logout do usuário sem qualquer acesso ao banco de dados
         logout_user()
         
-        # Não tentar registrar a ação de logout em log para evitar erros
-        # Isso foi removido pois estava causando erros de integridade
-        
+        # Feedback para o usuário
         flash('Você foi desconectado com sucesso.', 'success')
+        
+        # Redirecionar para a página de login
         return redirect(url_for('login'))
 
     # Dashboard
