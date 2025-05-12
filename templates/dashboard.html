@@ -20,14 +20,17 @@
 </div>
 
 <!-- Stats Cards Row 1 - Service Orders -->
-<div class="row">
+<div class="row dashboard-metrics">
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stat-card pink">
             <div class="stat-icon">
                 <i class="fas fa-clipboard-list"></i>
             </div>
-            <div class="stat-value">{{ so_stats.open }}</div>
-            <div class="stat-label">OS Abertas</div>
+            <div class="stat-value metric-value">{{ so_stats.open }}</div>
+            <div class="stat-label metric-label">OS Abertas</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-list"></i>
+            </div>
             <a href="{{ url_for('service_orders', status='aberta') }}" class="stretched-link"></a>
         </div>
     </div>
@@ -37,8 +40,11 @@
             <div class="stat-icon">
                 <i class="fas fa-cogs"></i>
             </div>
-            <div class="stat-value">{{ so_stats.in_progress }}</div>
-            <div class="stat-label">OS Em Andamento</div>
+            <div class="stat-value metric-value">{{ so_stats.in_progress }}</div>
+            <div class="stat-label metric-label">OS Em Andamento</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-tools"></i>
+            </div>
             <a href="{{ url_for('service_orders', status='em_andamento') }}" class="stretched-link"></a>
         </div>
     </div>
@@ -48,8 +54,11 @@
             <div class="stat-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
-            <div class="stat-value">{{ so_stats.closed }}</div>
-            <div class="stat-label">OS Fechadas</div>
+            <div class="stat-value metric-value">{{ so_stats.closed }}</div>
+            <div class="stat-label metric-label">OS Fechadas</div>
+            <div class="card-icon d-none d-sm-none d-md-flex">
+                <i class="fas fa-check"></i>
+            </div>
             <a href="{{ url_for('service_orders', status='fechada') }}" class="stretched-link"></a>
         </div>
     </div>

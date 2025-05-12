@@ -425,20 +425,37 @@ body {
     }
 }
 
-/* Ajustes adicionais para smartphones */
+/* Ajustes adicionais para smartphones - Design moderno e otimizado */
 @media (max-width: 576px) {
+    /* Ajustes do perfil no sidebar */
     .sidebar-user-info {
-        padding: 8px 5px;
+        padding: 12px 8px;
+        background: linear-gradient(45deg, rgba(45, 139, 247, 0.8), rgba(33, 107, 191, 0.8));
+        border-radius: 8px;
+        margin: 0 5px 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
     
     .sidebar-profile-image {
-        width: 40px;
-        height: 40px;
-        border-width: 1px;
+        width: 45px;
+        height: 45px;
+        border-width: 2px;
+        border-color: #fff;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+        margin: 0 12px 0 0;
     }
     
     .sidebar-user-name {
-        font-size: 0.8rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Navbar ajustes */
+    .navbar {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(to right, #1a1a2e, #16213e);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
     
     .navbar-brand {
@@ -447,61 +464,187 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-weight: 700;
     }
     
     .profile-avatar {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
+        border: 2px solid rgba(255, 255, 255, 0.7);
     }
     
     .dropdown-menu {
         width: 250px;
         right: -10px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border: none;
+        padding: 0;
+        overflow: hidden;
     }
     
     .user-info-header {
         padding: 15px 10px;
+        background: linear-gradient(45deg, #2D8BF7, #215B9C);
     }
     
     .user-info-header .profile-image {
         width: 60px;
         height: 60px;
+        border: 3px solid white;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
     }
     
-    /* Ajustes nos cards e tabelas para dispositivos móveis */
+    /* Design moderno para cards em mobile */
     .card {
-        margin-bottom: 15px;
+        margin-bottom: 18px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+    }
+    
+    .card:active {
+        transform: scale(0.98);
+    }
+    
+    .card-header {
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        color: white;
+        border-bottom: none;
+        padding: 12px 15px;
+        font-weight: 600;
     }
     
     .card-title {
         font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #1a1a2e;
     }
     
+    .card-body {
+        padding: 15px;
+    }
+    
+    /* Tabelas e elementos interativos */
     .table {
         font-size: 0.85rem;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .table thead th {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
     }
     
     .btn {
-        padding: 0.25rem 0.5rem;
+        padding: 0.4rem 0.8rem;
         font-size: 0.875rem;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
     }
     
-    /* Melhora na visualização de conteúdo em telas pequenas */
+    .btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(to right, #2D8BF7, #1e6fd0);
+        border: none;
+    }
+    
+    .btn-success {
+        background: linear-gradient(to right, #28a745, #1e8535);
+        border: none;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(to right, #dc3545, #b82535);
+        border: none;
+    }
+    
+    /* Layout mais aproveitado */
     .container-fluid {
-        padding-right: 10px;
-        padding-left: 10px;
+        padding-right: 12px;
+        padding-left: 12px;
     }
     
     .row {
-        margin-right: -5px;
-        margin-left: -5px;
+        margin-right: -6px;
+        margin-left: -6px;
     }
     
     .col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, 
     .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, 
     .col-sm, .col-md, .col-lg, .col-xl {
-        padding-right: 5px;
-        padding-left: 5px;
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+    
+    /* Sidebar e navegação */
+    .sidebar {
+        background-color: #1a1a2e;
+        box-shadow: inset -5px 0 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-link {
+        font-size: 0.9rem;
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        margin: 3px 5px;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-link:active {
+        background-color: rgba(45, 139, 247, 0.2);
+    }
+    
+    .nav-link.active {
+        background-color: #2D8BF7;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .nav-link i {
+        width: 24px;
+        margin-right: 8px;
+        text-align: center;
+    }
+    
+    /* Form controls mais interativos */
+    .form-control {
+        border-radius: 8px;
+        padding: 10px 15px;
+        border: 1px solid #ced4da;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(45, 139, 247, 0.25);
+        border-color: #2D8BF7;
+    }
+    
+    /* Modal mais moderno */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #eee;
     }
 }
 

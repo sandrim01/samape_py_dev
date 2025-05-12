@@ -1,0 +1,300 @@
+/* Estilos aprimorados para versão mobile do SAMAPE */
+
+/* Aplicados apenas em telas pequenas */
+@media (max-width: 576px) {
+    /* Melhorias para o dashboard */
+    .dashboard-metrics .card {
+        position: relative;
+        background: #fff;
+        overflow: visible;
+    }
+    
+    .dashboard-metrics .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .dashboard-metrics .metric-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2D8BF7;
+        margin: 5px 0;
+    }
+    
+    .dashboard-metrics .metric-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .dashboard-metrics .card-icon {
+        position: absolute;
+        top: -15px;
+        right: 15px;
+        background: linear-gradient(45deg, #2D8BF7, #215B9C);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Estilos para os gráficos */
+    .chart-container {
+        margin-top: 10px;
+        border-radius: 12px;
+        background-color: white;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Melhorias na exibição de tabelas */
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    /* Melhorias na lista de ordens de serviço */
+    .service-order-list .card {
+        transition: all 0.2s ease;
+    }
+    
+    .service-order-list .card:active {
+        transform: translateY(2px);
+    }
+    
+    .service-order-list .card-header {
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .service-order-list .order-status {
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .service-order-list .client-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+    
+    .service-order-list .order-details {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    /* Melhorias nos formulários */
+    .form-group label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+    
+    input[type="date"], input[type="time"] {
+        border-radius: 8px;
+        padding: 10px 15px;
+        width: 100%;
+    }
+    
+    /* Estilo para abas em páginas com tabs */
+    .nav-tabs {
+        border-bottom: none;
+        margin-bottom: 15px;
+    }
+    
+    .nav-tabs .nav-item {
+        margin-right: 5px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 8px 15px;
+        color: #495057;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-tabs .nav-link.active {
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        color: white;
+        box-shadow: 0 3px 10px rgba(45, 139, 247, 0.3);
+    }
+    
+    /* Estilo para o widget de upload de imagens */
+    .image-upload-widget {
+        border: 2px dashed #ced4da;
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    
+    .image-upload-widget:hover {
+        border-color: #2D8BF7;
+    }
+    
+    .image-preview {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .image-preview-item {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .image-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .image-preview-item .remove-image {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #dc3545;
+    }
+    
+    /* Estilo para paginação */
+    .pagination {
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .page-item .page-link {
+        border-radius: 8px;
+        margin: 0 3px;
+        color: #2D8BF7;
+        font-weight: 600;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #2D8BF7;
+        border-color: #2D8BF7;
+    }
+    
+    /* Layout de detalhes para visualização de objetos */
+    .detail-view .detail-header {
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        color: white;
+        padding: 15px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .detail-view .detail-body {
+        background: white;
+        padding: 15px;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .detail-view .detail-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 15px 0 10px;
+        color: #2D8BF7;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 5px;
+    }
+    
+    .detail-view .detail-row {
+        margin-bottom: 10px;
+    }
+    
+    .detail-view .detail-label {
+        font-weight: 600;
+        color: #666;
+        font-size: 0.85rem;
+    }
+    
+    .detail-view .detail-value {
+        font-size: 0.95rem;
+    }
+    
+    /* Melhorias no menu de ações */
+    .action-menu {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .action-menu .action-button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #2D8BF7, #215B9C);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        font-size: 1.5rem;
+    }
+    
+    .action-menu .action-items {
+        position: absolute;
+        bottom: 60px;
+        right: 0;
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .action-menu .action-item {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        color: #2D8BF7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        font-size: 1rem;
+    }
+    
+    .action-menu.open .action-items {
+        display: flex;
+    }
+}
