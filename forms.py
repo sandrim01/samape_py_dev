@@ -5,6 +5,10 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, V
 import re
 from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus
 
+class DeleteImageForm(FlaskForm):
+    """Formulário simples para exclusão de imagens"""
+    pass
+
 class LoginForm(FlaskForm):
     username = StringField('Nome de Usuário', validators=[DataRequired()])
     password = PasswordField('Senha', validators=[DataRequired()])

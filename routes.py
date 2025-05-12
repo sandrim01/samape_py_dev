@@ -338,31 +338,39 @@ def register_routes(app):
     @login_required
     def delete_service_order_image_route(image_id):
         """Rota para excluir uma imagem de ordem de serviço"""
-        # Buscar imagem para obter o service_order_id
-        image = ServiceOrderImage.query.get_or_404(image_id)
-        service_order_id = image.service_order_id
+        # Criar instância do formulário para validação CSRF
+        from forms import DeleteImageForm
+        form = DeleteImageForm()
         
-        # Verificar se a OS está fechada
-        service_order = ServiceOrder.query.get(service_order_id)
-        if service_order and service_order.status == ServiceOrderStatus.fechada:
-            flash('Não é possível excluir imagens de uma OS fechada.', 'warning')
-            return redirect(url_for('view_service_order', id=service_order_id))
-        
-        # Excluir a imagem
-        success, message = delete_service_order_image(image_id)
-        
-        if success:
-            flash('Imagem excluída com sucesso!', 'success')
-            log_action(
-                'Exclusão de imagem',
-                'service_order_image',
-                image_id,
-                f"Imagem removida da OS #{service_order_id}"
-            )
-        else:
-            flash(f'Erro ao excluir imagem: {message}', 'danger')
+        if form.validate_on_submit():
+            # Buscar imagem para obter o service_order_id
+            image = ServiceOrderImage.query.get_or_404(image_id)
+            service_order_id = image.service_order_id
             
-        return redirect(url_for('view_service_order', id=service_order_id))
+            # Verificar se a OS está fechada
+            service_order = ServiceOrder.query.get(service_order_id)
+            if service_order and service_order.status == ServiceOrderStatus.fechada:
+                flash('Não é possível excluir imagens de uma OS fechada.', 'warning')
+                return redirect(url_for('view_service_order', id=service_order_id))
+            
+            # Excluir a imagem
+            success, message = delete_service_order_image(image_id)
+            
+            if success:
+                flash('Imagem excluída com sucesso!', 'success')
+                log_action(
+                    'Exclusão de imagem',
+                    'service_order_image',
+                    image_id,
+                    f"Imagem removida da OS #{service_order_id}"
+                )
+            else:
+                flash(f'Erro ao excluir imagem: {message}', 'danger')
+        else:
+            # Se falhou na validação CSRF
+            flash('Erro de validação do formulário. Tente novamente.', 'danger')
+            
+        return redirect(url_for('view_service_order', id=image.service_order_id))
     
     @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
