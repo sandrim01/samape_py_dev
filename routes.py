@@ -1691,46 +1691,65 @@ def register_routes(app):
         form = PartForm()
         
         if form.validate_on_submit():
-            # Processar upload de imagem, se houver
-            image_filename = None
-            if form.image.data:
-                image = form.image.data
-                # Gerar nome de arquivo único
-                from werkzeug.utils import secure_filename
-                filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
-                image_path = os.path.join('static', 'uploads', 'parts', filename)
-                os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
-                image.save(image_path)
-                image_filename = filename
-            
-            part = Part(
-                name=form.name.data,
-                description=form.description.data,
-                part_number=form.part_number.data,
-                supplier_id=form.supplier_id.data if form.supplier_id.data else None,
-                category=form.category.data,
-                subcategory=form.subcategory.data,
-                cost_price=form.cost_price.data,
-                selling_price=form.selling_price.data,
-                stock_quantity=form.stock_quantity.data,
-                minimum_stock=form.minimum_stock.data,
-                location=form.location.data,
-                image=image_filename
-            )
-            
-            db.session.add(part)
-            db.session.commit()
-            
-            log_action(
-                'Cadastro de Peça',
-                'part',
-                part.id,
-                f'Peça {part.name} cadastrada'
-            )
-            
-            flash('Peça cadastrada com sucesso!', 'success')
-            return redirect(url_for('view_part', id=part.id))
-        
+            try:
+                # Processar upload de imagem, se houver
+                image_filename = None
+                if form.image.data:
+                    try:
+                        image = form.image.data
+                        # Gerar nome de arquivo único
+                        from werkzeug.utils import secure_filename
+                        filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
+                        image_path = os.path.join('static', 'uploads', 'parts', filename)
+                        os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
+                        image.save(image_path)
+                        image_filename = filename
+                    except Exception as e:
+                        # Se houver erro no upload da imagem, registrar, mas continuar sem a imagem
+                        app.logger.error(f"Erro ao salvar imagem da peça: {str(e)}")
+                        flash("Não foi possível salvar a imagem da peça, mas o cadastro será feito mesmo assim.", "warning")
+                
+                part = Part(
+                    name=form.name.data,
+                    description=form.description.data,
+                    part_number=form.part_number.data,
+                    supplier_id=form.supplier_id.data if form.supplier_id.data else None,
+                    category=form.category.data,
+                    subcategory=form.subcategory.data,
+                    cost_price=form.cost_price.data,
+                    selling_price=form.selling_price.data,
+                    stock_quantity=form.stock_quantity.data,
+                    minimum_stock=form.minimum_stock.data,
+                    location=form.location.data,
+                    image=image_filename
+                )
+                
+                db.session.add(part)
+                db.session.commit()
+                
+                try:
+                    log_action(
+                        'Cadastro de Peça',
+                        'part',
+                        part.id,
+                        f'Peça {part.name} cadastrada'
+                    )
+                except Exception:
+                    # Se falhar ao registrar log, não interromper o fluxo principal
+                    app.logger.error(f"Erro ao registrar log de criação da peça {part.id}")
+                    
+                flash('Peça cadastrada com sucesso!', 'success')
+                return redirect(url_for('parts'))
+                
+            except IntegrityError:
+                db.session.rollback()
+                flash('Erro de integridade ao cadastrar peça. Verifique se já existe uma peça com o mesmo número.', 'danger')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao cadastrar peça: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao cadastrar peça: {str(e)}")
+                
+        # Se chegou aqui é porque o formulário não foi validado ou ocorreu erro
         return render_template('parts/create.html', form=form)
     
     @app.route('/pecas/<int:id>')
@@ -2118,68 +2137,86 @@ def register_routes(app):
         parts = Part.query.order_by(Part.name).all()
         
         if form.validate_on_submit():
-            # Formatar as datas
-            expected_delivery_date = None
-            if form.expected_delivery_date.data:
-                try:
-                    expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
-                except ValueError:
-                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                    return render_template('supplier_orders/create.html', form=form)
-            
-            delivery_date = None
-            if form.delivery_date.data:
-                try:
-                    delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
-                except ValueError:
-                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                    return render_template('supplier_orders/create.html', form=form)
-            
-            # Criar o pedido
-            order = SupplierOrder(
-                supplier_id=form.supplier_id.data,
-                order_number=form.order_number.data,
-                total_value=0,  # Inicialmente zero, será calculado ao adicionar itens
-                status=form.status.data,
-                expected_delivery_date=expected_delivery_date,
-                delivery_date=delivery_date,
-                notes=form.notes.data,
-                created_by=current_user.id
-            )
-            
-            db.session.add(order)
-            db.session.commit()
-            
-            # Processar itens do pedido (enviados como JSON)
-            items_json = request.form.get('items_json', '[]')
             try:
-                items_data = json.loads(items_json)
-                for item_data in items_data:
-                    # Criar item de pedido
-                    item = OrderItem(
-                        order_id=order.id,
-                        part_id=item_data.get('part_id') if item_data.get('part_id') else None,
-                        description=item_data.get('description', ''),
-                        quantity=item_data.get('quantity', 1),
-                        unit_price=item_data.get('unit_price', 0),
-                        total_price=item_data.get('total_price', 0),
-                        status=OrderStatus.pendente
-                    )
-                    db.session.add(item)
+                # Formatar as datas
+                expected_delivery_date = None
+                if form.expected_delivery_date.data:
+                    try:
+                        expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
+                    except ValueError:
+                        flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                        return render_template('supplier_orders/create.html', form=form, parts=parts)
                 
+                delivery_date = None
+                if form.delivery_date.data:
+                    try:
+                        delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
+                    except ValueError:
+                        flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
+                        return render_template('supplier_orders/create.html', form=form, parts=parts)
+                
+                # Criar o pedido
+                order = SupplierOrder(
+                    supplier_id=form.supplier_id.data,
+                    order_number=form.order_number.data,
+                    total_value=0,  # Inicialmente zero, será calculado ao adicionar itens
+                    status=form.status.data,
+                    expected_delivery_date=expected_delivery_date,
+                    delivery_date=delivery_date,
+                    notes=form.notes.data,
+                    created_by=current_user.id
+                )
+                
+                db.session.add(order)
                 db.session.commit()
+                
+                # Processar itens do pedido (enviados como JSON)
+                items_json = request.form.get('items_json', '[]')
+                try:
+                    items_data = json.loads(items_json)
+                    for item_data in items_data:
+                        # Criar item de pedido
+                        item = OrderItem(
+                            order_id=order.id,
+                            part_id=item_data.get('part_id') if item_data.get('part_id') else None,
+                            description=item_data.get('description', ''),
+                            quantity=item_data.get('quantity', 1),
+                            unit_price=item_data.get('unit_price', 0),
+                            total_price=item_data.get('total_price', 0),
+                            status=OrderStatus.pendente
+                        )
+                        db.session.add(item)
+                    
+                    db.session.commit()
+                    
+                    try:
+                        # Registrar log apenas após confirmação do commit de todos os itens
+                        log_action(
+                            'Criação de Pedido',
+                            'supplier_order',
+                            order.id,
+                            f'Pedido para {order.supplier.name} criado'
+                        )
+                    except Exception as log_error:
+                        app.logger.error(f"Erro ao registrar log de pedido: {str(log_error)}")
+                        
+                    flash('Pedido criado com sucesso!', 'success')
+                    return redirect(url_for('view_supplier_order', id=order.id))
+                    
+                except Exception as item_error:
+                    # Erro ao processar itens do pedido, reverter a transação e mostrar mensagem de erro
+                    db.session.rollback()
+                    app.logger.error(f"Erro ao processar itens do pedido: {str(item_error)}")
+                    flash(f'Erro ao processar itens do pedido: {str(item_error)}', 'danger')
+                    return render_template('supplier_orders/create.html', form=form, parts=parts)
+                
+            except IntegrityError:
+                db.session.rollback()
+                flash('Erro de integridade ao criar pedido. Verifique se já existe um pedido com o mesmo número.', 'danger')
             except Exception as e:
-                app.logger.error(f"Erro ao processar itens do pedido: {str(e)}")
-            
-            log_action(
-                'Criação de Pedido',
-                'supplier_order',
-                order.id,
-                f'Pedido para {order.supplier.name} criado'
-            )
-            
-            flash('Pedido criado com sucesso!', 'success')
-            return redirect(url_for('view_supplier_order', id=order.id))
+                db.session.rollback()
+                flash(f'Erro ao criar pedido: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao criar pedido: {str(e)}")
         
         return render_template('supplier_orders/create.html', form=form, parts=parts)
     
