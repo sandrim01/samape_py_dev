@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota Fiscal #{{ service_order.invoice_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+        }
+        .invoice-title {
+            text-align: right;
+        }
+        .invoice-title h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 24px;
+        }
+        .invoice-title p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        .info-section {
+            margin-bottom: 30px;
+        }
+        .info-section h2 {
+            font-size: 18px;
+            margin: 0 0 10px;
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .info-box h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: #3498db;
+        }
+        .info-row {
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 120px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            text-align: left;
+            padding: 10px;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .amount-col {
+            text-align: right;
+        }
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .total-label {
+            font-weight: bold;
+            margin-right: 20px;
+            min-width: 200px;
+            text-align: right;
+        }
+        .total-value {
+            min-width: 100px;
+            text-align: right;
+        }
+        .grand-total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        .signature-area {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .equipment-list {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        .equipment-list li {
+            margin-bottom: 5px;
+        }
+        @media print {
+            body {
+                background-color: #fff;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="invoice-header">
+            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SAMAPE" class="logo">
+            <div class="invoice-title">
+                <h1>Nota Fiscal de Serviço</h1>
+                <p>Nº {{ service_order.invoice_number }}</p>
+                <p>Data: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>Empresa</h3>
+                <div class="info-row">
+                    <p><strong>SAMAPE</strong></p>
+                    <p>CNPJ: 12.345.678/0001-90</p>
+                    <p>Rua Exemplo, 123 - Centro</p>
+                    <p>São Paulo - SP - CEP: 01234-567</p>
+                    <p>Telefone: (11) 1234-5678</p>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Cliente</h3>
+                <div class="info-row">
+                    <p><strong>{{ service_order.client.name }}</strong></p>
+                    <p>{{ "CNPJ" if service_order.client.document|length > 11 else "CPF" }}: {{ service_order.client.document|format_document }}</p>
+                    {% if service_order.client.address %}
+                    <p>{{ service_order.client.address }}</p>
+                    {% endif %}
+                    {% if service_order.client.email %}
+                    <p>Email: {{ service_order.client.email }}</p>
+                    {% endif %}
+                    {% if service_order.client.phone %}
+                    <p>Telefone: {{ service_order.client.phone }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>Detalhes do Serviço</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 70%">Descrição</th>
+                        <th style="width: 30%" class="amount-col">Valor (R$)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div>
+                                <p><strong>Ordem de Serviço #{{ service_order.id }}</strong></p>
+                                <p>{{ service_order.service_details|nl2br }}</p>
+                                
+                                <p><strong>Equipamentos:</strong></p>
+                                <ul class="equipment-list">
+                                    {% for eq in service_order.equipment %}
+                                    <li>
+                                        <strong>{{ eq.type }}</strong> 
+                                        {% if eq.brand %}{{ eq.brand }}{% endif %}
+                                        {% if eq.model %} - Modelo: {{ eq.model }}{% endif %}
+                                        {% if eq.serial_number %} - S/N: {{ eq.serial_number }}{% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="amount-col">{{ "%.2f"|format(service_order.invoice_amount) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="totals">
+            <div class="total-row">
+                <div class="total-label">Subtotal:</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+            </div>
+            <div class="total-row">
+                <div class="total-label">Impostos (5%):</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount * 0.05) }}</div>
+            </div>
+            <div class="total-row grand-total">
+                <div class="total-label">VALOR TOTAL:</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>Informações Adicionais</h2>
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">Responsável Técnico:</span>
+                    <span>{% if service_order.responsible %}{{ service_order.responsible.name }}{% else %}Não atribuído{% endif %}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data de Fechamento:</span>
+                    <span>{{ service_order.closed_at.strftime('%d/%m/%Y') }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Observações:</span>
+                    <span>Nota fiscal referente à prestação de serviços de manutenção em equipamentos.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-area">
+            <div class="signature-box">
+                <p>SAMAPE</p>
+            </div>
+            <div class="signature-box">
+                <p>{{ service_order.client.name }}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>SAMAPE - Sistema de Gestão de Serviços</p>
+            <p>Esta nota fiscal é válida como comprovante de prestação de serviços</p>
+            <p>Data de Emissão: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+        </div>
+    </div>
+</body>
+</html>

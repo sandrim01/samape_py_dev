@@ -1340,10 +1340,9 @@ def register_routes(app):
             flash('Esta OS ainda não foi fechada.', 'warning')
             return redirect(url_for('view_service_order', id=id))
         
-        # Render the invoice template to HTML
-        html_content = render_template('invoices/view.html', 
-                                       service_order=service_order, 
-                                       export_mode=True,
+        # Render the clean invoice template to HTML
+        html_content = render_template('invoices/clean_invoice.html', 
+                                       service_order=service_order,
                                        Decimal=Decimal)  # Passando o tipo Decimal para o template
         
         try:
