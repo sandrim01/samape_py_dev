@@ -154,26 +154,52 @@ function updateEquipmentOptions(clientId) {
     const equipmentSelect = document.getElementById('equipment_select');
     if (!equipmentSelect) return;
     
-    // Fazer requisição AJAX para obter equipamentos do cliente
-    fetch(`/api/client/${clientId}/equipment`)
+    // Mostrar o select e esconder a mensagem de aviso
+    equipmentSelect.style.display = 'block';
+    const equipmentContainer = document.getElementById('equipment-container');
+    if (equipmentContainer) {
+        const warningMessage = equipmentContainer.querySelector('p.text-muted');
+        if (warningMessage) {
+            warningMessage.style.display = 'none';
+        }
+    }
+    
+    // Fazer requisição AJAX para obter equipamentos do cliente usando a URL em português
+    fetch(`/api/cliente/${clientId}/equipamentos`)
         .then(response => response.json())
         .then(data => {
             // Limpar opções atuais
             equipmentSelect.innerHTML = '';
             
-            // Adicionar novas opções
-            data.forEach(equipment => {
+            if (data.length === 0) {
+                // Se não houver equipamentos, mostrar uma mensagem
                 const option = document.createElement('option');
-                option.value = equipment.id;
-                option.textContent = `${equipment.type} - ${equipment.brand || ''} ${equipment.model || ''} ${equipment.serial_number ? `(${equipment.serial_number})` : ''}`;
+                option.value = '';
+                option.textContent = 'Nenhum equipamento cadastrado para este cliente';
+                option.disabled = true;
                 equipmentSelect.appendChild(option);
-            });
+            } else {
+                // Adicionar novas opções
+                data.forEach(equipment => {
+                    const option = document.createElement('option');
+                    option.value = equipment.id;
+                    option.textContent = `${equipment.type} - ${equipment.brand || ''} ${equipment.model || ''} ${equipment.serial_number ? `(${equipment.serial_number})` : ''}`;
+                    equipmentSelect.appendChild(option);
+                });
+            }
             
             // Atualizar seleção
             updateEquipmentSelection();
         })
         .catch(error => {
             console.error('Erro ao carregar equipamentos:', error);
+            // Em caso de erro, mostrar uma mensagem no select
+            equipmentSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Erro ao carregar equipamentos';
+            option.disabled = true;
+            equipmentSelect.appendChild(option);
         });
 }
 
