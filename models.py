@@ -128,6 +128,9 @@ class FinancialEntry(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    # Campos para relacionar com outros tipos de entidades (pedidos a fornecedores, etc.)
+    entry_type = db.Column(db.String(50))  # 'service_order', 'pedido_fornecedor', etc.
+    reference_id = db.Column(db.Integer)   # ID da entidade referenciada
 
 class ActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

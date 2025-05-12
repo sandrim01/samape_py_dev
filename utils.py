@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask import request, abort, session, redirect, url_for, flash, current_app
 from flask_login import current_user
 from werkzeug.utils import secure_filename
-from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage
+from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage, FinancialEntry
 
 def identify_and_format_document(document):
     """Identifica se é CPF ou CNPJ e formata adequadamente"""

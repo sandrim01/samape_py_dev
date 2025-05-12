@@ -2278,7 +2278,50 @@ def register_routes(app):
         flash('Item excluído com sucesso!', 'success')
         return redirect(url_for('view_supplier_order', id=order_id))
     
-# Esta seção foi removida para evitar conflitos com a rota duplicada
+# Registro de pagamento de pedido a fornecedor
+    @app.route('/pedidos-fornecedor/<int:id>/registrar-pagamento', methods=['POST'])
+    @login_required
+    def register_supplier_order_payment(id):
+        order = SupplierOrder.query.get_or_404(id)
+        
+        # Verificar se o pedido já foi pago
+        financial_entry = FinancialEntry.query.filter_by(
+            description=f'Pagamento de Pedido #{order.id} - {order.supplier.name}',
+            entry_type='pedido_fornecedor',
+            reference_id=order.id
+        ).first()
+        
+        if financial_entry:
+            flash('Este pedido já foi registrado como pago!', 'warning')
+            return redirect(url_for('view_supplier_order', id=order.id))
+        
+        # Criar entrada financeira como despesa
+        financial_entry = FinancialEntry(
+            description=f'Pagamento de Pedido #{order.id} - {order.supplier.name}',
+            amount=order.total_value,
+            type=FinancialEntryType.saida,
+            date=datetime.utcnow(),
+            created_by=current_user.id,
+            entry_type='pedido_fornecedor',
+            reference_id=order.id
+        )
+        
+        # Atualizar status do pedido para 'recebido'
+        order.status = OrderStatus.recebido
+        
+        db.session.add(financial_entry)
+        db.session.commit()
+        
+        # Registrar ação no log
+        log_action(
+            'Pagamento de Pedido',
+            'supplier_order',
+            order.id,
+            f'Pagamento de pedido para {order.supplier.name} no valor de {format_currency(order.total_value)}'
+        )
+        
+        flash(f'Pagamento de {format_currency(order.total_value)} registrado com sucesso!', 'success')
+        return redirect(url_for('view_supplier_order', id=order.id))
     
     # System Settings
     @app.route('/configuracoes', methods=['GET', 'POST'])
