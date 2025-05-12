@@ -21,6 +21,12 @@
     --green: #37d09e; /* Cor verde */
     --orange: #ff9353; /* Cor laranja */
     --blue: #4285f4; /* Cor azul */
+    --purple: #9c27b0; /* Cor roxa */
+    --cyan: #00bcd4; /* Cor ciano */
+    --teal: #009688; /* Cor verde-azulada */
+    --lime: #cddc39; /* Cor verde-limão */
+    --amber: #ffc107; /* Cor âmbar */
+    --green-light: #8bc34a; /* Verde claro */
     
     /* Cores utilitárias */
     --border-light: #333333; /* Borda clara para tema escuro */
@@ -1279,6 +1285,22 @@ body {
     border-top-color: var(--blue);
 }
 
+.stat-card.purple {
+    border-top-color: var(--purple);
+}
+
+.stat-card.cyan {
+    border-top-color: var(--cyan);
+}
+
+.stat-card.teal {
+    border-top-color: var(--teal);
+}
+
+.stat-card.green-light {
+    border-top-color: var(--green-light);
+}
+
 .stat-value {
     font-size: 1.8rem;
     font-weight: 700;
@@ -1321,6 +1343,22 @@ body {
 .stat-card.blue .stat-icon,
 .stat-card.info .stat-icon {
     color: var(--blue);
+}
+
+.stat-card.purple .stat-icon {
+    color: var(--purple);
+}
+
+.stat-card.cyan .stat-icon {
+    color: var(--cyan);
+}
+
+.stat-card.teal .stat-icon {
+    color: var(--teal);
+}
+
+.stat-card.green-light .stat-icon {
+    color: var(--green-light);
 }
 
 .stat-trend {
