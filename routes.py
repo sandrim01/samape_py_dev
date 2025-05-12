@@ -89,17 +89,30 @@ def register_routes(app):
             user = User.query.filter_by(username=username).first()
             
             if user and user.check_password(form.password.data) and user.active:
-                login_user(user, remember=form.remember_me.data)
-                record_login_attempt(username, True)
-                log_action('Login', 'user', user.id)
-                
-                next_page = request.args.get('next')
-                if not next_page or not next_page.startswith('/'):
-                    next_page = url_for('dashboard')
-                
-                return redirect(next_page)
+                try:
+                    login_user(user, remember=form.remember_me.data)
+                    record_login_attempt(username, True)
+                    
+                    try:
+                        log_action('Login', 'user', user.id)
+                    except Exception:
+                        # Se falhar o registro de log, continuar sem interferir no fluxo
+                        db.session.rollback()
+                    
+                    next_page = request.args.get('next')
+                    if not next_page or not next_page.startswith('/'):
+                        next_page = url_for('dashboard')
+                    
+                    return redirect(next_page)
+                except Exception:
+                    db.session.rollback()
+                    flash('Erro ao efetuar login. Tente novamente.', 'danger')
+                    return render_template('login.html', form=form)
             else:
-                record_login_attempt(username, False)
+                try:
+                    record_login_attempt(username, False)
+                except Exception:
+                    db.session.rollback()
                 flash('Nome de usuário ou senha inválidos.', 'danger')
         
         return render_template('login.html', form=form)

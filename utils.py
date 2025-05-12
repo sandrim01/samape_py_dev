@@ -52,17 +52,24 @@ def manager_required(f):
 
 def log_action(action, entity_type=None, entity_id=None, details=None):
     """Log user actions in the system"""
+    from sqlalchemy.exc import IntegrityError
+    
     if current_user.is_authenticated:
-        log = ActionLog(
-            user_id=current_user.id,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            details=details,
-            ip_address=request.remote_addr
-        )
-        db.session.add(log)
-        db.session.commit()
+        try:
+            log = ActionLog(
+                user_id=current_user.id,
+                action=action,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                details=details,
+                ip_address=request.remote_addr
+            )
+            db.session.add(log)
+            db.session.commit()
+        except IntegrityError:
+            # Se houver erro de integridade, fazer rollback e não registrar
+            db.session.rollback()
+            # Não impedir o fluxo normal da aplicação
 
 def check_login_attempts(username):
     """Check if the username has exceeded login attempts"""
@@ -88,18 +95,24 @@ def check_login_attempts(username):
 def record_login_attempt(username, success):
     """Record login attempt for rate limiting"""
     from models import User
+    from sqlalchemy.exc import IntegrityError
     
-    # Buscar email associado ao usuário
-    user = User.query.filter_by(username=username).first()
-    email = user.email if user else username
-    
-    attempt = LoginAttempt(
-        email=email,
-        success=success,
-        ip_address=request.remote_addr
-    )
-    db.session.add(attempt)
-    db.session.commit()
+    try:
+        # Buscar email associado ao usuário
+        user = User.query.filter_by(username=username).first()
+        email = user.email if user else username
+        
+        attempt = LoginAttempt(
+            email=email,
+            success=success,
+            ip_address=request.remote_addr
+        )
+        db.session.add(attempt)
+        db.session.commit()
+    except IntegrityError:
+        # Em caso de erro de integridade, fazer rollback e não registrar
+        db.session.rollback()
+        # Não impede o login/logout, apenas desativa o registro desta tentativa
 
 def format_document(document):
     """Format CPF/CNPJ for display"""
