@@ -8,6 +8,24 @@ from flask_login import current_user
 from werkzeug.utils import secure_filename
 from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage
 
+def identify_and_format_document(document):
+    """Identifica se é CPF ou CNPJ e formata adequadamente"""
+    if not document:
+        return document
+        
+    # Remove todos os caracteres não numéricos
+    digits = ''.join(filter(str.isdigit, str(document)))
+    
+    # Formata como CPF (xxx.xxx.xxx-xx)
+    if len(digits) == 11:
+        return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
+    # Formata como CNPJ (xx.xxx.xxx/xxxx-xx)
+    elif len(digits) == 14:
+        return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}"
+    
+    # Retorna como está se não for reconhecido
+    return document
+
 def role_required(*roles):
     """Decorator for view functions that require specific roles"""
     def decorator(f):

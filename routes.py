@@ -23,7 +23,8 @@ from utils import (
     role_required, admin_required, manager_required, log_action,
     check_login_attempts, record_login_attempt, format_document,
     format_currency, get_monthly_summary, get_service_order_stats,
-    save_service_order_images, delete_service_order_image
+    save_service_order_images, delete_service_order_image,
+    identify_and_format_document
 )
 
 def register_routes(app):
@@ -454,9 +455,12 @@ def register_routes(app):
         form = ClientForm()
         
         if form.validate_on_submit():
+            # Formatar automaticamente o CPF/CNPJ
+            formatted_document = identify_and_format_document(form.document.data)
+            
             client = Client(
                 name=form.name.data,
-                document=form.document.data,
+                document=formatted_document,
                 email=form.email.data,
                 phone=form.phone.data,
                 address=form.address.data
@@ -502,7 +506,11 @@ def register_routes(app):
         
         if form.validate_on_submit():
             client.name = form.name.data
-            client.document = form.document.data
+            # Formatar automaticamente o CPF/CNPJ se foi alterado
+            if client.document != form.document.data:
+                client.document = identify_and_format_document(form.document.data)
+            else:
+                client.document = form.document.data
             client.email = form.email.data
             client.phone = form.phone.data
             client.address = form.address.data
