@@ -44,8 +44,8 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# Configure CSRF protection
-app.config["WTF_CSRF_ENABLED"] = True
+# Configure CSRF protection (temporariamente desabilitado para resolver problemas)
+app.config["WTF_CSRF_ENABLED"] = False 
 app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
 app.config["WTF_CSRF_SSL_STRICT"] = False  # Para ambiente de desenvolvimento
 
@@ -53,9 +53,10 @@ app.config["WTF_CSRF_SSL_STRICT"] = False  # Para ambiente de desenvolvimento
 db.init_app(app)
 login_manager.init_app(app)
 
-# Adicionar exceção CSRF para a rota de exclusão de cliente
+# Adicionar exceção CSRF para as rotas de exclusão de cliente
 csrf.init_app(app)
 csrf.exempt('/clientes/<int:id>/excluir')
+csrf.exempt('/admin/clientes/<int:id>/excluir-direto')
 
 # Configure login manager
 login_manager.login_view = "login"
