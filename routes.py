@@ -225,6 +225,18 @@ def register_routes(app):
             db.session.add(service_order)
             db.session.commit()
             
+            # Processar imagens
+            if form.images.data and any(img.filename for img in form.images.data):
+                image_files = [img for img in form.images.data if img.filename]
+                if image_files:
+                    saved_images = save_service_order_images(
+                        service_order, 
+                        image_files, 
+                        form.image_descriptions.data
+                    )
+                    if saved_images:
+                        flash(f'{len(saved_images)} imagem(ns) anexada(s) com sucesso!', 'info')
+            
             log_action(
                 'Criação de OS',
                 'service_order',
