@@ -83,6 +83,18 @@
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
+                    <!-- User info in sidebar -->
+                    <div class="sidebar-user-info mb-4">
+                        {% if current_user.profile_image %}
+                            <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
+                                alt="Perfil" class="sidebar-profile-image">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/profiles/default_profile.svg') }}" 
+                                alt="Perfil" class="sidebar-profile-image">
+                        {% endif %}
+                        <div class="sidebar-user-name">{{ current_user.name }}</div>
+                    </div>
+                    
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {% if request.path == '/dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
