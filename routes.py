@@ -2024,6 +2024,9 @@ def register_routes(app):
     def new_supplier_order():
         form = SupplierOrderForm()
         
+        # Buscar peças para o dropdown no modal de adicionar item
+        parts = Part.query.order_by(Part.name).all()
+        
         if form.validate_on_submit():
             # Formatar as datas
             expected_delivery_date = None
@@ -2088,7 +2091,7 @@ def register_routes(app):
             flash('Pedido criado com sucesso!', 'success')
             return redirect(url_for('view_supplier_order', id=order.id))
         
-        return render_template('supplier_orders/create.html', form=form)
+        return render_template('supplier_orders/create.html', form=form, parts=parts)
     
     @app.route('/pedidos-fornecedor/<int:id>')
     @login_required
