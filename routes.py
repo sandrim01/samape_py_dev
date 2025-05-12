@@ -1281,7 +1281,7 @@ def register_routes(app):
                 current_user.email = form.email.data
                 
             # Handle profile image upload
-            if form.profile_image.data:
+            if form.profile_image.data and hasattr(form.profile_image.data, 'filename'):
                 # Save the image
                 import os
                 from werkzeug.utils import secure_filename

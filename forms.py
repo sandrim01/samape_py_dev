@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange, Regexp
 import re
 from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus
 
@@ -57,7 +57,9 @@ class ProfileForm(FlaskForm):
     current_password = PasswordField('Senha Atual', validators=[Optional()])
     new_password = PasswordField('Nova Senha', validators=[
         Optional(),
-        Length(min=8, message='A senha deve ter pelo menos 8 caracteres')
+        Length(min=8, message='A senha deve ter pelo menos 8 caracteres'),
+        Regexp(r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])', 
+               message='A senha deve conter pelo menos um número, uma letra minúscula e uma letra maiúscula')
     ])
     confirm_password = PasswordField('Confirmar Nova Senha', validators=[
         EqualTo('new_password', message='As senhas devem ser iguais')

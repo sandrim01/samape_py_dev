@@ -26,6 +26,7 @@ class Config:
     # Application
     APP_NAME = "SAMAPE - Sistema de Gestão de Serviços"
     COMPANY_NAME = "SAMAPE"
+    APP_VERSION = "1.0"
     
     # Roles
     ROLES = ["admin", "gerente", "funcionario"]
