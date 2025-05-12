@@ -2031,8 +2031,9 @@ def register_routes(app):
     @manager_required
     def adjust_stock(id):
         part = Part.query.get_or_404(id)
+        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
         
-        if request.method == 'POST':
+        if request.method == 'POST' and form.validate_on_submit():
             quantity = request.form.get('quantity', type=int)
             reason = request.form.get('reason')
             
@@ -2055,7 +2056,7 @@ def register_routes(app):
             flash('Estoque ajustado com sucesso!', 'success')
             return redirect(url_for('view_part', id=part.id))
         
-        return render_template('parts/adjust_stock.html', part=part)
+        return render_template('parts/adjust_stock.html', part=part, form=form)
 
     # Rotas de Pedidos a Fornecedores
     @app.route('/pedidos-fornecedor')
