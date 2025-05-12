@@ -107,6 +107,17 @@ class ServiceOrder(db.Model):
     
     # Relations
     financial_entries = db.relationship('FinancialEntry', backref='service_order', lazy=True)
+    images = db.relationship('ServiceOrderImage', backref='service_order', lazy=True, cascade="all, delete-orphan")
+
+class ServiceOrderImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.String(200))
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ServiceOrderImage {self.filename}>'
 
 class FinancialEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -117,6 +117,11 @@ class ServiceOrderForm(FlaskForm):
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
+    images = FileField('Imagens do Equipamento', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Apenas imagens são permitidas!')
+    ], render_kw={"multiple": True})
+    image_descriptions = TextAreaField('Descrições das Imagens (separadas por ponto e vírgula)', validators=[Optional()])
 
 class CloseServiceOrderForm(FlaskForm):
     invoice_number = StringField('Número da NF-e', validators=[DataRequired()])

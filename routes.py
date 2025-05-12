@@ -11,7 +11,7 @@ from app import db
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
-    SupplierOrder, OrderItem, OrderStatus
+    SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage
 )
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
