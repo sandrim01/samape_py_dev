@@ -195,6 +195,7 @@
                             {% if service_order.status.name != 'fechada' %}
                             <div class="mt-1">
                                 <form action="{{ url_for('delete_service_order_image_route', image_id=image.id) }}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta imagem?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
