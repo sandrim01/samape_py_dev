@@ -147,12 +147,48 @@
         }
         @media print {
             body {
+                margin: 0;
+                padding: 0;
                 background-color: #fff;
+                color: #000;
+                font-size: 11pt;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            .container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 10mm;
+                box-shadow: none;
+            }
+            .invoice-header {
+                border-bottom: 1px solid #000;
+            }
+            .info-section, .info-box, .totals {
+                border: 1px solid #000;
+            }
+            .logo {
+                max-height: 50mm;
+                max-width: 50mm;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            th, td {
+                border: 1px solid #000;
+            }
             .no-print {
                 display: none;
+            }
+            .page-break {
+                page-break-before: always;
             }
         }
     </style>
@@ -211,7 +247,7 @@
                         <td>
                             <div>
                                 <p><strong>Ordem de Serviço #{{ service_order.id }}</strong></p>
-                                <p>{{ service_order.service_details|nl2br }}</p>
+                                <div style="max-width: 100%; word-wrap: break-word; white-space: pre-wrap;">{{ service_order.service_details|nl2br }}</div>
                                 
                                 <p><strong>Equipamentos:</strong></p>
                                 <ul class="equipment-list">
