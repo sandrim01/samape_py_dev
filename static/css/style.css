@@ -264,16 +264,16 @@ body {
 .user-info-header {
     text-align: center;
     padding: 30px 15px;
-    margin-bottom: 10px;
-    background-color: var(--bg-darker);
+    margin-bottom: 0;
+    background-color: #1c1c1c;
     border-radius: 0;
 }
 
 .user-info-header .profile-image {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    border: 3px solid var(--blue);
+    border: 3px solid #2D8BF7;
     margin: 0 auto 15px;
     display: block;
     object-fit: cover;
@@ -281,7 +281,7 @@ body {
 }
 
 .user-info-header .user-name {
-    color: var(--text-white);
+    color: white;
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 5px;
@@ -289,7 +289,7 @@ body {
 }
 
 .user-info-header .user-email {
-    color: var(--text-muted);
+    color: #999999;
     font-size: 0.85rem;
     margin-bottom: 10px;
 }
@@ -298,7 +298,7 @@ body {
     display: inline-block;
     padding: 5px 15px;
     border-radius: 20px;
-    background-color: var(--pink);
+    background-color: #DA3551;
     color: white;
     font-size: 0.7rem;
     font-weight: 600;
