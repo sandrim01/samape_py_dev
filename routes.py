@@ -19,7 +19,8 @@ from models import (
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
-    SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm
+    SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm,
+    FlaskForm
 )
 from utils import (
     role_required, admin_required, manager_required, log_action,
@@ -738,11 +739,13 @@ def register_routes(app):
     def view_equipment(id):
         equipment = Equipment.query.get_or_404(id)
         service_orders = equipment.service_orders
+        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
         
         return render_template(
             'equipment/view.html',
             equipment=equipment,
-            service_orders=service_orders
+            service_orders=service_orders,
+            form=form
         )
 
     @app.route('/maquinarios/<int:id>/editar', methods=['GET', 'POST'])
