@@ -5,6 +5,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, s
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
+
 from wtforms.validators import Optional
 
 from app import db
