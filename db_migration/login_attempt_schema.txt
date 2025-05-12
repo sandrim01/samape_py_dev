@@ -1,0 +1,11 @@
+                                        Table "public.login_attempt"
+   Column   |            Type             | Collation | Nullable |                  Default                  
+------------+-----------------------------+-----------+----------+-------------------------------------------
+ id         | integer                     |           | not null | nextval('login_attempt_id_seq'::regclass)
+ email      | character varying(120)      |           | not null | 
+ success    | boolean                     |           |          | 
+ ip_address | character varying(45)       |           |          | 
+ timestamp  | timestamp without time zone |           |          | 
+Indexes:
+    "login_attempt_pkey" PRIMARY KEY, btree (id)
+

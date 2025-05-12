@@ -1,0 +1,26 @@
+                                          Table "public.part"
+     Column     |            Type             | Collation | Nullable |             Default              
+----------------+-----------------------------+-----------+----------+----------------------------------
+ id             | integer                     |           | not null | nextval('part_id_seq'::regclass)
+ name           | character varying(100)      |           | not null | 
+ description    | text                        |           |          | 
+ part_number    | character varying(50)       |           |          | 
+ supplier_id    | integer                     |           |          | 
+ category       | character varying(50)       |           |          | 
+ subcategory    | character varying(50)       |           |          | 
+ cost_price     | numeric(10,2)               |           |          | 
+ selling_price  | numeric(10,2)               |           |          | 
+ stock_quantity | integer                     |           |          | 
+ minimum_stock  | integer                     |           |          | 
+ location       | character varying(50)       |           |          | 
+ image          | character varying(255)      |           |          | 
+ created_at     | timestamp without time zone |           |          | 
+ updated_at     | timestamp without time zone |           |          | 
+Indexes:
+    "part_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "part_supplier_id_fkey" FOREIGN KEY (supplier_id) REFERENCES supplier(id)
+Referenced by:
+    TABLE "order_item" CONSTRAINT "order_item_part_id_fkey" FOREIGN KEY (part_id) REFERENCES part(id)
+    TABLE "part_sale" CONSTRAINT "part_sale_part_id_fkey" FOREIGN KEY (part_id) REFERENCES part(id)
+

@@ -1,0 +1,29 @@
+                                           Table "public.service_order"
+     Column      |            Type             | Collation | Nullable |                  Default                  
+-----------------+-----------------------------+-----------+----------+-------------------------------------------
+ id              | integer                     |           | not null | nextval('service_order_id_seq'::regclass)
+ client_id       | integer                     |           | not null | 
+ responsible_id  | integer                     |           |          | 
+ description     | text                        |           | not null | 
+ status          | serviceorderstatus          |           | not null | 
+ created_at      | timestamp without time zone |           |          | 
+ updated_at      | timestamp without time zone |           |          | 
+ closed_at       | timestamp without time zone |           |          | 
+ invoice_number  | character varying(20)       |           |          | 
+ invoice_date    | timestamp without time zone |           |          | 
+ invoice_amount  | numeric(10,2)               |           |          | 
+ service_details | text                        |           |          | 
+ estimated_value | numeric(10,2)               |           |          | 
+ discount_amount | numeric(10,2)               |           |          | 0
+ original_amount | numeric(10,2)               |           |          | 
+Indexes:
+    "service_order_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "service_order_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+    "service_order_responsible_id_fkey" FOREIGN KEY (responsible_id) REFERENCES "user"(id)
+Referenced by:
+    TABLE "equipment_service_orders" CONSTRAINT "equipment_service_orders_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+    TABLE "financial_entry" CONSTRAINT "financial_entry_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+    TABLE "part_sale" CONSTRAINT "part_sale_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+    TABLE "service_order_image" CONSTRAINT "service_order_image_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+

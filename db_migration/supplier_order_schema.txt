@@ -1,0 +1,22 @@
+                                              Table "public.supplier_order"
+         Column         |            Type             | Collation | Nullable |                  Default                   
+------------------------+-----------------------------+-----------+----------+--------------------------------------------
+ id                     | integer                     |           | not null | nextval('supplier_order_id_seq'::regclass)
+ supplier_id            | integer                     |           | not null | 
+ order_number           | character varying(50)       |           |          | 
+ total_value            | numeric(10,2)               |           |          | 
+ status                 | orderstatus                 |           | not null | 
+ expected_delivery_date | date                        |           |          | 
+ delivery_date          | date                        |           |          | 
+ notes                  | text                        |           |          | 
+ created_by             | integer                     |           |          | 
+ created_at             | timestamp without time zone |           |          | 
+ updated_at             | timestamp without time zone |           |          | 
+Indexes:
+    "supplier_order_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "supplier_order_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    "supplier_order_supplier_id_fkey" FOREIGN KEY (supplier_id) REFERENCES supplier(id)
+Referenced by:
+    TABLE "order_item" CONSTRAINT "order_item_order_id_fkey" FOREIGN KEY (order_id) REFERENCES supplier_order(id)
+

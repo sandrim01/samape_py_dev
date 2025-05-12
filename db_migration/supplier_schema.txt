@@ -1,0 +1,21 @@
+                                         Table "public.supplier"
+    Column    |            Type             | Collation | Nullable |               Default                
+--------------+-----------------------------+-----------+----------+--------------------------------------
+ id           | integer                     |           | not null | nextval('supplier_id_seq'::regclass)
+ name         | character varying(100)      |           | not null | 
+ document     | character varying(18)       |           |          | 
+ contact_name | character varying(100)      |           |          | 
+ email        | character varying(120)      |           |          | 
+ phone        | character varying(20)       |           |          | 
+ address      | character varying(200)      |           |          | 
+ website      | character varying(100)      |           |          | 
+ notes        | text                        |           |          | 
+ created_at   | timestamp without time zone |           |          | 
+ updated_at   | timestamp without time zone |           |          | 
+Indexes:
+    "supplier_pkey" PRIMARY KEY, btree (id)
+    "supplier_document_key" UNIQUE CONSTRAINT, btree (document)
+Referenced by:
+    TABLE "part" CONSTRAINT "part_supplier_id_fkey" FOREIGN KEY (supplier_id) REFERENCES supplier(id)
+    TABLE "supplier_order" CONSTRAINT "supplier_order_supplier_id_fkey" FOREIGN KEY (supplier_id) REFERENCES supplier(id)
+

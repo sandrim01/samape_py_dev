@@ -1,0 +1,25 @@
+                                              Table "public.user"
+    Column     |            Type             | Collation | Nullable |                 Default                  
+---------------+-----------------------------+-----------+----------+------------------------------------------
+ id            | integer                     |           | not null | nextval('user_id_seq'::regclass)
+ username      | character varying(64)       |           | not null | 
+ name          | character varying(100)      |           | not null | 
+ email         | character varying(120)      |           | not null | 
+ password_hash | character varying(256)      |           | not null | 
+ role          | userrole                    |           | not null | 
+ active        | boolean                     |           | not null | 
+ created_at    | timestamp without time zone |           |          | 
+ updated_at    | timestamp without time zone |           |          | 
+ profile_image | character varying(255)      |           |          | 'default_profile.png'::character varying
+Indexes:
+    "user_pkey" PRIMARY KEY, btree (id)
+    "user_email_key" UNIQUE CONSTRAINT, btree (email)
+    "user_username_key" UNIQUE CONSTRAINT, btree (username)
+Referenced by:
+    TABLE "action_log" CONSTRAINT "action_log_user_id_fkey" FOREIGN KEY (user_id) REFERENCES "user"(id)
+    TABLE "financial_entry" CONSTRAINT "financial_entry_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    TABLE "part_sale" CONSTRAINT "part_sale_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    TABLE "service_order" CONSTRAINT "service_order_responsible_id_fkey" FOREIGN KEY (responsible_id) REFERENCES "user"(id)
+    TABLE "supplier_order" CONSTRAINT "supplier_order_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    TABLE "system_settings" CONSTRAINT "system_settings_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES "user"(id)
+

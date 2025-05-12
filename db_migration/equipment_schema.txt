@@ -1,0 +1,21 @@
+                                           Table "public.equipment"
+      Column      |            Type             | Collation | Nullable |                Default                
+------------------+-----------------------------+-----------+----------+---------------------------------------
+ id               | integer                     |           | not null | nextval('equipment_id_seq'::regclass)
+ client_id        | integer                     |           | not null | 
+ type             | character varying(50)       |           | not null | 
+ brand            | character varying(50)       |           |          | 
+ model            | character varying(50)       |           |          | 
+ serial_number    | character varying(50)       |           |          | 
+ year             | integer                     |           |          | 
+ last_maintenance | timestamp without time zone |           |          | 
+ created_at       | timestamp without time zone |           |          | 
+ updated_at       | timestamp without time zone |           |          | 
+Indexes:
+    "equipment_pkey" PRIMARY KEY, btree (id)
+    "equipment_serial_number_key" UNIQUE CONSTRAINT, btree (serial_number)
+Foreign-key constraints:
+    "equipment_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+Referenced by:
+    TABLE "equipment_service_orders" CONSTRAINT "equipment_service_orders_equipment_id_fkey" FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+

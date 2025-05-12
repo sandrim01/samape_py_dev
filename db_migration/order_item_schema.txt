@@ -1,0 +1,18 @@
+                                      Table "public.order_item"
+   Column    |          Type          | Collation | Nullable |                Default                 
+-------------+------------------------+-----------+----------+----------------------------------------
+ id          | integer                |           | not null | nextval('order_item_id_seq'::regclass)
+ order_id    | integer                |           | not null | 
+ part_id     | integer                |           |          | 
+ description | character varying(200) |           | not null | 
+ quantity    | integer                |           | not null | 
+ unit_price  | numeric(10,2)          |           |          | 
+ total_price | numeric(10,2)          |           |          | 
+ status      | orderstatus            |           | not null | 
+ notes       | text                   |           |          | 
+Indexes:
+    "order_item_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "order_item_order_id_fkey" FOREIGN KEY (order_id) REFERENCES supplier_order(id)
+    "order_item_part_id_fkey" FOREIGN KEY (part_id) REFERENCES part(id)
+

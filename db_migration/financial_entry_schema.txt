@@ -1,0 +1,19 @@
+                                           Table "public.financial_entry"
+      Column      |            Type             | Collation | Nullable |                   Default                   
+------------------+-----------------------------+-----------+----------+---------------------------------------------
+ id               | integer                     |           | not null | nextval('financial_entry_id_seq'::regclass)
+ service_order_id | integer                     |           |          | 
+ description      | character varying(200)      |           | not null | 
+ amount           | numeric(10,2)               |           | not null | 
+ type             | financialentrytype          |           | not null | 
+ date             | timestamp without time zone |           |          | 
+ created_at       | timestamp without time zone |           |          | 
+ created_by       | integer                     |           |          | 
+ entry_type       | character varying(50)       |           |          | 
+ reference_id     | integer                     |           |          | 
+Indexes:
+    "financial_entry_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "financial_entry_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    "financial_entry_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+

@@ -1,0 +1,14 @@
+                                        Table "public.system_settings"
+   Column   |            Type             | Collation | Nullable |                   Default                   
+------------+-----------------------------+-----------+----------+---------------------------------------------
+ id         | integer                     |           | not null | nextval('system_settings_id_seq'::regclass)
+ name       | character varying(100)      |           | not null | 
+ value      | text                        |           |          | 
+ updated_at | timestamp without time zone |           |          | 
+ updated_by | integer                     |           |          | 
+Indexes:
+    "system_settings_pkey" PRIMARY KEY, btree (id)
+    "system_settings_name_key" UNIQUE CONSTRAINT, btree (name)
+Foreign-key constraints:
+    "system_settings_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES "user"(id)
+

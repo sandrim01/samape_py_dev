@@ -1,0 +1,19 @@
+                                        Table "public.client"
+   Column   |            Type             | Collation | Nullable |              Default               
+------------+-----------------------------+-----------+----------+------------------------------------
+ id         | integer                     |           | not null | nextval('client_id_seq'::regclass)
+ name       | character varying(100)      |           | not null | 
+ document   | character varying(18)       |           | not null | 
+ email      | character varying(120)      |           |          | 
+ phone      | character varying(20)       |           |          | 
+ address    | character varying(200)      |           |          | 
+ created_at | timestamp without time zone |           |          | 
+ updated_at | timestamp without time zone |           |          | 
+Indexes:
+    "client_pkey" PRIMARY KEY, btree (id)
+    "client_document_key" UNIQUE CONSTRAINT, btree (document)
+Referenced by:
+    TABLE "equipment" CONSTRAINT "equipment_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+    TABLE "part_sale" CONSTRAINT "part_sale_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+    TABLE "service_order" CONSTRAINT "service_order_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+

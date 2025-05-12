@@ -1,0 +1,15 @@
+                                          Table "public.sequence_counter"
+    Column     |            Type             | Collation | Nullable |                   Default                    
+---------------+-----------------------------+-----------+----------+----------------------------------------------
+ id            | integer                     |           | not null | nextval('sequence_counter_id_seq'::regclass)
+ name          | character varying(50)       |           | not null | 
+ prefix        | character varying(10)       |           |          | 
+ current_value | integer                     |           | not null | 
+ padding       | integer                     |           | not null | 
+ description   | character varying(100)      |           |          | 
+ created_at    | timestamp without time zone |           |          | 
+ updated_at    | timestamp without time zone |           |          | 
+Indexes:
+    "sequence_counter_pkey" PRIMARY KEY, btree (id)
+    "sequence_counter_name_key" UNIQUE CONSTRAINT, btree (name)
+

@@ -1,0 +1,23 @@
+                                           Table "public.part_sale"
+      Column      |            Type             | Collation | Nullable |                Default                
+------------------+-----------------------------+-----------+----------+---------------------------------------
+ id               | integer                     |           | not null | nextval('part_sale_id_seq'::regclass)
+ part_id          | integer                     |           | not null | 
+ client_id        | integer                     |           |          | 
+ service_order_id | integer                     |           |          | 
+ quantity         | integer                     |           | not null | 
+ unit_price       | numeric(10,2)               |           | not null | 
+ total_price      | numeric(10,2)               |           | not null | 
+ sale_date        | timestamp without time zone |           |          | 
+ invoice_number   | character varying(20)       |           |          | 
+ notes            | text                        |           |          | 
+ created_by       | integer                     |           |          | 
+ created_at       | timestamp without time zone |           |          | 
+Indexes:
+    "part_sale_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "part_sale_client_id_fkey" FOREIGN KEY (client_id) REFERENCES client(id)
+    "part_sale_created_by_fkey" FOREIGN KEY (created_by) REFERENCES "user"(id)
+    "part_sale_part_id_fkey" FOREIGN KEY (part_id) REFERENCES part(id)
+    "part_sale_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+

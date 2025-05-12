@@ -1,0 +1,13 @@
+                                           Table "public.service_order_image"
+      Column      |            Type             | Collation | Nullable |                     Default                     
+------------------+-----------------------------+-----------+----------+-------------------------------------------------
+ id               | integer                     |           | not null | nextval('service_order_image_id_seq'::regclass)
+ service_order_id | integer                     |           | not null | 
+ filename         | character varying(255)      |           | not null | 
+ description      | character varying(200)      |           |          | 
+ upload_date      | timestamp without time zone |           |          | 
+Indexes:
+    "service_order_image_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "service_order_image_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+

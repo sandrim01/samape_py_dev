@@ -1,0 +1,11 @@
+           Table "public.equipment_service_orders"
+      Column      |  Type   | Collation | Nullable | Default 
+------------------+---------+-----------+----------+---------
+ equipment_id     | integer |           | not null | 
+ service_order_id | integer |           | not null | 
+Indexes:
+    "equipment_service_orders_pkey" PRIMARY KEY, btree (equipment_id, service_order_id)
+Foreign-key constraints:
+    "equipment_service_orders_equipment_id_fkey" FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+    "equipment_service_orders_service_order_id_fkey" FOREIGN KEY (service_order_id) REFERENCES service_order(id)
+
