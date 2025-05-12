@@ -33,6 +33,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <form action="{{ url_for('delete_supplier_order', id=order.id) }}" method="post" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-danger">Excluir</button>
                         </form>
                     </div>
@@ -196,6 +197,7 @@
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                     <form action="{{ url_for('delete_order_item', id=item.id) }}" method="post" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-danger">Excluir</button>
                                                     </form>
                                                 </div>
