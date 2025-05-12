@@ -559,11 +559,16 @@ def register_routes(app):
         equipment = Equipment.query.filter_by(client_id=id).all()
         service_orders = ServiceOrder.query.filter_by(client_id=id).order_by(ServiceOrder.created_at.desc()).all()
         
+        # Criar um formulário simples para o token CSRF
+        from flask_wtf import FlaskForm
+        form = FlaskForm()
+        
         return render_template(
             'clients/view.html',
             client=client,
             equipment=equipment,
-            service_orders=service_orders
+            service_orders=service_orders,
+            form=form
         )
 
     @app.route('/clientes/<int:id>/editar', methods=['GET', 'POST'])
@@ -603,6 +608,13 @@ def register_routes(app):
     @app.route('/clientes/<int:id>/excluir', methods=['POST'])
     @admin_required
     def delete_client(id):
+        form = FlaskForm()  # Para validar o token CSRF
+        
+        # Verificar se o token CSRF é válido
+        if not form.validate():
+            flash('Erro de validação do formulário. Tente novamente.', 'danger')
+            return redirect(url_for('view_client', id=id))
+            
         client = Client.query.get_or_404(id)
         
         # Check if client has service orders
@@ -614,20 +626,34 @@ def register_routes(app):
         if Equipment.query.filter_by(client_id=id).count() > 0:
             flash('Não é possível excluir um cliente com equipamentos. Remova os equipamentos primeiro.', 'danger')
             return redirect(url_for('view_client', id=id))
+        
+        try:
+            client_name = client.name
+            db.session.delete(client)
+            db.session.commit()
             
-        client_name = client.name
-        db.session.delete(client)
-        db.session.commit()
-        
-        log_action(
-            'Exclusão de Cliente',
-            'client',
-            id,
-            f"Cliente {client_name} excluído"
-        )
-        
-        flash('Cliente excluído com sucesso!', 'success')
-        return redirect(url_for('clients'))
+            try:
+                log_action(
+                    'Exclusão de Cliente',
+                    'client',
+                    id,
+                    f"Cliente {client_name} excluído"
+                )
+            except Exception as log_error:
+                app.logger.error(f"Erro ao registrar log de exclusão de cliente: {str(log_error)}")
+            
+            flash('Cliente excluído com sucesso!', 'success')
+            return redirect(url_for('clients'))
+            
+        except IntegrityError:
+            db.session.rollback()
+            flash('Erro de integridade ao excluir cliente. Pode haver registros vinculados a este cliente.', 'danger')
+            return redirect(url_for('view_client', id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao excluir cliente: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao excluir cliente {id}: {str(e)}")
+            return redirect(url_for('view_client', id=id))
 
     # Equipment API endpoints
     @app.route('/api/equipamentos/modelos-por-marca', methods=['GET'])
