@@ -342,11 +342,11 @@ def register_routes(app):
         from forms import DeleteImageForm
         form = DeleteImageForm()
         
+        # Buscar imagem para obter o service_order_id antes de qualquer validação
+        image = ServiceOrderImage.query.get_or_404(image_id)
+        service_order_id = image.service_order_id
+        
         if form.validate_on_submit():
-            # Buscar imagem para obter o service_order_id
-            image = ServiceOrderImage.query.get_or_404(image_id)
-            service_order_id = image.service_order_id
-            
             # Verificar se a OS está fechada
             service_order = ServiceOrder.query.get(service_order_id)
             if service_order and service_order.status == ServiceOrderStatus.fechada:
@@ -370,7 +370,7 @@ def register_routes(app):
             # Se falhou na validação CSRF
             flash('Erro de validação do formulário. Tente novamente.', 'danger')
             
-        return redirect(url_for('view_service_order', id=image.service_order_id))
+        return redirect(url_for('view_service_order', id=service_order_id))
     
     @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
@@ -2075,7 +2075,11 @@ def register_routes(app):
             # Atualizar os campos do pedido
             order.supplier_id = form.supplier_id.data
             order.order_number = form.order_number.data
-            order.total_value = form.total_value.data
+            
+            # Garantir que o valor total seja tratado corretamente
+            # Se não houver valor informado, definir como 0
+            order.total_value = form.total_value.data if form.total_value.data is not None else 0
+            
             order.status = form.status.data
             order.expected_delivery_date = expected_delivery_date
             order.delivery_date = delivery_date
@@ -2172,8 +2176,8 @@ def register_routes(app):
             item.part_id = form.part_id.data if form.part_id.data else None
             item.description = form.description.data
             item.quantity = form.quantity.data
-            item.unit_price = form.unit_price.data
-            item.total_price = form.total_price.data
+            item.unit_price = form.unit_price.data if form.unit_price.data is not None else 0
+            item.total_price = form.total_price.data if form.total_price.data is not None else 0
             item.status = form.status.data
             item.notes = form.notes.data
             
