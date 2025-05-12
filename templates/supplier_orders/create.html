@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Pedido a Fornecedor - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Novo Pedido a Fornecedor</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-plus me-1"></i> Cadastro de Pedido
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="supplier_id" class="form-label">Fornecedor *</label>
+                    {{ form.supplier_id(class="form-control", id="supplier_id") }}
+                    {% if form.supplier_id.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.supplier_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="order_number" class="form-label">Número do Pedido</label>
+                    {{ form.order_number(class="form-control", id="order_number") }}
+                    {% if form.order_number.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.order_number.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status *</label>
+                    {{ form.status(class="form-control", id="status") }}
+                    {% if form.status.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.status.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="expected_delivery_date" class="form-label">Data Prevista de Entrega</label>
+                    {{ form.expected_delivery_date(class="form-control", id="expected_delivery_date", placeholder="DD/MM/AAAA") }}
+                    {% if form.expected_delivery_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.expected_delivery_date.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="total_value" class="form-label">Valor Total (R$)</label>
+                    {{ form.total_value(class="form-control", id="total_value", placeholder="0,00") }}
+                    {% if form.total_value.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.total_value.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Observações</label>
+                {{ form.notes(class="form-control", id="notes", rows=3) }}
+                {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.notes.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Cadastrar</button>
+                <a href="{{ url_for('supplier_orders') }}" class="btn btn-secondary ms-2">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar máscara para data
+    const dateFields = document.querySelectorAll('#expected_delivery_date, #delivery_date');
+    dateFields.forEach(field => {
+        field.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) value = value.substring(0, 8);
+            
+            if (value.length > 4) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4);
+            } else if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            
+            e.target.value = value;
+        });
+    });
+    
+    // Formatar campo de valor
+    const valueField = document.getElementById('total_value');
+    if (valueField) {
+        valueField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+            
+            value = parseFloat(value) / 100;
+            e.target.value = value.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

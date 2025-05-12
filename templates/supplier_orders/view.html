@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido #{{ order.id }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Detalhes do Pedido #{{ order.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if current_user.role in ['admin', 'gerente'] %}
+        <a href="{{ url_for('edit_supplier_order', id=order.id) }}" class="btn btn-primary me-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% endif %}
+        {% if current_user.role == 'admin' %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="fas fa-trash"></i> Excluir
+        </button>
+        
+        <!-- Modal de Confirmação de Exclusão -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirmação de Exclusão</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        Tem certeza que deseja excluir o pedido #{{ order.id }} para o fornecedor <strong>{{ order.supplier.name }}</strong>?
+                        <p class="text-danger mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> Esta ação não pode ser desfeita!
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form action="{{ url_for('delete_supplier_order', id=order.id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-1"></i> Informações do Pedido
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th style="width: 35%">Fornecedor</th>
+                            <td>
+                                <a href="{{ url_for('view_supplier', id=order.supplier_id) }}">{{ order.supplier.name }}</a>
+                            </td>
+                        </tr>
+                        {% if order.order_number %}
+                        <tr>
+                            <th>Número do Pedido</th>
+                            <td>{{ order.order_number }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                <span class="badge {% if order.status.name == 'pendente' %}bg-warning
+                                                   {% elif order.status.name == 'aprovado' %}bg-info
+                                                   {% elif order.status.name == 'enviado' %}bg-primary
+                                                   {% elif order.status.name == 'recebido' %}bg-success
+                                                   {% elif order.status.name == 'cancelado' %}bg-danger
+                                                   {% endif %}">
+                                    {{ order.status.value }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if order.expected_delivery_date %}
+                        <tr>
+                            <th>Data Prevista de Entrega</th>
+                            <td>{{ order.expected_delivery_date.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if order.delivery_date %}
+                        <tr>
+                            <th>Data de Entrega</th>
+                            <td>{{ order.delivery_date.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Valor Total</th>
+                            <td>{{ order.total_value | format_currency if order.total_value else 'R$ 0,00' }}</td>
+                        </tr>
+                        {% if order.notes %}
+                        <tr>
+                            <th>Observações</th>
+                            <td>{{ order.notes | nl2br | safe }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Data de Criação</th>
+                            <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% if order.created_by %}
+                        <tr>
+                            <th>Criado por</th>
+                            <td>{{ order.created_by_user.name if order.created_by_user else 'Usuário não encontrado' }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Última Atualização</th>
+                            <td>{{ order.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-shopping-basket me-1"></i> Itens do Pedido
+                {% if current_user.role in ['admin', 'gerente'] %}
+                <button type="button" class="btn btn-sm btn-primary float-end" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <i class="fas fa-plus"></i> Adicionar Item
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if order.items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Descrição</th>
+                                <th>Qtd</th>
+                                <th>Vlr. Unit.</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    {% if item.part %}
+                                    <a href="{{ url_for('view_part', id=item.part_id) }}">
+                                        {{ item.description }}
+                                    </a>
+                                    {% else %}
+                                    {{ item.description }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price | format_currency if item.unit_price else 'R$ 0,00' }}</td>
+                                <td>{{ item.total_price | format_currency if item.total_price else 'R$ 0,00' }}</td>
+                                <td>
+                                    <span class="badge {% if item.status.name == 'pendente' %}bg-warning
+                                                      {% elif item.status.name == 'aprovado' %}bg-info
+                                                      {% elif item.status.name == 'enviado' %}bg-primary
+                                                      {% elif item.status.name == 'recebido' %}bg-success
+                                                      {% elif item.status.name == 'cancelado' %}bg-danger
+                                                      {% endif %}">
+                                        {{ item.status.value }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if current_user.role in ['admin', 'gerente'] %}
+                                    <a href="{{ url_for('edit_order_item', id=item.id) }}" class="btn btn-sm btn-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteItemModal{{ item.id }}" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    
+                                    <!-- Modal de Confirmação de Exclusão de Item -->
+                                    <div class="modal fade" id="deleteItemModal{{ item.id }}" tabindex="-1" aria-labelledby="deleteItemModalLabel{{ item.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteItemModalLabel{{ item.id }}">Confirmação de Exclusão</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Tem certeza que deseja excluir o item "{{ item.description }}"?
+                                                    <p class="text-danger mt-3">
+                                                        <i class="fas fa-exclamation-triangle"></i> Esta ação não pode ser desfeita!
+                                                    </p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form action="{{ url_for('delete_order_item', id=item.id) }}" method="post" class="d-inline">
+                                                        <button type="submit" class="btn btn-danger">Excluir</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Este pedido ainda não possui itens.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar Item -->
+{% if current_user.role in ['admin', 'gerente'] %}
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemModalLabel">Adicionar Item ao Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form action="{{ url_for('add_order_item', id=order.id) }}" method="post">
+                <div class="modal-body">
+                    {{ item_form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="part_id" class="form-label">Peça (opcional)</label>
+                            {{ item_form.part_id(class="form-control", id="part_id") }}
+                            {% if item_form.part_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.part_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="description" class="form-label">Descrição *</label>
+                            {{ item_form.description(class="form-control", id="description") }}
+                            {% if item_form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">Quantidade *</label>
+                            {{ item_form.quantity(class="form-control", id="quantity") }}
+                            {% if item_form.quantity.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.quantity.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="unit_price" class="form-label">Preço Unitário (R$)</label>
+                            {{ item_form.unit_price(class="form-control", id="unit_price", placeholder="0,00") }}
+                            {% if item_form.unit_price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.unit_price.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="total_price" class="form-label">Preço Total (R$)</label>
+                            {{ item_form.total_price(class="form-control", id="total_price", placeholder="0,00") }}
+                            {% if item_form.total_price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.total_price.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status *</label>
+                            {{ item_form.status(class="form-control", id="status") }}
+                            {% if item_form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="notes" class="form-label">Observações</label>
+                            {{ item_form.notes(class="form-control", id="notes", rows=2) }}
+                            {% if item_form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in item_form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mb-3">
+    <a href="{{ url_for('supplier_orders') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar para Lista
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preencher automaticamente o preço total
+    const quantityField = document.getElementById('quantity');
+    const unitPriceField = document.getElementById('unit_price');
+    const totalPriceField = document.getElementById('total_price');
+    
+    function updateTotalPrice() {
+        if (quantityField.value && unitPriceField.value) {
+            const quantity = parseInt(quantityField.value);
+            const unitPrice = parseFloat(unitPriceField.value.replace(/\./g, '').replace(',', '.'));
+            if (!isNaN(quantity) && !isNaN(unitPrice)) {
+                const totalPrice = quantity * unitPrice;
+                totalPriceField.value = totalPrice.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+    }
+    
+    if (quantityField && unitPriceField && totalPriceField) {
+        quantityField.addEventListener('input', updateTotalPrice);
+        unitPriceField.addEventListener('input', function(e) {
+            // Formatar valor unitário
+            let value = e.target.value.replace(/\D/g, '');
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+            
+            value = parseFloat(value) / 100;
+            e.target.value = value.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            updateTotalPrice();
+        });
+        
+        totalPriceField.addEventListener('input', function(e) {
+            // Formatar valor total
+            let value = e.target.value.replace(/\D/g, '');
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+            
+            value = parseFloat(value) / 100;
+            e.target.value = value.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        });
+    }
+    
+    // Atualizar descrição quando selecionar uma peça
+    const partField = document.getElementById('part_id');
+    const descriptionField = document.getElementById('description');
+    
+    if (partField && descriptionField) {
+        partField.addEventListener('change', function() {
+            const option = partField.options[partField.selectedIndex];
+            if (option && option.value && option.text) {
+                descriptionField.value = option.text.split(' - ')[0];
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
