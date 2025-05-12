@@ -14,8 +14,9 @@ from app import db
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
-    SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage
+    SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage, equipment_service_orders
 )
+from utils import log_action
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
@@ -478,6 +479,68 @@ def register_routes(app):
             service_order=service_order,
             form=form
         )
+        
+    @app.route('/ordem-servico/<int:id>/excluir')
+    @login_required
+    @admin_required
+    def delete_service_order(id):
+        """Rota para excluir uma ordem de serviço"""
+        try:
+            service_order = ServiceOrder.query.get_or_404(id)
+            
+            # Verificar se há fotos relacionadas
+            images = ServiceOrderImage.query.filter_by(service_order_id=id).all()
+            for image in images:
+                try:
+                    # Tenta excluir o arquivo físico
+                    file_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), image.filename)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except Exception as img_error:
+                    app.logger.error(f"Erro ao excluir arquivo de imagem: {str(img_error)}")
+                
+                db.session.delete(image)
+            
+            # Remover relações com equipamentos na tabela de relacionamento
+            db.session.execute(
+                db.delete(equipment_service_orders).where(
+                    equipment_service_orders.c.service_order_id == id
+                )
+            )
+            
+            # Verificar se há entradas financeiras relacionadas
+            financial_entries = FinancialEntry.query.filter_by(service_order_id=id).all()
+            for entry in financial_entries:
+                db.session.delete(entry)
+            
+            # Excluir a ordem de serviço
+            order_number = service_order.id
+            client_name = service_order.client.name if service_order.client else "Cliente desconhecido"
+            db.session.delete(service_order)
+            db.session.commit()
+            
+            try:
+                log_action(
+                    'Exclusão de Ordem de Serviço',
+                    'service_order',
+                    id,
+                    f"OS #{order_number} de {client_name} excluída"
+                )
+            except Exception as log_error:
+                app.logger.error(f"Erro ao registrar log de exclusão de OS: {str(log_error)}")
+            
+            flash('Ordem de serviço excluída com sucesso!', 'success')
+            return redirect(url_for('service_orders'))
+            
+        except IntegrityError:
+            db.session.rollback()
+            flash('Erro de integridade ao excluir ordem de serviço. Pode haver registros vinculados.', 'danger')
+            return redirect(url_for('view_service_order', id=id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao excluir ordem de serviço {id}: {str(e)}")
+            return redirect(url_for('view_service_order', id=id))
 
     @app.route('/api/cliente/<int:client_id>/equipamentos')
     @login_required
