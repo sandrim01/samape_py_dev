@@ -485,29 +485,40 @@ def register_routes(app):
         form = ClientForm()
         
         if form.validate_on_submit():
-            # Formatar automaticamente o CPF/CNPJ
-            formatted_document = identify_and_format_document(form.document.data)
-            
-            client = Client(
-                name=form.name.data,
-                document=formatted_document,
-                email=form.email.data,
-                phone=form.phone.data,
-                address=form.address.data
-            )
-            
-            db.session.add(client)
-            db.session.commit()
-            
-            log_action(
-                'Criação de Cliente',
-                'client',
-                client.id,
-                f"Cliente {client.name} criado"
-            )
-            
-            flash('Cliente cadastrado com sucesso!', 'success')
-            return redirect(url_for('clients'))
+            try:
+                # Formatar automaticamente o CPF/CNPJ
+                formatted_document = identify_and_format_document(form.document.data)
+                
+                client = Client(
+                    name=form.name.data,
+                    document=formatted_document,
+                    email=form.email.data,
+                    phone=form.phone.data,
+                    address=form.address.data
+                )
+                
+                db.session.add(client)
+                db.session.commit()
+                
+                try:
+                    log_action(
+                        'Criação de Cliente',
+                        'client',
+                        client.id,
+                        f"Cliente {client.name} criado"
+                    )
+                except Exception:
+                    # Se falhar ao registrar o log, não interromper o fluxo principal
+                    db.session.rollback()
+                
+                flash('Cliente cadastrado com sucesso!', 'success')
+                return redirect(url_for('clients'))
+            except IntegrityError:
+                db.session.rollback()
+                flash('Erro de integridade ao cadastrar cliente. O ID pode estar duplicado.', 'danger')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao cadastrar cliente: {str(e)}', 'danger')
             
         return render_template('clients/create.html', form=form)
 
