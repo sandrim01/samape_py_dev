@@ -384,9 +384,12 @@ def register_routes(app):
         form = CloseServiceOrderForm()
         
         if form.validate_on_submit():
+            # Gerar o número da nota automaticamente
+            from utils import get_next_invoice_number
+            
             service_order.status = ServiceOrderStatus.fechada
             service_order.closed_at = datetime.utcnow()
-            service_order.invoice_number = form.invoice_number.data
+            service_order.invoice_number = get_next_invoice_number()
             service_order.invoice_date = datetime.utcnow()
             service_order.invoice_amount = form.invoice_amount.data
             service_order.service_details = form.service_details.data

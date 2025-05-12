@@ -128,7 +128,7 @@ class ServiceOrderForm(FlaskForm):
     image_descriptions = TextAreaField('Descrições das Imagens (separadas por ponto e vírgula)', validators=[Optional()])
 
 class CloseServiceOrderForm(FlaskForm):
-    invoice_number = StringField('Número da NF-e', validators=[DataRequired()])
+    # Removido campo invoice_number que agora será gerado automaticamente
     invoice_amount = DecimalField('Valor Total (R$)', validators=[DataRequired()], places=2)
     service_details = TextAreaField('Detalhes do Serviço Executado', validators=[DataRequired()])
 
