@@ -305,6 +305,18 @@ def register_routes(app):
             
             db.session.commit()
             
+            # Processar imagens
+            if form.images.data and form.images.data[0]:
+                image_files = form.images.data
+                if image_files:
+                    saved_images = save_service_order_images(
+                        service_order, 
+                        image_files, 
+                        form.image_descriptions.data
+                    )
+                    if saved_images:
+                        flash(f'{len(saved_images)} imagem(ns) adicional(is) anexada(s) com sucesso!', 'info')
+            
             log_action(
                 'Edição de OS',
                 'service_order',
@@ -313,7 +325,7 @@ def register_routes(app):
             )
             
             flash('Ordem de serviço atualizada com sucesso!', 'success')
-            return redirect(url_for('service_orders'))
+            return redirect(url_for('view_service_order', id=service_order.id))
             
         return render_template(
             'service_orders/edit.html',
