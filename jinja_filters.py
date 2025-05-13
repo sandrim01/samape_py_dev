@@ -7,6 +7,13 @@ def nl2br(value):
         return ""
     value = str(value)
     return Markup(value.replace('\n', '<br>'))
+    
+def absolute_value(value):
+    """Return absolute value of a number"""
+    try:
+        return abs(float(value))
+    except (ValueError, TypeError):
+        return 0
 
 def format_document(value):
     """Format CPF/CNPJ documents"""
