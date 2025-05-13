@@ -176,8 +176,21 @@ def register_routes(app):
             Part.stock_quantity <= Part.minimum_stock
         ).order_by(Part.stock_quantity.asc()).limit(5).all()
         
+        # Get vehicle statistics
+        from sqlalchemy import func
+        from datetime import datetime, timedelta
+        
+        # Count active vehicles
+        active_vehicles_count = Vehicle.query.filter_by(status=VehicleStatus.ativo).count()
+        
+        # Count vehicles in maintenance
+        maintenance_vehicles_count = Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count()
+        
+        # Count recent refuelings (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        refuelings_count = Refueling.query.filter(Refueling.date >= thirty_days_ago).count()
+        
         # Add current timestamp to prevent caching
-        from datetime import datetime
         
         # Prepare metrics for dashboard
         import json
@@ -208,7 +221,11 @@ def register_routes(app):
             low_stock_items=low_stock_items,
             low_stock_parts=low_stock_parts,
             metrics=metrics,
-            now=datetime.now().timestamp()
+            now=datetime.now().timestamp(),
+            # Vehicle statistics
+            active_vehicles_count=active_vehicles_count,
+            maintenance_vehicles_count=maintenance_vehicles_count,
+            refuelings_count=refuelings_count
         )
 
     # Service Order routes
