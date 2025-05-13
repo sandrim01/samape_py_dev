@@ -579,12 +579,18 @@ def register_routes(app):
         
         if form.validate_on_submit():
             try:
-                # Formatar automaticamente o CPF/CNPJ
-                formatted_document = identify_and_format_document(form.document.data)
+                # Remover caracteres especiais do documento
+                doc = re.sub(r'[^0-9]', '', form.document.data)
+                
+                # Verificar se já existe um cliente com este documento
+                existing_client = Client.query.filter_by(document=doc).first()
+                if existing_client:
+                    flash('Já existe um cliente cadastrado com este CPF/CNPJ.', 'danger')
+                    return render_template('clients/create.html', form=form)
                 
                 client = Client(
                     name=form.name.data,
-                    document=formatted_document,
+                    document=doc,  # Salvamos apenas os números
                     email=form.email.data,
                     phone=form.phone.data,
                     address=form.address.data
@@ -602,13 +608,14 @@ def register_routes(app):
                     )
                 except Exception:
                     # Se falhar ao registrar o log, não interromper o fluxo principal
-                    db.session.rollback()
+                    pass
                 
                 flash('Cliente cadastrado com sucesso!', 'success')
                 return redirect(url_for('clients'))
-            except IntegrityError:
+            except IntegrityError as e:
                 db.session.rollback()
-                flash('Erro de integridade ao cadastrar cliente. O ID pode estar duplicado.', 'danger')
+                app.logger.error(f"Erro de integridade: {str(e)}")
+                flash(f'Erro de integridade ao cadastrar cliente: {str(e)}', 'danger')
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao cadastrar cliente: {str(e)}', 'danger')
