@@ -2718,3 +2718,21 @@ def register_routes(app):
             
     # Register function to be called with app context in app.py
     app.create_initial_admin = create_initial_admin
+    
+    @app.route('/criar_dados_teste')
+    @login_required
+    def criar_dados_teste():
+        """Rota temporária para criar dados de teste no sistema."""
+        from create_test_data import create_test_data
+        
+        try:
+            result = create_test_data()
+            if result:
+                flash('Dados de teste criados com sucesso!', 'success')
+            else:
+                flash('Falha ao criar dados de teste.', 'danger')
+        except Exception as e:
+            app.logger.error(f'Erro ao criar dados de teste: {str(e)}')
+            flash(f'Erro ao criar dados de teste: {str(e)}', 'danger')
+            
+        return redirect(url_for('dashboard'))
