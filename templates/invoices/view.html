@@ -348,7 +348,7 @@
                 <div class="dest-inscr-label">INSC. ESTADUAL</div>
                 <div class="dest-inscr-value">-</div>
                 <div class="dest-hora-label">HORA SAÍDA</div>
-                <div class="dest-hora-value">{{ service_order.invoice_date.strftime('%H:%M:%S') }}</div>
+                <div class="dest-hora-value">{{ service_order.invoice_date.strftime('%H:%M:%S') if service_order.invoice_date else '--:--:--' }}</div>
             </div>
         </div>
         
@@ -478,7 +478,7 @@
                         {% if service_order.responsible %}
                         Responsável Técnico: {{ service_order.responsible.name }}
                         {% endif %}
-                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') }}.
+                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') if service_order.closed_at else 'data não definida' }}.
                         Documento emitido por ME ou EPP optante pelo Simples Nacional.
                     </div>
                 </div>
