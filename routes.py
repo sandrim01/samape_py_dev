@@ -161,6 +161,21 @@ def register_routes(app):
             ActionLog.timestamp.desc()
         ).limit(10).all()
         
+        # Get pending supplier orders
+        pending_supplier_orders = SupplierOrder.query.filter(
+            SupplierOrder.status.in_([OrderStatus.pendente, OrderStatus.aprovado, OrderStatus.enviado])
+        ).order_by(SupplierOrder.created_at.desc()).limit(5).all()
+        
+        # Get low stock items (EPIs e ferramentas)
+        low_stock_items = StockItem.query.filter(
+            StockItem.quantity <= StockItem.min_quantity
+        ).order_by(StockItem.quantity.asc()).limit(5).all()
+        
+        # Get parts with low stock (peças)
+        low_stock_parts = Part.query.filter(
+            Part.stock_quantity <= Part.minimum_stock
+        ).order_by(Part.stock_quantity.asc()).limit(5).all()
+        
         # Add current timestamp to prevent caching
         from datetime import datetime
         
@@ -189,8 +204,11 @@ def register_routes(app):
             maintenance_in_progress=maintenance_in_progress,
             recent_orders=recent_orders,
             recent_logs=recent_logs,
+            pending_supplier_orders=pending_supplier_orders,
+            low_stock_items=low_stock_items,
+            low_stock_parts=low_stock_parts,
             metrics=metrics,
-            now=datetime.now().timestamp()
+            now=datetime.now()
         )
 
     # Service Order routes

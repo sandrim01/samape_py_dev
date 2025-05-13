@@ -1,0 +1,269 @@
+/* Estilos para dashboard compacto */
+
+/* Cards menores para o dashboard */
+.compact-card {
+    margin-bottom: 1rem;
+    height: calc(100% - 1rem);
+    background-color: #2b3035 !important;
+    border-color: #343a40 !important;
+}
+
+.compact-card .card-header {
+    padding: 0.5rem 1rem;
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+    border-bottom: 1px solid #454d55;
+}
+
+.compact-card .card-header h5 {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+.compact-card .card-body {
+    padding: 0.75rem;
+}
+
+/* Status indicators para cards de status */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #454d55;
+}
+
+.status-indicator:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.status-indicator .indicator-label {
+    font-size: 0.85rem;
+    color: #e9ecef;
+}
+
+.status-indicator .indicator-value {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #e9ecef;
+}
+
+/* Stock indicator - alerta de estoque */
+.stock-alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #454d55;
+}
+
+.stock-alert-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.stock-alert-item .stock-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stock-alert-item .stock-qty {
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.stock-alert-item .stock-qty.warning {
+    background-color: #665429 !important;
+    color: #fff;
+}
+
+.stock-alert-item .stock-qty.danger {
+    background-color: #65353a !important;
+    color: #fff;
+}
+
+/* Botões compactos no dashboard */
+.compact-card .btn-sm {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Tabelas compactas */
+.compact-table {
+    margin: 0;
+}
+
+.compact-table th,
+.compact-table td {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.compact-table thead th {
+    background-color: #343a40 !important;
+    border-bottom: 1px solid #454d55 !important;
+}
+
+/* Layout para ordenamento das cards */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+}
+
+.dashboard-col-3 {
+    grid-column: span 3;
+}
+
+.dashboard-col-4 {
+    grid-column: span 4;
+}
+
+.dashboard-col-6 {
+    grid-column: span 6;
+}
+
+.dashboard-col-8 {
+    grid-column: span 8;
+}
+
+.dashboard-col-9 {
+    grid-column: span 9;
+}
+
+.dashboard-col-12 {
+    grid-column: span 12;
+}
+
+/* Ajustes para gráficos */
+.chart-container {
+    position: relative;
+    height: 150px;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 767.98px) {
+    .dashboard-grid {
+        display: block;
+    }
+    
+    .chart-container {
+        height: 180px;
+    }
+}
+
+/* Média temporal - ajustes */
+.avg-time-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.avg-time {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #e9ecef;
+}
+
+.avg-time-label {
+    font-size: 0.9rem;
+    color: #adb5bd;
+    margin-left: 0.25rem;
+}
+
+/* Activity timeline */
+.activity-timeline {
+    max-height: 285px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #454d55;
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    background-color: #343a40 !important;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.activity-content small {
+    font-size: 0.75rem;
+}
+
+/* Card footer */
+.compact-card .card-footer {
+    padding: 0.5rem;
+    background-color: #2b3035 !important;
+    border-top: 1px solid #454d55;
+}
+
+/* Badges para status */
+.badge {
+    font-weight: normal;
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+}
+
+/* Status colors */
+.status-pending {
+    background-color: #665429 !important;
+}
+
+.status-progress {
+    background-color: #304D69 !important;
+}
+
+.status-finished {
+    background-color: #345a35 !important;
+}
+
+.status-canceled {
+    background-color: #65353a !important;
+}
+
+/* Complementary styles for dark mode */
+.compact-card .progress {
+    background-color: #454d55;
+    height: 6px;
+}
+
+.compact-card .text-muted {
+    color: #adb5bd !important;
+}

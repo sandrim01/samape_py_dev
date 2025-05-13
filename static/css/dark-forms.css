@@ -1,0 +1,220 @@
+/* Estilos para escurecer formulários e interfaces */
+
+/* Inputs de formulário e textareas */
+.form-control,
+.custom-file-label,
+.custom-select,
+.input-group-text {
+    background-color: #2c3136 !important; /* Fundo escuro para inputs */
+    border-color: #495057 !important;
+    color: #e9ecef !important;
+}
+
+/* Ao focar nos inputs */
+.form-control:focus,
+.custom-select:focus {
+    background-color: #343a40 !important;
+    border-color: #5a6268 !important;
+    box-shadow: 0 0 0 0.2rem rgba(121, 135, 161, 0.25) !important;
+    color: #e9ecef !important;
+}
+
+/* Selects e dropdowns */
+select option {
+    background-color: #343a40 !important;
+    color: #e9ecef !important;
+}
+
+/* Placeholders nos inputs */
+::placeholder {
+    color: #a9b0b7 !important;
+    opacity: 0.7 !important;
+}
+
+/* Botões de escolha de arquivo */
+.custom-file-label::after {
+    background-color: #4e5c68 !important;
+    color: #e9ecef !important;
+    border-color: #495057 !important;
+}
+
+/* Cards e tabelas */
+.card {
+    background-color: #2b3035 !important;
+    border-color: #343a40 !important;
+}
+
+.table {
+    color: #e9ecef !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(77, 85, 94, 0.2) !important;
+}
+
+/* Cores de fundo para as tabelas */
+.table-hover tbody tr {
+    background-color: #2b3035 !important;
+}
+
+.table td, .table th {
+    border-color: #454d55 !important;
+}
+
+/* Headers de tabelas */
+.table thead th {
+    border-bottom-color: #454d55 !important;
+    background-color: #343a40 !important;
+}
+
+/* Dropdowns e menus */
+.dropdown-menu {
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+}
+
+.dropdown-item {
+    color: #e9ecef !important;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: #4e5c68 !important;
+    color: #fff !important;
+}
+
+/* Modals */
+.modal-content {
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+}
+
+.modal-header, .modal-footer {
+    border-color: #454d55 !important;
+}
+
+.close {
+    color: #e9ecef !important;
+}
+
+/* Fundos de página e containers */
+.bg-light, .bg-white {
+    background-color: #2b3035 !important;
+}
+
+/* Badges e alertas */
+.badge-secondary {
+    background-color: #5a6268 !important;
+}
+
+/* Listagens e paginação */
+.page-item.disabled .page-link {
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+}
+
+.page-link {
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+    color: #e9ecef !important;
+}
+
+.page-item.active .page-link {
+    background-color: #4e5c68 !important;
+    border-color: #5a6268 !important;
+}
+
+/* Cores de texto */
+.text-dark {
+    color: #e9ecef !important;
+}
+
+/* Formulários */
+.form-group label {
+    color: #e9ecef !important;
+}
+
+/* Inputs desabilitados */
+.form-control:disabled, 
+.form-control[readonly] {
+    background-color: #3b4148 !important;
+    color: #adb5bd !important;
+}
+
+/* Cards no dashboard */
+.dashboard-card {
+    background-color: #2b3035 !important;
+    border-color: #343a40 !important;
+}
+
+/* Lista de itens */
+.list-group-item {
+    background-color: #343a40 !important;
+    border-color: #454d55 !important;
+    color: #e9ecef !important;
+}
+
+/* Ajustes para contraste */
+.text-muted {
+    color: #adb5bd !important;
+}
+
+/* Gradiente mais escuro para headers de cartões */
+.card-header.bg-gradient-primary,
+.card-header.bg-gradient-success,
+.card-header.bg-gradient-info,
+.card-header.bg-gradient-warning,
+.card-header.bg-gradient-danger {
+    background-image: linear-gradient(to right, #2c3136, #343a40) !important;
+}
+
+/* Itens de tabela com status (warning, danger, etc) */
+.table-warning, .table-warning > td, .table-warning > th {
+    background-color: #665429 !important;
+}
+
+.table-danger, .table-danger > td, .table-danger > th {
+    background-color: #65353a !important;
+}
+
+.table-success, .table-success > td, .table-success > th {
+    background-color: #345a35 !important;
+}
+
+/* Ajustes específicos para rows da tabela ao passar o mouse */
+.table-hover .table-warning:hover,
+.table-hover .table-warning:hover > td,
+.table-hover .table-warning:hover > th {
+    background-color: #786331 !important;
+}
+
+.table-hover .table-danger:hover,
+.table-hover .table-danger:hover > td,
+.table-hover .table-danger:hover > th {
+    background-color: #743d44 !important;
+}
+
+.table-hover .table-success:hover,
+.table-hover .table-success:hover > td,
+.table-hover .table-success:hover > th {
+    background-color: #3b683c !important;
+}
+
+/* Ajuste para o fundo da página */
+body {
+    background-color: #212529 !important;
+}
+
+/* Ajustes para o dashboard */
+.dashboard-card {
+    margin-bottom: 1rem !important;
+    height: calc(100% - 1rem) !important;
+}
+
+.dashboard-row {
+    margin-bottom: 0 !important;
+}
+
+.dashboard-header {
+    font-size: 1rem !important;
+    padding: 0.75rem 1rem !important;
+}

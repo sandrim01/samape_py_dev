@@ -2,6 +2,10 @@
 
 {% block title %}Dashboard - SAMAPE{% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard-compact.css') }}?v={{ now() }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
     <h1 class="page-title">Painel de Controle</h1>
@@ -19,39 +23,40 @@
     </div>
 </div>
 
-<!-- First row of cards -->
-<div class="row">
+<!-- Dashboard Grid System -->
+<div class="dashboard-grid">
+    <!-- Primeira linha: 3 cards principais -->
     <!-- Indicadores de Manutenção em Andamento -->
-    <div class="col-md-4 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <div class="dashboard-col-3">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-tools me-2"></i>Manutenções em Andamento
+                    <i class="fas fa-tools me-2"></i>Manutenções
                 </h5>
             </div>
             <div class="card-body">
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">OS em Espera</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">OS em Espera</div>
                     <div class="indicator-value">{{ metrics.pending_orders }}</div>
                 </div>
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">OS em Andamento</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">OS em Andamento</div>
                     <div class="indicator-value">{{ metrics.in_progress_orders }}</div>
                 </div>
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">OS Finalizadas</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">OS Finalizadas</div>
                     <div class="indicator-value">{{ metrics.closed_orders }}</div>
                 </div>
-                <a href="{{ url_for('service_orders') }}" class="btn btn-outline-primary mt-3 w-100">
-                    <i class="fas fa-eye me-2"></i>Ver Todas
+                <a href="{{ url_for('service_orders') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-eye me-1"></i>Ver Todas
                 </a>
             </div>
         </div>
     </div>
 
     <!-- Gráfico de distribuição de ordens de serviço -->
-    <div class="col-md-4 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <div class="dashboard-col-3">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-chart-pie me-2"></i>Distribuição de OS
@@ -62,18 +67,18 @@
                     <canvas id="orderDistributionChart"></canvas>
                 </div>
                 <div class="text-center mt-2">
-                    <small class="text-muted">Distribuição de OS por status</small>
+                    <small class="text-muted">Visão geral por status</small>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Tempo Médio de Conclusão -->
-    <div class="col-md-4 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <div class="dashboard-col-3">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-clock me-2"></i>Tempo Médio de Conclusão
+                    <i class="fas fa-clock me-2"></i>Tempo Médio
                 </h5>
             </div>
             <div class="card-body text-center">
@@ -83,10 +88,7 @@
                         <span class="avg-time-label">dias</span>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <p class="card-text small">O tempo médio para conclusão de um serviço.</p>
-                </div>
-                <div class="progress mt-3" style="height: 8px;">
+                <div class="progress mt-3" style="height: 6px;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ metrics.efficiency_percentage }}%"></div>
                 </div>
                 <div class="d-flex justify-content-between mt-1">
@@ -96,41 +98,39 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Second row of cards -->
-<div class="row">
     <!-- Pedidos a fornecedores -->
-    <div class="col-md-3 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <div class="dashboard-col-3">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-shipping-fast me-2"></i>Pedidos a Fornecedores
+                    <i class="fas fa-shipping-fast me-2"></i>Fornecedores
                 </h5>
             </div>
             <div class="card-body">
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">Pedidos Abertos</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">Pedidos Abertos</div>
                     <div class="indicator-value">{{ metrics.open_orders }}</div>
                 </div>
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">Aguardando Entrega</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">Aguard. Entrega</div>
                     <div class="indicator-value">{{ metrics.pending_delivery }}</div>
                 </div>
-                <div class="maintenance-indicator">
-                    <div class="indicator-title">Entregues este mês</div>
+                <div class="status-indicator">
+                    <div class="indicator-label">Entregues (mês)</div>
                     <div class="indicator-value">{{ metrics.delivered_this_month }}</div>
                 </div>
-                <a href="{{ url_for('supplier_orders') }}" class="btn btn-outline-primary mt-3 w-100">
-                    <i class="fas fa-eye me-2"></i>Ver Pedidos
+                <a href="{{ url_for('supplier_orders') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-eye me-1"></i>Ver Pedidos
                 </a>
             </div>
         </div>
     </div>
 
+    <!-- Segunda linha: Financeiro + 2 colunas de estoque -->
     <!-- Resumo financeiro -->
-    <div class="col-md-5 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <div class="dashboard-col-4">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-chart-line me-2"></i>Resumo Financeiro
@@ -140,52 +140,84 @@
                 <div class="chart-container">
                     <canvas id="financialChart"></canvas>
                 </div>
-                <div class="row mt-3 text-center">
+                <div class="row mt-2 text-center">
                     <div class="col-6">
-                        <h6 class="text-success">Receitas</h6>
-                        <p>R$ {{ "%.2f"|format(metrics.monthly_income) }}</p>
+                        <small class="text-success">Receitas</small>
+                        <p class="mb-0">R$ {{ "%.2f"|format(metrics.monthly_income) }}</p>
                     </div>
                     <div class="col-6">
-                        <h6 class="text-danger">Despesas</h6>
-                        <p>R$ {{ "%.2f"|format(metrics.monthly_expenses) }}</p>
+                        <small class="text-danger">Despesas</small>
+                        <p class="mb-0">R$ {{ "%.2f"|format(metrics.monthly_expenses) }}</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Alertas de Estoque -->
-    <div class="col-md-4 mb-4">
-        <div class="card status-card h-100 bg-light">
+    <!-- Alertas de Estoque - Peças -->
+    <div class="dashboard-col-4">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Alertas de Estoque
+                    <i class="fas fa-boxes me-2"></i>Estoque de Peças
                 </h5>
             </div>
             <div class="card-body">
                 {% if low_stock_parts %}
-                <ul class="list-group stock-alerts">
+                <div class="stock-alerts">
                     {% for part in low_stock_parts %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ part.name }}</strong>
-                            <br><small>{{ part.part_number if part.part_number else 'Sem código' }}</small>
+                    <div class="stock-alert-item">
+                        <div class="stock-name">{{ part.name }}</div>
+                        <div class="stock-qty {{ 'warning' if part.stock_quantity > 0 else 'danger' }}">
+                            {{ part.stock_quantity }}
                         </div>
-                        <span class="badge rounded-pill {{ 'bg-warning' if part.stock_quantity > 0 else 'bg-danger' }}">
-                            {{ part.stock_quantity }} un
-                        </span>
-                    </li>
+                    </div>
                     {% endfor %}
-                </ul>
-                <a href="{{ url_for('parts') }}" class="btn btn-outline-primary mt-3 w-100">
-                    <i class="fas fa-boxes me-2"></i>Gerenciar Estoque
+                </div>
+                <a href="{{ url_for('parts') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-boxes me-1"></i>Gerenciar Peças
                 </a>
                 {% else %}
-                <div class="alert alert-success mt-3 mb-3">
-                    <i class="fas fa-check-circle me-2"></i>Não há itens abaixo do estoque mínimo.
+                <div class="alert alert-success mt-1 mb-1 p-2">
+                    <i class="fas fa-check-circle me-1"></i>Sem alertas de estoque
                 </div>
-                <a href="{{ url_for('parts') }}" class="btn btn-outline-primary mt-3 w-100">
-                    <i class="fas fa-boxes me-2"></i>Ver Estoque
+                <a href="{{ url_for('parts') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-boxes me-1"></i>Ver Peças
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas de Estoque - EPIs e Ferramentas -->
+    <div class="dashboard-col-4">
+        <div class="card compact-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-hard-hat me-2"></i>EPIs e Ferramentas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                <div class="stock-alerts">
+                    {% for item in low_stock_items %}
+                    <div class="stock-alert-item">
+                        <div class="stock-name">{{ item.name }}</div>
+                        <div class="stock-qty {{ 'warning' if item.quantity > 0 else 'danger' }}">
+                            {{ item.quantity }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{{ url_for('stock') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-toolbox me-1"></i>Gerenciar EPIs
+                </a>
+                {% else %}
+                <div class="alert alert-success mt-1 mb-1 p-2">
+                    <i class="fas fa-check-circle me-1"></i>Sem alertas de estoque
+                </div>
+                <a href="{{ url_for('stock') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-toolbox me-1"></i>Ver EPIs
                 </a>
                 {% endif %}
             </div>
