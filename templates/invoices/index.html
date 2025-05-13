@@ -84,7 +84,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-end">
-                                <span class="fw-bold">R$ {{ "%.2f"|format(invoice.invoice_amount) }}</span>
+                                <span class="fw-bold">R$ {{ "%.2f"|format(invoice.invoice_amount if invoice.invoice_amount else 0) }}</span>
                             </td>
                             <td class="text-center">
                                 <a href="{{ url_for('view_invoice', id=invoice.id) }}" class="btn btn-sm btn-info" title="Visualizar NF-e">
