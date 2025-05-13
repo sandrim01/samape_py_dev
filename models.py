@@ -207,6 +207,19 @@ class OrderStatus(enum.Enum):
     enviado = "enviado"
     recebido = "recebido"
     cancelado = "cancelado"
+    
+class StockItemType(enum.Enum):
+    """Tipo de item no estoque"""
+    epi = "EPI (Equipamento de Proteção Individual)"
+    ferramenta = "Ferramenta"
+    consumivel = "Material de Consumo"
+    
+class StockItemStatus(enum.Enum):
+    """Status do item de estoque"""
+    disponivel = "Disponível"
+    baixo = "Estoque Baixo"
+    esgotado = "Esgotado"
+    vencido = "Vencido/Expirado"
 
 class SupplierOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -263,3 +276,61 @@ class SequenceCounter(db.Model):
         if self.prefix:
             return f"{self.prefix}{formatted_number}"
         return formatted_number
+        
+class StockItem(db.Model):
+    """Modelo para itens de estoque (EPIs e ferramentas)"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    type = db.Column(Enum(StockItemType), nullable=False)
+    quantity = db.Column(db.Integer, default=0)
+    min_quantity = db.Column(db.Integer, default=5)  # Quantidade mínima desejada em estoque
+    location = db.Column(db.String(100), nullable=True)  # Localização física no depósito
+    price = db.Column(db.Numeric(10, 2), nullable=True)  # Preço unitário
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=True)
+    status = db.Column(Enum(StockItemStatus), default=StockItemStatus.disponivel)
+    expiration_date = db.Column(db.Date, nullable=True)  # Data de validade (para EPIs)
+    image = db.Column(db.String(255), nullable=True)  # Caminho para imagem do item
+    ca_number = db.Column(db.String(50), nullable=True)  # Número do CA para EPIs
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relações
+    supplier = db.relationship('Supplier', backref='stock_items')
+    movements = db.relationship('StockMovement', backref='stock_item', lazy=True, cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f'<StockItem {self.name}>'
+        
+    def update_status(self):
+        """Atualiza o status do item com base na quantidade e data de validade"""
+        today = datetime.now().date()
+        
+        if self.expiration_date and self.expiration_date <= today:
+            self.status = StockItemStatus.vencido
+        elif self.quantity <= 0:
+            self.status = StockItemStatus.esgotado
+        elif self.quantity <= self.min_quantity:
+            self.status = StockItemStatus.baixo
+        else:
+            self.status = StockItemStatus.disponivel
+        
+        return self.status
+        
+class StockMovement(db.Model):
+    """Registro de movimentações de estoque"""
+    id = db.Column(db.Integer, primary_key=True)
+    stock_item_id = db.Column(db.Integer, db.ForeignKey('stock_item.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)  # Positivo para entrada, negativo para saída
+    description = db.Column(db.Text, nullable=True)
+    reference = db.Column(db.String(100), nullable=True)  # Referência (número de OS, nome de funcionário, etc)
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relações
+    service_order = db.relationship('ServiceOrder', backref='stock_movements')
+    
+    def __repr__(self):
+        return f'<StockMovement {self.id} - {self.quantity}>'

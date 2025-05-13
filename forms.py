@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange, Regexp
 import re
-from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus
+from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder
 
 class DeleteImageForm(FlaskForm):
     """Formulário simples para exclusão de imagens"""
@@ -315,3 +315,49 @@ class SystemSettingsForm(FlaskForm):
         (50, '50'),
         (100, '100')
     ], validators=[DataRequired()])
+    
+class StockItemForm(FlaskForm):
+    """Formulário para cadastro e edição de itens de estoque"""
+    name = StringField('Nome do Item', validators=[DataRequired(), Length(min=3, max=100)])
+    description = TextAreaField('Descrição', validators=[Optional()])
+    type = SelectField('Tipo', choices=[(t.name, t.value) for t in StockItemType], validators=[DataRequired()])
+    quantity = IntegerField('Quantidade em Estoque', validators=[DataRequired(), NumberRange(min=0)], default=0)
+    min_quantity = IntegerField('Quantidade Mínima', validators=[DataRequired(), NumberRange(min=0)], default=5)
+    location = StringField('Localização no Depósito', validators=[Optional(), Length(max=100)])
+    price = DecimalField('Preço Unitário (R$)', validators=[Optional()], places=2)
+    supplier_id = SelectField('Fornecedor', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    expiration_date = StringField('Data de Validade', validators=[Optional()])
+    ca_number = StringField('Número do CA (para EPIs)', validators=[Optional(), Length(max=50)])
+    image = FileField('Imagem do Item', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas!')
+    ])
+    
+    def __init__(self, *args, **kwargs):
+        super(StockItemForm, self).__init__(*args, **kwargs)
+        self.supplier_id.choices = [(0, 'Selecione um fornecedor (opcional)')] + [
+            (s.id, s.name) for s in Supplier.query.order_by(Supplier.name).all()
+        ]
+        
+class StockMovementForm(FlaskForm):
+    """Formulário para movimentação de estoque"""
+    stock_item_id = SelectField('Item', coerce=int, validators=[DataRequired()])
+    quantity = IntegerField('Quantidade', validators=[DataRequired(), NumberRange(min=1)], default=1)
+    direction = SelectField('Tipo de Movimentação', choices=[
+        ('entrada', 'Entrada em Estoque'),
+        ('saida', 'Saída de Estoque')
+    ], validators=[DataRequired()])
+    description = TextAreaField('Motivo/Descrição', validators=[DataRequired()])
+    reference = StringField('Referência (Funcionário, OS, etc)', validators=[Optional(), Length(max=100)])
+    service_order_id = SelectField('Ordem de Serviço', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    
+    def __init__(self, *args, **kwargs):
+        super(StockMovementForm, self).__init__(*args, **kwargs)
+        self.stock_item_id.choices = [(i.id, f"{i.name} - {i.quantity} em estoque") 
+                                      for i in StockItem.query.order_by(StockItem.name).all()]
+        
+        # Ordens de serviço abertas
+        self.service_order_id.choices = [(0, 'Nenhuma OS relacionada')] + [
+            (s.id, f"OS #{s.id} - {s.client.name}") 
+            for s in ServiceOrder.query.filter(ServiceOrder.status != ServiceOrderStatus.fechada).order_by(ServiceOrder.id.desc()).all()
+        ]
