@@ -2860,7 +2860,8 @@ def register_routes(app):
             'stock/view.html',
             item=item,
             movements=movements,
-            movement_form=movement_form
+            movement_form=movement_form,
+            now=datetime.now()
         )
         
     @app.route('/estoque/<int:id>/editar', methods=['GET', 'POST'])
