@@ -19,147 +19,206 @@
     </div>
 </div>
 
-<!-- Stats Cards Row 1 - Service Orders -->
-<div class="row dashboard-metrics">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card pink">
-            <div class="stat-icon">
-                <i class="fas fa-clipboard-list"></i>
+<!-- First row of cards -->
+<div class="row">
+    <!-- Indicadores de Manutenção em Andamento -->
+    <div class="col-md-4 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>Manutenções em Andamento
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ so_stats.open }}</div>
-            <div class="stat-label metric-label">OS Abertas</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-list"></i>
+            <div class="card-body">
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">OS em Espera</div>
+                    <div class="indicator-value">{{ metrics.pending_orders }}</div>
+                </div>
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">OS em Andamento</div>
+                    <div class="indicator-value">{{ metrics.in_progress_orders }}</div>
+                </div>
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">OS Finalizadas</div>
+                    <div class="indicator-value">{{ metrics.closed_orders }}</div>
+                </div>
+                <a href="{{ url_for('service_orders') }}" class="btn btn-outline-primary mt-3 w-100">
+                    <i class="fas fa-eye me-2"></i>Ver Todas
+                </a>
             </div>
-            <a href="{{ url_for('service_orders', status='aberta') }}" class="stretched-link"></a>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card orange">
-            <div class="stat-icon">
-                <i class="fas fa-cogs"></i>
+
+    <!-- Gráfico de distribuição de ordens de serviço -->
+    <div class="col-md-4 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Distribuição de OS
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ so_stats.in_progress }}</div>
-            <div class="stat-label metric-label">OS Em Andamento</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-tools"></i>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="orderDistributionChart"></canvas>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">Distribuição de OS por status</small>
+                </div>
             </div>
-            <a href="{{ url_for('service_orders', status='em_andamento') }}" class="stretched-link"></a>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card green">
-            <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
+
+    <!-- Tempo Médio de Conclusão -->
+    <div class="col-md-4 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Tempo Médio de Conclusão
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ so_stats.closed }}</div>
-            <div class="stat-label metric-label">OS Fechadas</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-check"></i>
-            </div>
-            <a href="{{ url_for('service_orders', status='fechada') }}" class="stretched-link"></a>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card purple">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-value metric-value">{{ so_stats.avg_completion_time }}</div>
-            <div class="stat-label metric-label">Média de Dias p/ Conclusão</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-hourglass-half"></i>
+            <div class="card-body text-center">
+                <div class="avg-time-container">
+                    <div class="avg-time">
+                        <span class="avg-time-value">{{ metrics.avg_completion_time }}</span>
+                        <span class="avg-time-label">dias</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="card-text small">O tempo médio para conclusão de um serviço.</p>
+                </div>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ metrics.efficiency_percentage }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <small class="text-muted">Mais rápido</small>
+                    <small class="text-muted">Mais lento</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Stats Cards Row 2 - Supplier Orders and Financial -->
-<div class="row dashboard-metrics">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card cyan">
-            <div class="stat-icon">
-                <i class="fas fa-dolly-flatbed"></i>
+<!-- Second row of cards -->
+<div class="row">
+    <!-- Pedidos a fornecedores -->
+    <div class="col-md-3 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shipping-fast me-2"></i>Pedidos a Fornecedores
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ supplier_stats.open }}</div>
-            <div class="stat-label metric-label">Pedidos Abertos</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-clipboard-list"></i>
+            <div class="card-body">
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">Pedidos Abertos</div>
+                    <div class="indicator-value">{{ metrics.open_orders }}</div>
+                </div>
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">Aguardando Entrega</div>
+                    <div class="indicator-value">{{ metrics.pending_delivery }}</div>
+                </div>
+                <div class="maintenance-indicator">
+                    <div class="indicator-title">Entregues este mês</div>
+                    <div class="indicator-value">{{ metrics.delivered_this_month }}</div>
+                </div>
+                <a href="{{ url_for('supplier_orders') }}" class="btn btn-outline-primary mt-3 w-100">
+                    <i class="fas fa-eye me-2"></i>Ver Pedidos
+                </a>
             </div>
-            <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card teal">
-            <div class="stat-icon">
-                <i class="fas fa-truck-loading"></i>
+
+    <!-- Resumo financeiro -->
+    <div class="col-md-5 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Resumo Financeiro
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ supplier_stats.closed }}</div>
-            <div class="stat-label metric-label">Pedidos Fechados</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-check-circle"></i>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="financialChart"></canvas>
+                </div>
+                <div class="row mt-3 text-center">
+                    <div class="col-6">
+                        <h6 class="text-success">Receitas</h6>
+                        <p>R$ {{ "%.2f"|format(metrics.monthly_income) }}</p>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-danger">Despesas</h6>
+                        <p>R$ {{ "%.2f"|format(metrics.monthly_expenses) }}</p>
+                    </div>
+                </div>
             </div>
-            <a href="{{ url_for('supplier_orders') }}" class="stretched-link"></a>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card green-light">
-            <div class="stat-icon">
-                <i class="fas fa-hand-holding-usd"></i>
+
+    <!-- Alertas de Estoque -->
+    <div class="col-md-4 mb-4">
+        <div class="card status-card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Alertas de Estoque
+                </h5>
             </div>
-            <div class="stat-value metric-value">{{ format_currency(financial_summary.income) }}</div>
-            <div class="stat-label metric-label">Receitas do Mês</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-arrow-up"></i>
+            <div class="card-body">
+                {% if low_stock_parts %}
+                <ul class="list-group stock-alerts">
+                    {% for part in low_stock_parts %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ part.name }}</strong>
+                            <br><small>{{ part.part_number if part.part_number else 'Sem código' }}</small>
+                        </div>
+                        <span class="badge rounded-pill {{ 'bg-warning' if part.stock_quantity > 0 else 'bg-danger' }}">
+                            {{ part.stock_quantity }} un
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <a href="{{ url_for('parts') }}" class="btn btn-outline-primary mt-3 w-100">
+                    <i class="fas fa-boxes me-2"></i>Gerenciar Estoque
+                </a>
+                {% else %}
+                <div class="alert alert-success mt-3 mb-3">
+                    <i class="fas fa-check-circle me-2"></i>Não há itens abaixo do estoque mínimo.
+                </div>
+                <a href="{{ url_for('parts') }}" class="btn btn-outline-primary mt-3 w-100">
+                    <i class="fas fa-boxes me-2"></i>Ver Estoque
+                </a>
+                {% endif %}
             </div>
-            <a href="{{ url_for('financial') }}" class="stretched-link"></a>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="stat-card blue">
-            <div class="stat-icon">
-                <i class="fas fa-dollar-sign"></i>
-            </div>
-            <div class="stat-value metric-value">{{ format_currency(financial_summary.balance) }}</div>
-            <div class="stat-label metric-label">Balanço do Mês</div>
-            <div class="card-icon d-none d-sm-none d-md-flex">
-                <i class="fas fa-wallet"></i>
-            </div>
-            <a href="{{ url_for('financial') }}" class="stretched-link"></a>
         </div>
     </div>
 </div>
 
-<!-- Manutenções Em Andamento -->
-<div class="row mt-4">
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100 dashboard-panel">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Manutenções em Andamento</h5>
+<!-- Third row: Recent data tables -->
+<div class="row">
+    <!-- Latest service orders -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Ordens Recentes
+                </h5>
             </div>
             <div class="card-body p-0">
-                {% if maintenance_in_progress %}
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>OS</th>
+                                <th class="px-3">ID</th>
                                 <th>Cliente</th>
                                 <th>Equipamento</th>
-                                <th>Desde</th>
+                                <th>Data</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in maintenance_in_progress %}
+                            {% for order in recent_orders %}
                             <tr>
-                                <td>{{ order.id }}</td>
+                                <td class="px-3">{{ order.id }}</td>
                                 <td>{{ order.client.name }}</td>
                                 <td>
                                     {% if order.equipment %}
@@ -168,7 +227,7 @@
                                     -
                                     {% endif %}
                                 </td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                                 <td>
                                     <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-eye"></i>
@@ -179,107 +238,96 @@
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <p class="text-center p-3">Nenhuma manutenção em andamento.</p>
-                {% endif %}
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="{{ url_for('service_orders', status='em_andamento') }}" class="text-decoration-none">Ver Todas</a>
-                <div><i class="fas fa-angle-right"></i></div>
+            <div class="card-footer bg-white text-end">
+                <a href="{{ url_for('service_orders') }}" class="btn btn-outline-primary btn-sm">Ver Todos</a>
             </div>
         </div>
     </div>
 
-    <!-- Status dos Pedidos a Fornecedores -->
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header bg-info text-dark">
-                <h5 class="mb-0"><i class="fas fa-truck-loading me-2"></i> Status dos Pedidos a Fornecedores</h5>
+    <!-- Recent system logs -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>Atividades Recentes
+                </h5>
             </div>
             <div class="card-body">
-                <canvas id="supplierOrderStatusChart" height="180"></canvas>
-                <!-- Dados para o gráfico -->
-                <div id="supplier-pending" data-count="{{ supplier_stats.pending }}" class="d-none"></div>
-                <div id="supplier-approved" data-count="{{ supplier_stats.approved }}" class="d-none"></div>
-                <div id="supplier-sent" data-count="{{ supplier_stats.sent }}" class="d-none"></div>
-                <div id="supplier-received" data-count="{{ supplier_stats.received }}" class="d-none"></div>
-                <div id="supplier-canceled" data-count="{{ supplier_stats.canceled }}" class="d-none"></div>
+                <div class="activity-timeline">
+                    {% for log in recent_logs %}
+                    <div class="activity-item">
+                        <div class="activity-icon bg-light">
+                            {% if log.entity_type == 'service_order' %}
+                            <i class="fas fa-clipboard-list text-primary"></i>
+                            {% elif log.entity_type == 'client' %}
+                            <i class="fas fa-user text-success"></i>
+                            {% elif log.entity_type == 'equipment' %}
+                            <i class="fas fa-tools text-warning"></i>
+                            {% elif log.entity_type == 'financial' %}
+                            <i class="fas fa-dollar-sign text-danger"></i>
+                            {% elif log.entity_type == 'part' %}
+                            <i class="fas fa-box text-info"></i>
+                            {% else %}
+                            <i class="fas fa-cog text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text">{{ log.action }}</div>
+                            <small class="text-muted">{{ log.timestamp.strftime('%d/%m/%Y %H:%M') if log.timestamp else 'Data não definida' }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="{{ url_for('supplier_orders') }}" class="text-decoration-none">Ver Todos os Pedidos</a>
-                <div><i class="fas fa-angle-right"></i></div>
+            <div class="card-footer bg-white text-end">
+                <a href="{{ url_for('logs') }}" class="btn btn-outline-primary btn-sm">Ver Histórico Completo</a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Gráficos -->
-<div class="row mt-2">
-    <!-- Distribuição de OS -->
-    <div class="col-lg-6 mb-4">
-        <div class="card card-dark h-100 dashboard-panel">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Distribuição de OS</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="serviceOrderDistributionChart" height="180"></canvas>
-                <!-- Dados para o gráfico -->
-                <div id="os-aberta" data-count="{{ so_stats.open }}" class="d-none"></div>
-                <div id="os-em-andamento" data-count="{{ so_stats.in_progress }}" class="d-none"></div>
-                <div id="os-fechada" data-count="{{ so_stats.closed }}" class="d-none"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Resumo Financeiro -->
-    <div class="col-lg-6 mb-4">
-        <div class="card card-dark h-100 dashboard-panel">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Resumo Financeiro</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="monthlyFinancialChart" height="180"></canvas>
-                <!-- Dados para o gráfico -->
-                <div id="monthly-income" data-value="{{ financial_summary.income }}" class="d-none"></div>
-                <div id="monthly-expenses" data-value="{{ financial_summary.expenses }}" class="d-none"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- Fourth row: Supplier orders -->
 <div class="row">
-    <!-- Ordens de Serviço Recentes -->
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100 dashboard-panel">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> Ordens de Serviço Recentes</h5>
+    <div class="col-md-12 mb-4">
+        <div class="card bg-light">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-truck me-2"></i>Pedidos a Fornecedores Pendentes
+                </h5>
             </div>
             <div class="card-body p-0">
-                {% if recent_orders %}
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
+                                <th class="px-3">ID</th>
+                                <th>Fornecedor</th>
+                                <th>Valor</th>
                                 <th>Status</th>
                                 <th>Data</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for order in recent_orders %}
+                            {% for order in pending_supplier_orders %}
                             <tr>
-                                <td>{{ order.id }}</td>
-                                <td>{{ order.client.name }}</td>
+                                <td class="px-3">{{ order.id }}</td>
+                                <td>{{ order.supplier.name }}</td>
+                                <td>R$ {{ "%.2f"|format(order.total_value) if order.total_value else '-' }}</td>
                                 <td>
-                                    <span class="status-badge status-{{ order.status.name }}">
+                                    <span class="badge {% if order.status.name == 'pendente' %}bg-warning
+                                                      {% elif order.status.name == 'aprovado' %}bg-info
+                                                      {% elif order.status.name == 'enviado' %}bg-primary
+                                                      {% elif order.status.name == 'entregue' %}bg-success
+                                                      {% elif order.status.name == 'cancelado' %}bg-danger
+                                                      {% else %}bg-secondary{% endif %}">
                                         {{ order.status.value }}
                                     </span>
                                 </td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                                 <td>
-                                    <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <a href="{{ url_for('view_supplier_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </td>
@@ -288,51 +336,106 @@
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <p class="text-center p-3">Nenhuma ordem de serviço recente.</p>
-                {% endif %}
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="{{ url_for('service_orders') }}" class="text-decoration-none">Ver Todas</a>
-                <div><i class="fas fa-angle-right"></i></div>
+            <div class="card-footer bg-white text-end">
+                <a href="{{ url_for('supplier_orders') }}" class="btn btn-outline-primary btn-sm">Ver Todos</a>
             </div>
-        </div>
-    </div>
-    
-    <!-- Atividades Recentes -->
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i> Atividades Recentes</h5>
-            </div>
-            <div class="card-body p-0">
-                {% if recent_logs %}
-                <ul class="list-group list-group-flush">
-                    {% for log in recent_logs %}
-                    <li class="list-group-item border-0 border-bottom border-light py-3">
-                        <div>
-                            <div class="fw-bold mb-1">{{ log.action }}</div>
-                            <div class="d-flex justify-content-between">
-                                <div>{% if log.user %}Por: {{ log.user.name }}{% endif %}</div>
-                                <small class="text-muted">{{ log.timestamp.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-center p-3">Nenhuma atividade recente.</p>
-                {% endif %}
-            </div>
-            {% if current_user.role == UserRole.admin %}
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="{{ url_for('logs') }}" class="text-decoration-none">Ver Todos os Logs</a>
-                <div><i class="fas fa-angle-right"></i></div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Nenhum script aqui, os gráficos são renderizados pelo charts.js global -->
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Order Distribution Chart
+    const orderCtx = document.getElementById('orderDistributionChart').getContext('2d');
+    const orderDistributionChart = new Chart(orderCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Em Espera', 'Em Andamento', 'Concluídas'],
+            datasets: [{
+                data: [{{ metrics.pending_orders }}, {{ metrics.in_progress_orders }}, {{ metrics.closed_orders }}],
+                backgroundColor: [
+                    '#ffc107', // amarelo - em espera
+                    '#0d6efd', // azul - em andamento
+                    '#198754'  // verde - concluídas
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 12,
+                        color: '#6c757d'
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // Financial Chart
+    const financialCtx = document.getElementById('financialChart').getContext('2d');
+    const financialChart = new Chart(financialCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+            datasets: [
+                {
+                    label: 'Receitas',
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 1,
+                    data: {{ metrics.income_data }}
+                },
+                {
+                    label: 'Despesas',
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    data: {{ metrics.expense_data }}
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#6c757d'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#6c757d'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        color: '#6c757d'
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

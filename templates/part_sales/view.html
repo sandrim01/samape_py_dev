@@ -159,7 +159,7 @@
                             </tr>
                             <tr>
                                 <th>Data de Criação</th>
-                                <td>{{ sale.service_order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ sale.service_order.created_at.strftime('%d/%m/%Y') if sale.service_order and sale.service_order.created_at else 'Data não definida' }}</td>
                             </tr>
                             <tr>
                                 <th>Responsável</th>

@@ -107,7 +107,7 @@
                             {% if order.order_number %}
                             <strong>Número do Pedido:</strong> {{ order.order_number }}<br>
                             {% endif %}
-                            <strong>Data do Pedido:</strong> {{ order.created_at.strftime('%d/%m/%Y') }}<br>
+                            <strong>Data do Pedido:</strong> {{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}<br>
                             <strong>Status:</strong> 
                             <span class="badge {% if order.status.name == 'pendente' %}bg-warning
                                               {% elif order.status.name == 'aprovado' %}bg-info
