@@ -308,14 +308,32 @@ def add_refueling():
         if vehicle and form.odometer.data > vehicle.current_km:
             vehicle.current_km = form.odometer.data
         
+        # Adicionar o abastecimento ao banco de dados
         db.session.add(refueling)
         db.session.commit()
         
+        # Registrar o abastecimento no financeiro como saída
+        from models import FinancialEntry, FinancialEntryType
+        vehicle = Vehicle.query.get(form.vehicle_id.data)
+        vehicle_plate = vehicle.plate if vehicle else "Desconhecido"
+        
+        financial_entry = FinancialEntry(
+            description=f"Abastecimento - {vehicle_plate} - {form.liters.data}L de {form.fuel_type.data}",
+            amount=form.total_cost.data,
+            type=FinancialEntryType.saida,
+            date=form.date.data,
+            entry_type='refueling',
+            reference_id=refueling.id,
+            created_by=current_user.id
+        )
+        
+        db.session.add(financial_entry)
+        db.session.commit()
+        
         # Criar log da ação
-        vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
         log_action('Abastecimento registrado', 'refueling', refueling.id, f'{vehicle_plate} - {form.liters.data}L - R${form.total_cost.data:.2f}')
         
-        flash('Abastecimento registrado com sucesso!', 'success')
+        flash('Abastecimento registrado com sucesso e lançado no financeiro!', 'success')
         return redirect(url_for('refuelings'))
     
     return render_template(
