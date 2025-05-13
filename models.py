@@ -19,6 +19,20 @@ class ServiceOrderStatus(enum.Enum):
 class FinancialEntryType(enum.Enum):
     entrada = "entrada"
     saida = "saida"
+    
+class VehicleStatus(enum.Enum):
+    ativo = "Ativo"
+    manutencao = "Em Manutenção"
+    inativo = "Inativo"
+    reservado = "Reservado"
+    
+class VehicleType(enum.Enum):
+    carro = "Carro"
+    caminhao = "Caminhão"
+    van = "Van"
+    onibus = "Ônibus"
+    maquinario = "Maquinário"
+    outro = "Outro"
 
 # Association tables
 equipment_service_orders = db.Table(
@@ -341,3 +355,55 @@ class StockMovement(db.Model):
         if self.created_by:
             return User.query.get(self.created_by)
         return None
+
+class Vehicle(db.Model):
+    """Modelo para veículos da frota"""
+    id = db.Column(db.Integer, primary_key=True)
+    identifier = db.Column(db.String(50), unique=True, nullable=False)  # Placa ou ID interno
+    type = db.Column(Enum(VehicleType), nullable=False)
+    brand = db.Column(db.String(50))
+    model = db.Column(db.String(100))
+    year = db.Column(db.Integer)
+    license_plate = db.Column(db.String(20))
+    color = db.Column(db.String(50))
+    chassis = db.Column(db.String(50))
+    purchase_date = db.Column(db.Date)
+    purchase_value = db.Column(db.Numeric(10, 2))
+    current_value = db.Column(db.Numeric(10, 2))
+    mileage = db.Column(db.Integer)
+    last_maintenance_date = db.Column(db.Date)
+    next_maintenance_date = db.Column(db.Date)
+    responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(Enum(VehicleStatus), default=VehicleStatus.ativo, nullable=False)
+    image = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    responsible = db.relationship('User', backref='vehicles', foreign_keys=[responsible_id])
+    maintenance_history = db.relationship('VehicleMaintenance', backref='vehicle', lazy=True, cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f'<Vehicle {self.identifier} - {self.brand} {self.model}>'
+
+class VehicleMaintenance(db.Model):
+    """Registro de manutenções realizadas nos veículos"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    mileage = db.Column(db.Integer)
+    description = db.Column(db.Text, nullable=False)
+    cost = db.Column(db.Numeric(10, 2))
+    service_provider = db.Column(db.String(100))
+    invoice_number = db.Column(db.String(50))
+    performed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    performed_by = db.relationship('User', backref='maintenance_performed', foreign_keys=[performed_by_id])
+    creator = db.relationship('User', backref='maintenance_created', foreign_keys=[created_by])
+    
+    def __repr__(self):
+        return f'<VehicleMaintenance {self.id} - {self.date}>'
