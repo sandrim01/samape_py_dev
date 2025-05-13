@@ -40,7 +40,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Configure session
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # Alterado para False em ambiente de desenvolvimento
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
@@ -120,5 +120,25 @@ app.add_url_rule('/delete_travel_log/<int:travel_log_id>', view_func=routes_vehi
 
 # Create initial admin user if needed
 with app.app_context():
-    if hasattr(app, 'create_initial_admin'):
-        app.create_initial_admin()
+    # Certificando que temos pelo menos um usuário admin no sistema
+    from models import User, UserRole
+
+    # Verificar se já existe um usuário admin
+    if User.query.filter_by(role=UserRole.admin).count() == 0:
+        try:
+            admin = User(
+                username="admin",
+                name="Administrador",
+                email="admin@samape.com",
+                role=UserRole.admin,
+                active=True
+            )
+            admin.set_password("admin123")
+            
+            db.session.add(admin)
+            db.session.commit()
+            
+            print("Usuário administrador criado com sucesso!")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao criar usuário administrador: {e}")
