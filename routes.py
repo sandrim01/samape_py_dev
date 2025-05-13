@@ -330,11 +330,7 @@ def register_routes(app):
     def edit_service_order(id):
         service_order = ServiceOrder.query.get_or_404(id)
         
-        # Check if order is already closed
-        if service_order.status == ServiceOrderStatus.fechada:
-            flash('Não é possível editar uma OS fechada.', 'warning')
-            return redirect(url_for('view_service_order', id=id))
-            
+        # Removida restrição de edição para OS fechadas
         form = ServiceOrderForm(obj=service_order)
         
         # Load clients for dropdown
@@ -411,11 +407,8 @@ def register_routes(app):
         service_order_id = image.service_order_id
         
         if form.validate_on_submit():
-            # Verificar se a OS está fechada
+            # Removida restrição para exclusão de imagens em OS fechadas
             service_order = ServiceOrder.query.get(service_order_id)
-            if service_order and service_order.status == ServiceOrderStatus.fechada:
-                flash('Não é possível excluir imagens de uma OS fechada.', 'warning')
-                return redirect(url_for('view_service_order', id=service_order_id))
             
             # Excluir a imagem
             success, message = delete_service_order_image(image_id)
