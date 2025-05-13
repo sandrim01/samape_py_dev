@@ -283,8 +283,14 @@ def register_routes(app):
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     description=form.description.data,
                     estimated_value=form.estimated_value.data,
+                    total_value=form.total_value.data,
                     status=ServiceOrderStatus[form.status.data]
                 )
+                
+                # Se um valor total foi definido e status é "fechada", registrar data de fechamento
+                if form.total_value.data and form.status.data == 'fechada':
+                    service_order.closed_at = datetime.utcnow()
+                    service_order.invoice_amount = form.total_value.data
                 
                 # Add equipment relationships if selected
                 if form.equipment_ids.data:
@@ -374,7 +380,19 @@ def register_routes(app):
             service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
             service_order.description = form.description.data
             service_order.estimated_value = form.estimated_value.data
-            service_order.status = ServiceOrderStatus[form.status.data]
+            service_order.total_value = form.total_value.data
+            
+            # Se um valor total foi definido, sugerir fechar a OS se estiver em andamento
+            if form.total_value.data and service_order.status == ServiceOrderStatus.em_andamento:
+                if form.status.data == 'fechada' or request.form.get('fechar_os') == 'true':
+                    service_order.status = ServiceOrderStatus.fechada
+                    service_order.closed_at = datetime.utcnow()
+                    service_order.invoice_amount = form.total_value.data
+                    flash('Ordem de serviço fechada com sucesso!', 'success')
+                else:
+                    flash('Um valor total foi definido. Você pode fechar esta OS quando estiver pronto.', 'info')
+            else:
+                service_order.status = ServiceOrderStatus[form.status.data]
             
             # Update equipment relationships
             service_order.equipment = []

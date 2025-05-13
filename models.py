@@ -94,6 +94,7 @@ class ServiceOrder(db.Model):
     responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     description = db.Column(db.Text, nullable=False)
     estimated_value = db.Column(db.Numeric(10, 2), nullable=True)  # Valor estimado da OS
+    total_value = db.Column(db.Numeric(10, 2), nullable=True)  # Valor total da OS (quando concluída)
     status = db.Column(Enum(ServiceOrderStatus), default=ServiceOrderStatus.aberta, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
