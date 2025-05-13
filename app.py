@@ -9,7 +9,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from jinja_filters import nl2br, format_document, format_currency, status_color
+from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value
 
 
 # Configure logging
@@ -79,6 +79,7 @@ app.jinja_env.filters['nl2br'] = nl2br
 app.jinja_env.filters['format_document'] = format_document
 app.jinja_env.filters['format_currency'] = format_currency
 app.jinja_env.filters['status_color'] = status_color
+app.jinja_env.filters['abs'] = absolute_value
 
 # Import and register routes
 from routes import register_routes

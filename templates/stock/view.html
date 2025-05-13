@@ -213,7 +213,7 @@
                                         <span class="badge badge-danger">Saída</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ abs(movement.quantity) }}</td>
+                                <td>{{ movement.quantity|abs }}</td>
                                 <td>{{ movement.description }}</td>
                                 <td>{{ movement.reference or '-' }}</td>
                                 <td>
