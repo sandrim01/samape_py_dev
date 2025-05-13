@@ -341,3 +341,192 @@ class StockMovement(db.Model):
         if self.created_by:
             return User.query.get(self.created_by)
         return None
+        
+# Enumerações para o controle de frota
+class VehicleStatus(enum.Enum):
+    """Status do veículo"""
+    ativo = "Ativo"
+    em_manutencao = "Em Manutenção"
+    inativo = "Inativo"
+    
+class FuelType(enum.Enum):
+    """Tipo de combustível"""
+    gasolina = "Gasolina"
+    etanol = "Etanol"
+    diesel = "Diesel"
+    gnv = "GNV"
+    flex = "Flex"
+    hibrido = "Híbrido"
+    eletrico = "Elétrico"
+    
+class MaintenanceType(enum.Enum):
+    """Tipo de manutenção"""
+    preventiva = "Preventiva"
+    corretiva = "Corretiva"
+    revisao = "Revisão"
+    troca_oleo = "Troca de Óleo"
+    pneus = "Pneus"
+    eletrica = "Elétrica"
+    mecanica = "Mecânica"
+    funilaria = "Funilaria"
+    limpeza = "Limpeza"
+    outros = "Outros"
+
+# Modelos para o controle de frota
+class Vehicle(db.Model):
+    """Modelo para veículos da frota"""
+    id = db.Column(db.Integer, primary_key=True)
+    model = db.Column(db.String(100), nullable=False)  # Modelo do veículo
+    brand = db.Column(db.String(100), nullable=False)  # Marca do veículo
+    plate = db.Column(db.String(20), unique=True, nullable=False)  # Placa do veículo
+    year = db.Column(db.Integer, nullable=True)  # Ano de fabricação
+    color = db.Column(db.String(50), nullable=True)  # Cor do veículo
+    chassis = db.Column(db.String(50), nullable=True)  # Número do chassi
+    renavam = db.Column(db.String(50), nullable=True)  # Número do RENAVAM
+    fuel_type = db.Column(Enum(FuelType), nullable=False)  # Tipo de combustível
+    status = db.Column(Enum(VehicleStatus), default=VehicleStatus.ativo, nullable=False)  # Status do veículo
+    current_km = db.Column(db.Integer, default=0, nullable=False)  # Quilometragem atual
+    acquisition_date = db.Column(db.Date, nullable=True)  # Data de aquisição
+    insurance_expiry = db.Column(db.Date, nullable=True)  # Data de vencimento do seguro
+    insurance_policy = db.Column(db.String(50), nullable=True)  # Número da apólice de seguro
+    next_maintenance_date = db.Column(db.Date, nullable=True)  # Data da próxima manutenção
+    next_maintenance_km = db.Column(db.Integer, nullable=True)  # KM para próxima manutenção
+    responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Responsável pelo veículo
+    notes = db.Column(db.Text, nullable=True)  # Notas gerais
+    image = db.Column(db.String(255), nullable=True)  # Foto do veículo
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relações
+    responsible = db.relationship('User', backref='vehicles_responsible')
+    refuelings = db.relationship('Refueling', backref='vehicle', lazy=True, cascade="all, delete-orphan")
+    maintenances = db.relationship('VehicleMaintenance', backref='vehicle', lazy=True, cascade="all, delete-orphan")
+    travel_logs = db.relationship('VehicleTravelLog', backref='vehicle', lazy=True, cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f'<Vehicle {self.brand} {self.model} - {self.plate}>'
+    
+    def update_current_km(self, new_km):
+        """Atualiza a quilometragem atual do veículo"""
+        if new_km > self.current_km:
+            self.current_km = new_km
+            return True
+        return False
+
+class Refueling(db.Model):
+    """Modelo para registros de abastecimento"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    odometer = db.Column(db.Integer, nullable=False)  # Odômetro no momento do abastecimento
+    fuel_type = db.Column(Enum(FuelType), nullable=False)  # Tipo de combustível
+    liters = db.Column(db.Float, nullable=False)  # Quantidade em litros
+    price_per_liter = db.Column(db.Float, nullable=False)  # Preço por litro
+    total_cost = db.Column(db.Float, nullable=False)  # Custo total
+    full_tank = db.Column(db.Boolean, default=True)  # Tanque cheio
+    gas_station = db.Column(db.String(100), nullable=True)  # Nome do posto
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Motorista
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=True)  # OS relacionada
+    receipt_image = db.Column(db.String(255), nullable=True)  # Imagem do comprovante
+    notes = db.Column(db.Text, nullable=True)  # Observações
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relações
+    driver = db.relationship('User', foreign_keys=[driver_id], backref='refuelings_as_driver')
+    service_order = db.relationship('ServiceOrder', backref='refuelings')
+    creator = db.relationship('User', foreign_keys=[created_by], backref='refuelings_created')
+    
+    def __repr__(self):
+        vehicle_plate = Vehicle.query.get(self.vehicle_id).plate if self.vehicle_id else "Unknown"
+        return f'<Refueling {self.id} - {vehicle_plate} - {self.date.strftime("%d/%m/%Y")}>'
+    
+    def save(self):
+        """Salva o registro e atualiza a quilometragem do veículo"""
+        vehicle = Vehicle.query.get(self.vehicle_id)
+        if vehicle and self.odometer > vehicle.current_km:
+            vehicle.current_km = self.odometer
+        return self
+
+class VehicleMaintenance(db.Model):
+    """Modelo para registros de manutenção"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    odometer = db.Column(db.Integer, nullable=False)  # Odômetro no momento da manutenção
+    maintenance_type = db.Column(Enum(MaintenanceType), nullable=False)  # Tipo de manutenção
+    description = db.Column(db.Text, nullable=False)  # Descrição do serviço
+    cost = db.Column(db.Float, nullable=False)  # Custo da manutenção
+    workshop = db.Column(db.String(100), nullable=True)  # Oficina/local
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=True)  # OS relacionada
+    invoice_number = db.Column(db.String(50), nullable=True)  # Número da nota fiscal
+    invoice_image = db.Column(db.String(255), nullable=True)  # Imagem da nota fiscal
+    completed = db.Column(db.Boolean, default=True)  # Manutenção concluída
+    next_maintenance_date = db.Column(db.Date, nullable=True)  # Data da próxima manutenção
+    next_maintenance_km = db.Column(db.Integer, nullable=True)  # KM para próxima manutenção
+    notes = db.Column(db.Text, nullable=True)  # Observações
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relações
+    service_order = db.relationship('ServiceOrder', backref='maintenances')
+    creator = db.relationship('User', backref='maintenances_created')
+    
+    def __repr__(self):
+        vehicle_plate = Vehicle.query.get(self.vehicle_id).plate if self.vehicle_id else "Unknown"
+        return f'<Maintenance {self.id} - {vehicle_plate} - {self.date.strftime("%d/%m/%Y")}>'
+    
+    def save(self):
+        """Salva o registro e atualiza a quilometragem do veículo"""
+        vehicle = Vehicle.query.get(self.vehicle_id)
+        if vehicle:
+            if self.odometer > vehicle.current_km:
+                vehicle.current_km = self.odometer
+            if self.next_maintenance_date:
+                vehicle.next_maintenance_date = self.next_maintenance_date
+            if self.next_maintenance_km:
+                vehicle.next_maintenance_km = self.next_maintenance_km
+        return self
+
+class VehicleTravelLog(db.Model):
+    """Modelo para registros de viagens/deslocamentos"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=True)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=True)
+    start_odometer = db.Column(db.Integer, nullable=False)
+    end_odometer = db.Column(db.Integer, nullable=True)
+    destination = db.Column(db.String(200), nullable=False)
+    purpose = db.Column(db.Text, nullable=False)
+    distance = db.Column(db.Float, nullable=True)  # Distância percorrida em km
+    status = db.Column(db.String(20), default='em_andamento', nullable=False)  # em_andamento, concluido, cancelado
+    notes = db.Column(db.Text, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relações
+    driver = db.relationship('User', foreign_keys=[driver_id], backref='travel_logs_as_driver')
+    service_order = db.relationship('ServiceOrder', backref='travel_logs')
+    creator = db.relationship('User', foreign_keys=[created_by], backref='travel_logs_created')
+    
+    def __repr__(self):
+        return f'<TravelLog {self.id} - {self.vehicle.plate} - {self.start_date.strftime("%d/%m/%Y")}>'
+    
+    def complete(self, end_odometer):
+        """Finaliza o registro de viagem"""
+        if end_odometer > self.start_odometer:
+            self.end_odometer = end_odometer
+            self.end_date = datetime.utcnow()
+            self.distance = end_odometer - self.start_odometer
+            self.status = 'concluido'
+            
+            # Atualiza a quilometragem do veículo
+            vehicle = Vehicle.query.get(self.vehicle_id)
+            if vehicle and end_odometer > vehicle.current_km:
+                vehicle.current_km = end_odometer
+            
+            return True
+        return False

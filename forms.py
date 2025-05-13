@@ -1,9 +1,15 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
+from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField, DateField, FloatField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange, Regexp
 import re
-from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder
+from datetime import date, datetime
+from models import (
+    User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, 
+    Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder,
+    VehicleStatus, FuelType, MaintenanceType, Vehicle, Refueling, VehicleMaintenance,
+    VehicleTravelLog
+)
 
 class DeleteImageForm(FlaskForm):
     """Formulário simples para exclusão de imagens"""
