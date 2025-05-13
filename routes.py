@@ -18,6 +18,7 @@ from models import (
     SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage, equipment_service_orders,
     StockItem, StockMovement, StockItemType, StockItemStatus
 )
+from utils import get_system_setting
 from utils import log_action
 from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
@@ -2695,6 +2696,344 @@ def register_routes(app):
             return redirect(url_for('system_settings'))
             
         return render_template('settings/index.html', form=form, settings=current_settings)
+        
+    # Rotas para gerenciamento de EPIs e ferramentas (estoque)
+    @app.route('/estoque', methods=['GET'])
+    @login_required
+    def stock_items():
+        # Parâmetros de filtro
+        item_type = request.args.get('type', '')
+        status = request.args.get('status', '')
+        search = request.args.get('search', '')
+        supplier_id = request.args.get('supplier_id', '')
+        
+        # Query base com ordenação padrão
+        query = StockItem.query
+        
+        # Aplicar filtros
+        if item_type:
+            query = query.filter(StockItem.type == StockItemType[item_type])
+        if status:
+            query = query.filter(StockItem.status == StockItemStatus[status])
+        if search:
+            query = query.filter(StockItem.name.ilike(f'%{search}%') | 
+                                StockItem.description.ilike(f'%{search}%'))
+        if supplier_id and supplier_id.isdigit():
+            query = query.filter(StockItem.supplier_id == int(supplier_id))
+        
+        # Atualizar status de todos os itens
+        items_to_update = []
+        for item in query.all():
+            old_status = item.status
+            item.update_status()
+            if old_status != item.status:
+                items_to_update.append(item)
+        
+        if items_to_update:
+            db.session.commit()
+        
+        # Ordenação e paginação
+        items_per_page = int(get_system_setting('items_per_page', '20'))
+        page = request.args.get('page', 1, type=int)
+        items = query.order_by(StockItem.name).paginate(
+            page=page, per_page=items_per_page, error_out=False
+        )
+        
+        # Lista de fornecedores para o filtro
+        suppliers = Supplier.query.order_by(Supplier.name).all()
+        
+        return render_template(
+            'stock/index.html',
+            items=items,
+            item_types=StockItemType,
+            item_statuses=StockItemStatus,
+            suppliers=suppliers,
+            active_filters={
+                'type': item_type,
+                'status': status,
+                'search': search,
+                'supplier_id': supplier_id
+            }
+        )
+        
+    @app.route('/estoque/novo', methods=['GET', 'POST'])
+    @login_required
+    def new_stock_item():
+        form = StockItemForm()
+        
+        if form.validate_on_submit():
+            try:
+                # Processar data de validade
+                expiration_date = None
+                if form.expiration_date.data:
+                    try:
+                        expiration_date = datetime.strptime(form.expiration_date.data, '%Y-%m-%d').date()
+                    except ValueError:
+                        flash('Formato de data inválido. Use o formato AAAA-MM-DD.', 'danger')
+                        return render_template('stock/edit.html', form=form)
+                
+                # Criar o item
+                stock_item = StockItem(
+                    name=form.name.data,
+                    description=form.description.data,
+                    type=StockItemType[form.type.data],
+                    quantity=form.quantity.data,
+                    min_quantity=form.min_quantity.data,
+                    location=form.location.data,
+                    price=form.price.data,
+                    supplier_id=form.supplier_id.data if form.supplier_id.data != 0 else None,
+                    expiration_date=expiration_date,
+                    ca_number=form.ca_number.data,
+                    created_by=current_user.id
+                )
+                
+                # Atualizar status com base na quantidade e validade
+                stock_item.update_status()
+                
+                # Salvar imagem se fornecida
+                if form.image.data and form.image.data.filename:
+                    filename = secure_filename(form.image.data.filename)
+                    # Gerar nome único com uuid
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    # Diretório para salvar as imagens
+                    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'stock')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    # Caminho completo do arquivo
+                    filepath = os.path.join(upload_folder, unique_filename)
+                    # Salvar o arquivo
+                    form.image.data.save(filepath)
+                    # Armazenar o caminho relativo no banco de dados
+                    stock_item.image = f'uploads/stock/{unique_filename}'
+                
+                db.session.add(stock_item)
+                db.session.commit()
+                
+                # Registrar a criação do item
+                log_action(
+                    'Cadastro de Item de Estoque',
+                    'stock_item',
+                    stock_item.id,
+                    f"Item {stock_item.name} cadastrado no estoque"
+                )
+                
+                # Criar um registro de movimento de estoque para a entrada inicial
+                if form.quantity.data > 0:
+                    movement = StockMovement(
+                        stock_item_id=stock_item.id,
+                        quantity=form.quantity.data,
+                        description="Entrada inicial de estoque",
+                        created_by=current_user.id
+                    )
+                    db.session.add(movement)
+                    db.session.commit()
+                
+                flash('Item cadastrado com sucesso!', 'success')
+                return redirect(url_for('view_stock_item', id=stock_item.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Erro ao cadastrar item de estoque: {str(e)}")
+                flash(f'Erro ao cadastrar item: {str(e)}', 'danger')
+        
+        return render_template('stock/edit.html', form=form, item=None)
+        
+    @app.route('/estoque/<int:id>', methods=['GET'])
+    @login_required
+    def view_stock_item(id):
+        item = StockItem.query.get_or_404(id)
+        
+        # Atualizar status do item
+        old_status = item.status
+        item.update_status()
+        if old_status != item.status:
+            db.session.commit()
+        
+        # Buscar movimentações do item
+        movements = StockMovement.query.filter_by(stock_item_id=id).order_by(StockMovement.created_at.desc()).all()
+        
+        # Formulário para nova movimentação
+        movement_form = StockMovementForm()
+        movement_form.stock_item_id.choices = [(item.id, item.name)]
+        movement_form.stock_item_id.data = item.id
+        
+        return render_template(
+            'stock/view.html',
+            item=item,
+            movements=movements,
+            movement_form=movement_form
+        )
+        
+    @app.route('/estoque/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    def edit_stock_item(id):
+        item = StockItem.query.get_or_404(id)
+        form = StockItemForm(obj=item)
+        
+        if form.validate_on_submit():
+            try:
+                # Processar data de validade
+                expiration_date = None
+                if form.expiration_date.data:
+                    try:
+                        expiration_date = datetime.strptime(form.expiration_date.data, '%Y-%m-%d').date()
+                    except ValueError:
+                        flash('Formato de data inválido. Use o formato AAAA-MM-DD.', 'danger')
+                        return render_template('stock/edit.html', form=form, item=item)
+                
+                # Atualizar o item
+                item.name = form.name.data
+                item.description = form.description.data
+                item.type = StockItemType[form.type.data]
+                # Não atualizar quantity diretamente, usar movimentação
+                item.min_quantity = form.min_quantity.data
+                item.location = form.location.data
+                item.price = form.price.data
+                item.supplier_id = form.supplier_id.data if form.supplier_id.data != 0 else None
+                item.expiration_date = expiration_date
+                item.ca_number = form.ca_number.data
+                
+                # Salvar nova imagem se fornecida
+                if form.image.data and form.image.data.filename:
+                    # Remover imagem anterior se existir
+                    if item.image:
+                        old_image_path = os.path.join(current_app.static_folder, item.image)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    
+                    filename = secure_filename(form.image.data.filename)
+                    # Gerar nome único com uuid
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    # Diretório para salvar as imagens
+                    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'stock')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    # Caminho completo do arquivo
+                    filepath = os.path.join(upload_folder, unique_filename)
+                    # Salvar o arquivo
+                    form.image.data.save(filepath)
+                    # Armazenar o caminho relativo no banco de dados
+                    item.image = f'uploads/stock/{unique_filename}'
+                
+                # Atualizar status do item
+                item.update_status()
+                db.session.commit()
+                
+                # Registrar a edição do item
+                log_action(
+                    'Edição de Item de Estoque',
+                    'stock_item',
+                    item.id,
+                    f"Item {item.name} editado no estoque"
+                )
+                
+                flash('Item atualizado com sucesso!', 'success')
+                return redirect(url_for('view_stock_item', id=item.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Erro ao editar item de estoque: {str(e)}")
+                flash(f'Erro ao editar item: {str(e)}', 'danger')
+        
+        # Preencher o campo de data de validade no formato correto
+        if request.method == 'GET' and item.expiration_date:
+            form.expiration_date.data = item.expiration_date.strftime('%Y-%m-%d')
+        
+        return render_template('stock/edit.html', form=form, item=item)
+        
+    @app.route('/estoque/<int:id>/excluir', methods=['POST'])
+    @login_required
+    @role_required(['admin', 'gerente'])
+    def delete_stock_item(id):
+        item = StockItem.query.get_or_404(id)
+        
+        try:
+            # Registrar a exclusão
+            item_name = item.name
+            
+            # Remover imagem se existir
+            if item.image:
+                image_path = os.path.join(current_app.static_folder, item.image)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+            
+            # Excluir movimentações relacionadas
+            StockMovement.query.filter_by(stock_item_id=id).delete()
+            
+            # Excluir o item
+            db.session.delete(item)
+            db.session.commit()
+            
+            # Registrar a ação
+            log_action(
+                'Exclusão de Item de Estoque',
+                'stock_item',
+                id,
+                f"Item {item_name} excluído do estoque"
+            )
+            
+            flash('Item excluído com sucesso!', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir item de estoque: {str(e)}")
+            flash(f'Erro ao excluir item: {str(e)}', 'danger')
+        
+        return redirect(url_for('stock_items'))
+        
+    @app.route('/estoque/movimentacao', methods=['POST'])
+    @login_required
+    def add_stock_movement():
+        form = StockMovementForm()
+        
+        if form.validate_on_submit():
+            try:
+                item = StockItem.query.get_or_404(form.stock_item_id.data)
+                
+                # Determinar a quantidade (positiva para entrada, negativa para saída)
+                quantity = form.quantity.data
+                if form.direction.data == 'saida':
+                    quantity = -quantity
+                
+                # Verificar se há quantidade suficiente em caso de saída
+                if quantity < 0 and abs(quantity) > item.quantity:
+                    flash('Quantidade insuficiente em estoque para esta saída.', 'danger')
+                    return redirect(url_for('view_stock_item', id=item.id))
+                
+                # Criar o movimento
+                movement = StockMovement(
+                    stock_item_id=form.stock_item_id.data,
+                    quantity=quantity,
+                    description=form.description.data,
+                    reference=form.reference.data,
+                    service_order_id=form.service_order_id.data if form.service_order_id.data != 0 else None,
+                    created_by=current_user.id
+                )
+                
+                # Atualizar a quantidade do item
+                item.quantity += quantity
+                
+                # Atualizar o status do item
+                item.update_status()
+                
+                db.session.add(movement)
+                db.session.commit()
+                
+                # Registrar a ação
+                log_action(
+                    f"{'Entrada' if quantity > 0 else 'Saída'} de Estoque",
+                    'stock_movement',
+                    movement.id,
+                    f"{abs(quantity)} unidade(s) {form.direction.data} de {item.name}"
+                )
+                
+                flash('Movimento de estoque registrado com sucesso!', 'success')
+                
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Erro ao registrar movimento de estoque: {str(e)}")
+                flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
+        
+        # Redirecionar para a visualização do item
+        return redirect(url_for('view_stock_item', id=form.stock_item_id.data))
 
     # Initialize the first admin user if no users exist
     def create_initial_admin():

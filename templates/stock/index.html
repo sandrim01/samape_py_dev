@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Estoque de EPIs e Ferramentas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Estoque de EPIs e Ferramentas</h1>
+        <div>
+            <a href="{{ url_for('new_stock_item') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Novo Item
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card card-body mb-4 bg-gradient-dark border-left-primary">
+        <form method="GET" action="{{ url_for('stock_items') }}" id="filter-form">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="search" class="form-label">Pesquisar</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ active_filters.search }}" placeholder="Nome ou descrição...">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="type" class="form-label">Tipo</label>
+                    <select class="form-control" id="type" name="type">
+                        <option value="">Todos os tipos</option>
+                        {% for type in item_types %}
+                        <option value="{{ type.name }}" {% if active_filters.type == type.name %}selected{% endif %}>
+                            {{ type.value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">Todos os status</option>
+                        {% for status in item_statuses %}
+                        <option value="{{ status.name }}" {% if active_filters.status == status.name %}selected{% endif %}>
+                            {{ status.value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="supplier_id" class="form-label">Fornecedor</label>
+                    <select class="form-control" id="supplier_id" name="supplier_id">
+                        <option value="">Todos os fornecedores</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if active_filters.supplier_id|string == supplier.id|string %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-right">
+                    <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+                    <a href="{{ url_for('stock_items') }}" class="btn btn-secondary">Limpar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Itens -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-gradient-primary">
+            <h6 class="m-0 font-weight-bold text-white">Itens Cadastrados</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-white"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Opções:</div>
+                    <a class="dropdown-item" href="{{ url_for('stock_items') }}?status=baixo">Ver itens com estoque baixo</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_items') }}?status=esgotado">Ver itens esgotados</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_items') }}?type=epi">Ver somente EPIs</a>
+                    <a class="dropdown-item" href="{{ url_for('stock_items') }}?type=ferramenta">Ver somente ferramentas</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ url_for('stock_items') }}">Ver todos</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="stock-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                            <th>Mín.</th>
+                            <th>Status</th>
+                            <th>Localização</th>
+                            <th>Fornecedor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if items.items %}
+                            {% for item in items.items %}
+                            <tr class="{% if item.status == item_statuses.esgotado %}table-danger{% elif item.status == item_statuses.baixo %}table-warning{% elif item.status == item_statuses.vencido %}table-danger{% endif %}">
+                                <td>{{ item.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_stock_item', id=item.id) }}">
+                                        {{ item.name }}
+                                    </a>
+                                </td>
+                                <td>{{ item.type.value }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.min_quantity }}</td>
+                                <td>
+                                    <span class="badge badge-{% if item.status == item_statuses.disponivel %}success{% elif item.status == item_statuses.baixo %}warning{% elif item.status == item_statuses.esgotado %}danger{% elif item.status == item_statuses.vencido %}danger{% endif %}">
+                                        {{ item.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ item.location or '-' }}</td>
+                                <td>{{ item.supplier.name if item.supplier else '-' }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('view_stock_item', id=item.id) }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('edit_stock_item', id=item.id) }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <!-- Botão que abre modal para confirmar exclusão -->
+                                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal{{ item.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Modal de Confirmação de Exclusão -->
+                                    <div class="modal fade" id="deleteModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ item.id }}" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ item.id }}">Confirmar Exclusão</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Tem certeza que deseja excluir o item <strong>{{ item.name }}</strong>?<br>
+                                                    Esta ação não pode ser desfeita e todas as movimentações relacionadas serão excluídas.
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                    <form action="{{ url_for('delete_stock_item', id=item.id) }}" method="POST">
+                                                        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center">Nenhum item de estoque encontrado.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if items.pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginação de itens">
+                    <ul class="pagination">
+                        {% if items.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('stock_items', page=items.prev_num, search=active_filters.search, type=active_filters.type, status=active_filters.status, supplier_id=active_filters.supplier_id) }}">
+                                    Anterior
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in items.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == items.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('stock_items', page=page_num, search=active_filters.search, type=active_filters.type, status=active_filters.status, supplier_id=active_filters.supplier_id) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if items.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('stock_items', page=items.next_num, search=active_filters.search, type=active_filters.type, status=active_filters.status, supplier_id=active_filters.supplier_id) }}">
+                                    Próximo
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próximo</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Aplica filtros ao mudar select
+        $('#type, #status, #supplier_id').change(function() {
+            $('#filter-form').submit();
+        });
+    });
+</script>
+{% endblock %}
