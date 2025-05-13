@@ -62,7 +62,7 @@
             </div>
             
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label for="estimated_value" class="form-label">Valor Estimado (R$)</label>
                     {{ form.estimated_value(class="form-control", id="estimated_value") }}
                     {% if form.estimated_value.errors %}
@@ -74,7 +74,22 @@
                     {% endif %}
                 </div>
                 
-                <div class="col-md-6">
+                {% if service_order.status.name == 'fechada' %}
+                <div class="col-md-4">
+                    <label for="invoice_amount" class="form-label">Valor Total da Nota (R$)</label>
+                    {{ form.invoice_amount(class="form-control", id="invoice_amount") }}
+                    {% if form.invoice_amount.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.invoice_amount.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-warning">Atenção: Alterar este valor atualizará o lançamento financeiro associado.</small>
+                </div>
+                {% endif %}
+                
+                <div class="col-md-{% if service_order.status.name == 'fechada' %}4{% else %}8{% endif %}">
                     <label for="status" class="form-label">Status *</label>
                     {{ form.status(class="form-control", id="status") }}
                     {% if form.status.errors %}

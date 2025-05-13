@@ -369,23 +369,68 @@ def register_routes(app):
             if service_order.responsible_id is None:
                 form.responsible_id.data = 0
                 
+            # Set invoice_amount if OS is closed
+            if service_order.status.name == 'fechada' and service_order.invoice_amount:
+                form.invoice_amount.data = service_order.invoice_amount
+                
         if form.validate_on_submit():
-            service_order.client_id = form.client_id.data
-            service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
-            service_order.description = form.description.data
-            service_order.estimated_value = form.estimated_value.data
-            service_order.status = ServiceOrderStatus[form.status.data]
-            
-            # Update equipment relationships
-            service_order.equipment = []
-            if form.equipment_ids.data:
-                equipment_ids = form.equipment_ids.data.split(',')
-                for eq_id in equipment_ids:
-                    equipment = Equipment.query.get(int(eq_id))
-                    if equipment and equipment.client_id == service_order.client_id:
-                        service_order.equipment.append(equipment)
-            
-            db.session.commit()
+            try:
+                # Verifique se estamos alterando o valor da nota de uma OS fechada
+                # e armazene o valor antigo para comparação
+                old_invoice_amount = None
+                if service_order.status.name == 'fechada' and service_order.invoice_amount:
+                    old_invoice_amount = service_order.invoice_amount
+                
+                service_order.client_id = form.client_id.data
+                service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
+                service_order.description = form.description.data
+                service_order.estimated_value = form.estimated_value.data
+                service_order.status = ServiceOrderStatus[form.status.data]
+                
+                # Se a OS está fechada, atualize o valor total da nota
+                if service_order.status.name == 'fechada' and form.invoice_amount.data:
+                    service_order.invoice_amount = form.invoice_amount.data
+                
+                # Update equipment relationships
+                service_order.equipment = []
+                if form.equipment_ids.data:
+                    equipment_ids = form.equipment_ids.data.split(',')
+                    for eq_id in equipment_ids:
+                        equipment = Equipment.query.get(int(eq_id))
+                        if equipment and equipment.client_id == service_order.client_id:
+                            service_order.equipment.append(equipment)
+                
+                # Salve as alterações na OS
+                db.session.commit()
+                
+                # Se alteramos o valor da nota e existem lançamentos financeiros relacionados
+                # devemos atualizar esses lançamentos
+                if (old_invoice_amount is not None and 
+                    form.invoice_amount.data is not None and 
+                    old_invoice_amount != form.invoice_amount.data):
+                    
+                    # Busque o lançamento financeiro associado à OS
+                    financial_entry = FinancialEntry.query.filter_by(
+                        service_order_id=service_order.id,
+                        type=FinancialEntryType.entrada
+                    ).first()
+                    
+                    if financial_entry:
+                        financial_entry.amount = form.invoice_amount.data
+                        financial_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
+                        db.session.commit()
+                        
+                        log_action(
+                            'Atualização Financeira',
+                            'financial',
+                            financial_entry.id,
+                            f"Valor da OS #{service_order.id} atualizado de {old_invoice_amount} para {form.invoice_amount.data}"
+                        )
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao atualizar OS: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao atualizar OS {id}: {str(e)}")
+                return redirect(url_for('view_service_order', id=service_order.id))
             
             # Processar imagens - verificar se há arquivos enviados
             image_files = request.files.getlist('images')
@@ -478,17 +523,36 @@ def register_routes(app):
                     flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
                     return redirect(url_for('view_service_order', id=id))
                 
-                # Create financial entry
-                financial_entry = FinancialEntry(
+                # Verificar se já existe um lançamento financeiro para esta OS
+                existing_entry = FinancialEntry.query.filter_by(
                     service_order_id=service_order.id,
-                    description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
-                    amount=form.invoice_amount.data,
-                    type=FinancialEntryType.entrada,
-                    created_by=current_user.id
-                )
+                    type=FinancialEntryType.entrada
+                ).first()
                 
-                db.session.add(financial_entry)
-                db.session.commit()
+                # Se já existe, atualiza o valor; senão, cria um novo lançamento
+                if existing_entry:
+                    existing_entry.amount = form.invoice_amount.data
+                    existing_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
+                    db.session.commit()
+                    
+                    log_action(
+                        'Atualização Financeira',
+                        'financial',
+                        existing_entry.id,
+                        f"Valor da OS #{service_order.id} atualizado para {form.invoice_amount.data}"
+                    )
+                else:
+                    # Create new financial entry
+                    financial_entry = FinancialEntry(
+                        service_order_id=service_order.id,
+                        description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
+                        amount=form.invoice_amount.data,
+                        type=FinancialEntryType.entrada,
+                        created_by=current_user.id
+                    )
+                    
+                    db.session.add(financial_entry)
+                    db.session.commit()
                 
                 flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
                 log_action(
