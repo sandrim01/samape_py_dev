@@ -85,6 +85,9 @@ app.jinja_env.filters['abs'] = absolute_value
 from routes import register_routes
 register_routes(app)
 
+# Import vehicle routes
+import routes_vehicles
+
 # Create initial admin user if needed
 with app.app_context():
     if hasattr(app, 'create_initial_admin'):

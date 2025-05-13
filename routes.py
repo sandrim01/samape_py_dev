@@ -16,7 +16,8 @@ from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
     SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage, equipment_service_orders,
-    StockItem, StockMovement, StockItemType, StockItemStatus
+    StockItem, StockMovement, StockItemType, StockItemStatus, Vehicle, Refueling, 
+    VehicleMaintenance, VehicleTravelLog, VehicleStatus, FuelType, MaintenanceType
 )
 from utils import get_system_setting
 from utils import log_action
@@ -24,7 +25,8 @@ from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
     SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm,
-    FlaskForm, StockItemForm, StockMovementForm
+    FlaskForm, StockItemForm, StockMovementForm, VehicleForm, RefuelingForm,
+    VehicleMaintenanceForm, VehicleTravelLogForm, VehicleTravelLogCompleteForm
 )
 from utils import (
     role_required, admin_required, manager_required, log_action,

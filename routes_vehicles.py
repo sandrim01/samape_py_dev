@@ -10,12 +10,20 @@ from app import db, app
 from models import Vehicle, Refueling, VehicleMaintenance, VehicleTravelLog, VehicleStatus
 from forms import VehicleForm, RefuelingForm, VehicleMaintenanceForm, VehicleTravelLogForm, VehicleTravelLogCompleteForm, DeleteImageForm
 import locale
-from utils import allowed_file, delete_file, save_image, create_log, format_date
+from utils import allowed_file, delete_file, save_image, log_action, format_date
 import uuid
 import re
 
 # Configurar o locale para formatação de números
-locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+try:
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+except locale.Error:
+    try:
+        # Tentar outros locales comuns
+        locale.setlocale(locale.LC_ALL, 'pt_BR')
+    except locale.Error:
+        # Usar o locale padrão do sistema
+        locale.setlocale(locale.LC_ALL, '')
 
 # Definir as pastas para salvar as imagens
 UPLOAD_FOLDER = 'static/uploads/vehicles'
@@ -91,7 +99,7 @@ def add_vehicle():
         db.session.commit()
         
         # Criar log da ação
-        create_log(f'Veículo adicionado: {vehicle.plate} - {vehicle.brand} {vehicle.model}')
+        log_action('Veículo adicionado', 'vehicle', vehicle.id, f'{vehicle.plate} - {vehicle.brand} {vehicle.model}')
         
         flash(f'Veículo {vehicle.plate} adicionado com sucesso!', 'success')
         return redirect(url_for('vehicles'))
@@ -170,7 +178,7 @@ def edit_vehicle(vehicle_id):
         db.session.commit()
         
         # Criar log da ação
-        create_log(f'Veículo editado: {vehicle.plate} - {vehicle.brand} {vehicle.model}')
+        log_action('Veículo editado', 'vehicle', vehicle.id, f'{vehicle.plate} - {vehicle.brand} {vehicle.model}')
         
         flash(f'Veículo {vehicle.plate} atualizado com sucesso!', 'success')
         return redirect(url_for('view_vehicle', vehicle_id=vehicle.id))
@@ -210,7 +218,7 @@ def delete_vehicle(vehicle_id):
     db.session.delete(vehicle)
     db.session.commit()
     
-    create_log(f'Veículo excluído: {plate} - {brand_model}')
+    log_action('Veículo excluído', 'vehicle', vehicle_id, f'{plate} - {brand_model}')
     
     flash(f'Veículo {plate} excluído com sucesso!', 'success')
     return redirect(url_for('vehicles'))
@@ -232,7 +240,7 @@ def delete_vehicle_image(vehicle_id):
             vehicle.image = None
             db.session.commit()
             
-            create_log(f'Imagem removida do veículo: {vehicle.plate}')
+            log_action('Imagem removida', 'vehicle', vehicle.id, f'Veículo: {vehicle.plate}')
             
             flash('Imagem removida com sucesso!', 'success')
         else:
@@ -305,7 +313,7 @@ def add_refueling():
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Abastecimento registrado: {vehicle_plate} - {form.liters.data}L - R${form.total_cost.data:.2f}')
+        log_action('Abastecimento registrado', 'refueling', refueling.id, f'{vehicle_plate} - {form.liters.data}L - R${form.total_cost.data:.2f}')
         
         flash('Abastecimento registrado com sucesso!', 'success')
         return redirect(url_for('refuelings'))
@@ -367,7 +375,7 @@ def edit_refueling(refueling_id):
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Abastecimento editado: {vehicle_plate} - {form.liters.data}L - R${form.total_cost.data:.2f}')
+        log_action('Abastecimento editado', 'refueling', refueling.id, f'{vehicle_plate} - {form.liters.data}L - R${form.total_cost.data:.2f}')
         
         flash('Abastecimento atualizado com sucesso!', 'success')
         return redirect(url_for('view_refueling', refueling_id=refueling.id))
@@ -397,7 +405,7 @@ def delete_refueling(refueling_id):
     db.session.delete(refueling)
     db.session.commit()
     
-    create_log(f'Abastecimento excluído: {refueling_data}')
+    log_action('Abastecimento excluído', 'refueling', refueling_id, f'{refueling_data}')
     
     flash('Registro de abastecimento excluído com sucesso!', 'success')
     return redirect(url_for('refuelings'))
@@ -418,7 +426,7 @@ def delete_refueling_receipt(refueling_id):
             refueling.receipt_image = None
             db.session.commit()
             
-            create_log(f'Comprovante removido do abastecimento #{refueling.id}')
+            log_action('Comprovante removido', 'refueling', refueling.id, f'Abastecimento #{refueling.id}')
             
             flash('Comprovante removido com sucesso!', 'success')
         else:
@@ -492,7 +500,7 @@ def add_maintenance():
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Manutenção registrada: {vehicle_plate} - {form.maintenance_type.data} - R${form.cost.data:.2f}')
+        log_action('Manutenção registrada', 'maintenance', maintenance.id, f'{vehicle_plate} - {form.maintenance_type.data} - R${form.cost.data:.2f}')
         
         flash('Manutenção registrada com sucesso!', 'success')
         return redirect(url_for('maintenances'))
@@ -560,7 +568,7 @@ def edit_maintenance(maintenance_id):
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Manutenção editada: {vehicle_plate} - {form.maintenance_type.data} - R${form.cost.data:.2f}')
+        log_action('Manutenção editada', 'maintenance', maintenance.id, f'{vehicle_plate} - {form.maintenance_type.data} - R${form.cost.data:.2f}')
         
         flash('Manutenção atualizada com sucesso!', 'success')
         return redirect(url_for('view_maintenance', maintenance_id=maintenance.id))
@@ -590,7 +598,7 @@ def delete_maintenance(maintenance_id):
     db.session.delete(maintenance)
     db.session.commit()
     
-    create_log(f'Manutenção excluída: {maintenance_data}')
+    log_action('Manutenção excluída', 'maintenance', maintenance_id, f'{maintenance_data}')
     
     flash('Registro de manutenção excluído com sucesso!', 'success')
     return redirect(url_for('maintenances'))
@@ -611,7 +619,7 @@ def delete_maintenance_invoice(maintenance_id):
             maintenance.invoice_image = None
             db.session.commit()
             
-            create_log(f'Nota fiscal removida da manutenção #{maintenance.id}')
+            log_action('Nota fiscal removida', 'maintenance', maintenance.id, f'Manutenção #{maintenance.id}')
             
             flash('Nota fiscal removida com sucesso!', 'success')
         else:
@@ -667,7 +675,7 @@ def add_travel_log():
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Viagem iniciada: {vehicle_plate} - {form.destination.data}')
+        log_action('Viagem iniciada', 'travel', travel_log.id, f'{vehicle_plate} - {form.destination.data}')
         
         flash('Viagem registrada com sucesso!', 'success')
         return redirect(url_for('travel_logs'))
@@ -720,7 +728,7 @@ def edit_travel_log(travel_log_id):
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
-        create_log(f'Viagem editada: {vehicle_plate} - {form.destination.data}')
+        log_action('Viagem editada', 'travel', travel_log.id, f'{vehicle_plate} - {form.destination.data}')
         
         flash('Viagem atualizada com sucesso!', 'success')
         return redirect(url_for('view_travel_log', travel_log_id=travel_log.id))
@@ -766,7 +774,7 @@ def complete_travel_log(travel_log_id):
         
         # Criar log da ação
         vehicle_plate = Vehicle.query.get(travel_log.vehicle_id).plate
-        create_log(f'Viagem finalizada: {vehicle_plate} - {travel_log.destination} - {travel_log.distance} km')
+        log_action('Viagem finalizada', 'travel', travel_log.id, f'{vehicle_plate} - {travel_log.destination} - {travel_log.distance} km')
         
         flash('Viagem finalizada com sucesso!', 'success')
         return redirect(url_for('view_travel_log', travel_log_id=travel_log.id))
@@ -790,7 +798,7 @@ def cancel_travel_log(travel_log_id):
     
     # Criar log da ação
     vehicle_plate = Vehicle.query.get(travel_log.vehicle_id).plate
-    create_log(f'Viagem cancelada: {vehicle_plate} - {travel_log.destination}')
+    log_action('Viagem cancelada', 'travel', travel_log.id, f'{vehicle_plate} - {travel_log.destination}')
     
     flash('Viagem cancelada com sucesso!', 'success')
     return redirect(url_for('travel_logs'))
@@ -809,7 +817,7 @@ def delete_travel_log(travel_log_id):
     db.session.delete(travel_log)
     db.session.commit()
     
-    create_log(f'Viagem excluída: {travel_data}')
+    log_action('Viagem excluída', 'travel', travel_log_id, f'{travel_data}')
     
     flash('Registro de viagem excluído com sucesso!', 'success')
     return redirect(url_for('travel_logs'))
