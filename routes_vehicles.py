@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, jsonify, current_app, send_from_directory
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app import db
+from app import db, app
 from models import Vehicle, Refueling, VehicleMaintenance, VehicleTravelLog, VehicleStatus
 from forms import VehicleForm, RefuelingForm, VehicleMaintenanceForm, VehicleTravelLogForm, VehicleTravelLogCompleteForm, DeleteImageForm
 import locale
@@ -29,6 +29,7 @@ os.makedirs(RECEIPT_IMAGES_FOLDER, exist_ok=True)
 os.makedirs(INVOICE_IMAGES_FOLDER, exist_ok=True)
 
 # Rota para listar todos os veículos
+@app.route('/veiculos')
 @login_required
 def vehicles():
     """Lista todos os veículos da frota"""
