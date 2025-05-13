@@ -209,14 +209,14 @@
                     </div>
                     {% endfor %}
                 </div>
-                <a href="{{ url_for('stock') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                <a href="{{ url_for('stock_items') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
                     <i class="fas fa-toolbox me-1"></i>Gerenciar EPIs
                 </a>
                 {% else %}
                 <div class="alert alert-success mt-1 mb-1 p-2">
                     <i class="fas fa-check-circle me-1"></i>Sem alertas de estoque
                 </div>
-                <a href="{{ url_for('stock') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                <a href="{{ url_for('stock_items') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
                     <i class="fas fa-toolbox me-1"></i>Ver EPIs
                 </a>
                 {% endif %}
