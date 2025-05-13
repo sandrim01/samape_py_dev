@@ -52,6 +52,7 @@ def vehicles():
     )
 
 # Rota para adicionar um novo veículo
+@app.route('/veiculos/adicionar', methods=['GET', 'POST'])
 @login_required
 def add_vehicle():
     """Adiciona um novo veículo à frota"""
@@ -102,6 +103,7 @@ def add_vehicle():
     )
 
 # Rota para visualizar detalhes de um veículo
+@app.route('/veiculos/<int:vehicle_id>')
 @login_required
 def view_vehicle(vehicle_id):
     """Exibe os detalhes de um veículo"""
@@ -132,6 +134,7 @@ def view_vehicle(vehicle_id):
     )
 
 # Rota para editar um veículo
+@app.route('/veiculos/<int:vehicle_id>/editar', methods=['GET', 'POST'])
 @login_required
 def edit_vehicle(vehicle_id):
     """Edita um veículo existente"""
@@ -180,6 +183,7 @@ def edit_vehicle(vehicle_id):
     )
 
 # Rota para excluir um veículo
+@app.route('/veiculos/<int:vehicle_id>/excluir', methods=['POST'])
 @login_required
 def delete_vehicle(vehicle_id):
     """Exclui um veículo da frota"""
@@ -212,6 +216,7 @@ def delete_vehicle(vehicle_id):
     return redirect(url_for('vehicles'))
 
 # Rota para excluir a imagem de um veículo
+@app.route('/veiculos/<int:vehicle_id>/excluir-imagem', methods=['POST'])
 @login_required
 def delete_vehicle_image(vehicle_id):
     """Remove a imagem de um veículo"""
@@ -238,6 +243,7 @@ def delete_vehicle_image(vehicle_id):
 # ROTAS PARA ABASTECIMENTO
 
 # Rota para listar todos os abastecimentos
+@app.route('/abastecimentos')
 @login_required
 def refuelings():
     """Lista todos os registros de abastecimento"""
