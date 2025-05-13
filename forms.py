@@ -135,6 +135,7 @@ class ServiceOrderForm(FlaskForm):
     responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
+    invoice_amount = DecimalField('Valor Total da Nota (R$)', validators=[Optional()], places=2)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
     images = FileField('Imagens do Equipamento', validators=[
         Optional(),
