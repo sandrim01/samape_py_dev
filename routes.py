@@ -1525,6 +1525,7 @@ def register_routes(app):
     @login_required
     def view_invoice(id):
         from decimal import Decimal
+        from datetime import datetime
         
         service_order = ServiceOrder.query.get_or_404(id)
         
@@ -1532,11 +1533,41 @@ def register_routes(app):
         if service_order.status != ServiceOrderStatus.fechada:
             flash('Esta OS ainda não foi fechada.', 'warning')
             return redirect(url_for('view_service_order', id=id))
+            
+        # Verificar se a ordem de serviço possui cliente 
+        if not service_order.client or not service_order.client_id:
+            flash('Esta Ordem de Serviço não possui cliente associado e não pode gerar nota fiscal.', 'danger')
+            return redirect(url_for('view_service_order', id=id))
+        
+        # Verificar e corrigir campos de data necessários
+        if not service_order.invoice_date:
+            service_order.invoice_date = datetime.utcnow()
+            
+        if not service_order.closed_at:
+            service_order.closed_at = datetime.utcnow()
+            
+        # Verificar outros campos obrigatórios
+        if not service_order.invoice_number:
+            from utils import get_next_invoice_number
+            service_order.invoice_number = get_next_invoice_number()
+            
+        # Salvar as alterações
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar informações da nota fiscal: {str(e)}', 'danger')
+            return redirect(url_for('view_service_order', id=id))
         
         # Passamos o tipo Decimal para o template para facilitar operações matemáticas
-        return render_template('invoices/clean_invoice.html', 
-                              service_order=service_order,
-                              Decimal=Decimal)
+        try:
+            return render_template('invoices/clean_invoice.html', 
+                                service_order=service_order,
+                                Decimal=Decimal)
+        except Exception as e:
+            flash(f'Erro ao gerar nota fiscal: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao gerar nota fiscal: {str(e)}")
+            return redirect(url_for('view_service_order', id=id))
     
     @app.route('/os/<int:id>/nfe/exportar')
     @login_required
@@ -1546,6 +1577,7 @@ def register_routes(app):
         import tempfile
         import os
         from decimal import Decimal
+        from datetime import datetime
         
         service_order = ServiceOrder.query.get_or_404(id)
         
@@ -1553,11 +1585,40 @@ def register_routes(app):
         if service_order.status != ServiceOrderStatus.fechada:
             flash('Esta OS ainda não foi fechada.', 'warning')
             return redirect(url_for('view_service_order', id=id))
+            
+        # Verificar e corrigir campos de data necessários
+        if not service_order.invoice_date:
+            service_order.invoice_date = datetime.utcnow()
+            
+        if not service_order.closed_at:
+            service_order.closed_at = datetime.utcnow()
+            
+        # Verificar outros campos obrigatórios
+        if not service_order.invoice_number:
+            from utils import get_next_invoice_number
+            service_order.invoice_number = get_next_invoice_number()
+            
+        # Verificar se a ordem de serviço possui cliente 
+        if not service_order.client or not service_order.client_id:
+            flash('Esta Ordem de Serviço não possui cliente associado e não pode gerar nota fiscal.', 'danger')
+            return redirect(url_for('view_service_order', id=id))
+            
+        # Salvar as alterações
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar informações da nota fiscal: {str(e)}', 'danger')
+            return redirect(url_for('view_service_order', id=id))
         
         # Render the clean invoice template to HTML
-        html_content = render_template('invoices/clean_invoice.html', 
-                                       service_order=service_order,
-                                       Decimal=Decimal)  # Passando o tipo Decimal para o template
+        try:
+            html_content = render_template('invoices/clean_invoice.html', 
+                                        service_order=service_order,
+                                        Decimal=Decimal)  # Passando o tipo Decimal para o template
+        except Exception as e:
+            flash(f'Erro ao gerar nota fiscal: {str(e)}', 'danger')
+            return redirect(url_for('view_service_order', id=id))
         
         try:
             # Create a temporary file
