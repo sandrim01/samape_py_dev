@@ -141,6 +141,8 @@ class ServiceOrderForm(FlaskForm):
     responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
+    total_value = DecimalField('Valor Total (R$)', validators=[Optional()], places=2, 
+                             description='Preencha apenas para finalizar a OS')
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
     images = FileField('Imagens do Equipamento', validators=[
         Optional(),
@@ -367,3 +369,145 @@ class StockMovementForm(FlaskForm):
             (s.id, f"OS #{s.id} - {s.client.name}") 
             for s in ServiceOrder.query.filter(ServiceOrder.status != ServiceOrderStatus.fechada).order_by(ServiceOrder.id.desc()).all()
         ]
+        
+# Formulários para o sistema de controle de frota
+class VehicleForm(FlaskForm):
+    """Formulário para cadastro e edição de veículos"""
+    model = StringField('Modelo', validators=[DataRequired(), Length(max=100)])
+    brand = StringField('Marca', validators=[DataRequired(), Length(max=100)])
+    plate = StringField('Placa', validators=[
+        DataRequired(),
+        Length(min=7, max=8),
+        Regexp(r'^[A-Z0-9]{7,8}$', message='Formato de placa inválido. Use apenas letras maiúsculas e números.')
+    ])
+    year = IntegerField('Ano', validators=[Optional(), NumberRange(min=1950, max=2050)])
+    color = StringField('Cor', validators=[Optional(), Length(max=50)])
+    chassis = StringField('Chassi', validators=[Optional(), Length(max=50)])
+    renavam = StringField('RENAVAM', validators=[Optional(), Length(max=50)])
+    fuel_type = SelectField('Tipo de Combustível', validators=[DataRequired()], coerce=str)
+    status = SelectField('Status', validators=[DataRequired()], coerce=str)
+    current_km = IntegerField('Hodômetro Atual (km)', validators=[DataRequired(), NumberRange(min=0)])
+    acquisition_date = DateField('Data de Aquisição', validators=[Optional()], format='%Y-%m-%d')
+    insurance_expiry = DateField('Vencimento do Seguro', validators=[Optional()], format='%Y-%m-%d')
+    insurance_policy = StringField('Número da Apólice', validators=[Optional(), Length(max=50)])
+    next_maintenance_date = DateField('Data da Próxima Manutenção', validators=[Optional()], format='%Y-%m-%d')
+    next_maintenance_km = IntegerField('KM para Próxima Manutenção', validators=[Optional(), NumberRange(min=0)])
+    responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    image = FileField('Foto do Veículo', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas!')
+    ])
+    
+    def __init__(self, *args, **kwargs):
+        super(VehicleForm, self).__init__(*args, **kwargs)
+        self.fuel_type.choices = [(fuel.name, fuel.value) for fuel in FuelType]
+        self.status.choices = [(status.name, status.value) for status in VehicleStatus]
+        self.responsible_id.choices = [(0, 'Selecione um responsável (opcional)')]
+        users = User.query.filter_by(active=True).order_by(User.name).all()
+        for user in users:
+            self.responsible_id.choices.append((user.id, user.name))
+
+class RefuelingForm(FlaskForm):
+    """Formulário para registro de abastecimento"""
+    vehicle_id = SelectField('Veículo', coerce=int, validators=[DataRequired()])
+    date = DateField('Data', validators=[DataRequired()], format='%Y-%m-%d', default=date.today)
+    odometer = IntegerField('Hodômetro (km)', validators=[DataRequired(), NumberRange(min=0)])
+    fuel_type = SelectField('Tipo de Combustível', validators=[DataRequired()], coerce=str)
+    liters = FloatField('Quantidade (litros)', validators=[DataRequired(), NumberRange(min=0.1)])
+    price_per_liter = FloatField('Preço por Litro (R$)', validators=[DataRequired(), NumberRange(min=0.01)])
+    total_cost = FloatField('Valor Total (R$)', validators=[DataRequired(), NumberRange(min=0.01)])
+    full_tank = BooleanField('Tanque Completo', default=True)
+    gas_station = StringField('Posto', validators=[Optional(), Length(max=100)])
+    driver_id = SelectField('Motorista', coerce=int, validators=[Optional()])
+    service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
+    receipt_image = FileField('Comprovante de Abastecimento', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Apenas imagens e PDFs são permitidos!')
+    ])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(RefuelingForm, self).__init__(*args, **kwargs)
+        self.vehicle_id.choices = [(0, 'Selecione um veículo')]
+        vehicles = Vehicle.query.filter_by(status=VehicleStatus.ativo).order_by(Vehicle.plate).all()
+        for vehicle in vehicles:
+            self.vehicle_id.choices.append((vehicle.id, f'{vehicle.plate} - {vehicle.brand} {vehicle.model}'))
+        
+        self.fuel_type.choices = [(fuel.name, fuel.value) for fuel in FuelType]
+        
+        self.driver_id.choices = [(0, 'Selecione um motorista (opcional)')]
+        users = User.query.filter_by(active=True).order_by(User.name).all()
+        for user in users:
+            self.driver_id.choices.append((user.id, user.name))
+        
+        self.service_order_id.choices = [(0, 'Nenhuma OS relacionada')]
+        service_orders = ServiceOrder.query.filter_by(status=ServiceOrderStatus.aberta).all()
+        for so in service_orders:
+            self.service_order_id.choices.append((so.id, f'OS #{so.id} - {so.title}'))
+
+class VehicleMaintenanceForm(FlaskForm):
+    """Formulário para registro de manutenção de veículos"""
+    vehicle_id = SelectField('Veículo', coerce=int, validators=[DataRequired()])
+    date = DateField('Data', validators=[DataRequired()], format='%Y-%m-%d', default=date.today)
+    odometer = IntegerField('Hodômetro (km)', validators=[DataRequired(), NumberRange(min=0)])
+    maintenance_type = SelectField('Tipo de Manutenção', validators=[DataRequired()], coerce=str)
+    description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
+    cost = FloatField('Custo (R$)', validators=[DataRequired(), NumberRange(min=0)])
+    workshop = StringField('Oficina/Local', validators=[Optional(), Length(max=100)])
+    service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
+    invoice_number = StringField('Número da Nota Fiscal', validators=[Optional(), Length(max=50)])
+    invoice_image = FileField('Nota Fiscal/Comprovante', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Apenas imagens e PDFs são permitidos!')
+    ])
+    completed = BooleanField('Manutenção Concluída', default=True)
+    next_maintenance_date = DateField('Data da Próxima Manutenção', validators=[Optional()], format='%Y-%m-%d')
+    next_maintenance_km = IntegerField('KM para Próxima Manutenção', validators=[Optional(), NumberRange(min=0)])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(VehicleMaintenanceForm, self).__init__(*args, **kwargs)
+        self.vehicle_id.choices = [(0, 'Selecione um veículo')]
+        vehicles = Vehicle.query.order_by(Vehicle.plate).all()
+        for vehicle in vehicles:
+            self.vehicle_id.choices.append((vehicle.id, f'{vehicle.plate} - {vehicle.brand} {vehicle.model}'))
+        
+        self.maintenance_type.choices = [(mtype.name, mtype.value) for mtype in MaintenanceType]
+        
+        self.service_order_id.choices = [(0, 'Nenhuma OS relacionada')]
+        service_orders = ServiceOrder.query.filter_by(status=ServiceOrderStatus.aberta).all()
+        for so in service_orders:
+            self.service_order_id.choices.append((so.id, f'OS #{so.id} - {so.title}'))
+
+class VehicleTravelLogForm(FlaskForm):
+    """Formulário para registro de viagens/deslocamentos"""
+    vehicle_id = SelectField('Veículo', coerce=int, validators=[DataRequired()])
+    driver_id = SelectField('Motorista', coerce=int, validators=[DataRequired()])
+    service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
+    start_date = DateField('Data de Saída', validators=[DataRequired()], format='%Y-%m-%d', default=date.today)
+    start_odometer = IntegerField('Hodômetro de Saída (km)', validators=[DataRequired(), NumberRange(min=0)])
+    destination = StringField('Destino', validators=[DataRequired(), Length(max=200)])
+    purpose = TextAreaField('Finalidade', validators=[DataRequired()])
+    notes = TextAreaField('Observações', validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(VehicleTravelLogForm, self).__init__(*args, **kwargs)
+        self.vehicle_id.choices = [(0, 'Selecione um veículo')]
+        vehicles = Vehicle.query.filter_by(status=VehicleStatus.ativo).order_by(Vehicle.plate).all()
+        for vehicle in vehicles:
+            self.vehicle_id.choices.append((vehicle.id, f'{vehicle.plate} - {vehicle.brand} {vehicle.model}'))
+        
+        self.driver_id.choices = [(0, 'Selecione um motorista')]
+        users = User.query.filter_by(active=True).order_by(User.name).all()
+        for user in users:
+            self.driver_id.choices.append((user.id, user.name))
+        
+        self.service_order_id.choices = [(0, 'Nenhuma OS relacionada')]
+        service_orders = ServiceOrder.query.filter_by(status=ServiceOrderStatus.aberta).all()
+        for so in service_orders:
+            self.service_order_id.choices.append((so.id, f'OS #{so.id} - {so.title}'))
+            
+class VehicleTravelLogCompleteForm(FlaskForm):
+    """Formulário para finalização de viagem"""
+    end_odometer = IntegerField('Hodômetro de Retorno (km)', validators=[DataRequired(), NumberRange(min=0)])

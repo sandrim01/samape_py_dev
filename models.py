@@ -513,7 +513,8 @@ class VehicleTravelLog(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by], backref='travel_logs_created')
     
     def __repr__(self):
-        return f'<TravelLog {self.id} - {self.vehicle.plate} - {self.start_date.strftime("%d/%m/%Y")}>'
+        vehicle_plate = Vehicle.query.get(self.vehicle_id).plate if self.vehicle_id else "Unknown"
+        return f'<TravelLog {self.id} - {vehicle_plate} - {self.start_date.strftime("%d/%m/%Y")}>'
     
     def complete(self, end_odometer):
         """Finaliza o registro de viagem"""
