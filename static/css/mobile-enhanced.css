@@ -107,11 +107,12 @@
     
     /* Estilos para cards de informação em mobile */
     .info-card {
-        background: #fff;
+        background: #1e2430;
+        color: #e9ecef;
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         transition: all 0.2s ease;
     }
     
@@ -432,9 +433,10 @@
         .client-item, .equipment-item {
             margin-bottom: 15px;
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            background-color: #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            background-color: #1f2937;
             transition: all 0.2s ease;
+            color: #e9ecef;
         }
         
         .client-item:active, .equipment-item:active {
@@ -443,18 +445,21 @@
         
         .client-item-header, .equipment-item-header {
             padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #374151;
+            background: linear-gradient(to right, #2D8BF7, #215B9C);
+            border-radius: 10px 10px 0 0;
         }
         
         .client-item-title, .equipment-item-title {
             font-weight: 700;
             font-size: 1.1rem;
             margin-bottom: 3px;
+            color: #ffffff;
         }
         
         .client-item-subtitle, .equipment-item-subtitle {
             font-size: 0.85rem;
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.8);
         }
         
         .client-item-body, .equipment-item-body {
@@ -463,32 +468,65 @@
         
         .client-item-detail, .equipment-item-detail {
             display: flex;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 0.9rem;
+            border-bottom: 1px solid #374151;
+            padding-bottom: 8px;
+        }
+        
+        .client-item-detail:last-child, .equipment-item-detail:last-child {
+            border-bottom: none;
         }
         
         .client-item-label, .equipment-item-label {
             font-weight: 600;
-            color: #666;
+            color: #9ca3af;
             width: 40%;
             padding-right: 10px;
         }
         
         .client-item-value, .equipment-item-value {
-            color: #333;
+            color: #e9ecef;
             flex: 1;
         }
         
+        .client-item-value a, .equipment-item-value a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        .client-item-value a:hover, .equipment-item-value a:hover {
+            text-decoration: underline;
+        }
+        
         /* Melhoria no estilo de detalhes em modais */
+        .modal-content {
+            background-color: #1f2937;
+            color: #e9ecef;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #374151;
+            background: linear-gradient(to right, #2D8BF7, #215B9C);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #374151;
+        }
+        
+        .modal-title {
+            color: #ffffff;
+        }
+        
         .modal-body .detail-row {
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #374151;
             padding-bottom: 8px;
             margin-bottom: 8px;
         }
         
         .modal-body .detail-label {
             font-weight: 600;
-            color: #555;
+            color: #9ca3af;
             font-size: 0.85rem;
             display: block;
             margin-bottom: 3px;
@@ -496,6 +534,15 @@
         
         .modal-body .detail-value {
             font-size: 0.95rem;
+            color: #e9ecef;
+        }
+        
+        .modal-body .text-muted {
+            color: #9ca3af !important;
+        }
+        
+        .modal-body .text-danger {
+            color: #f87171 !important;
         }
         
         /* Estilos para toasts (mensagens temporárias) */
@@ -538,5 +585,57 @@
                 opacity: 0;
             }
         }
+    }
+}
+
+/* Estilos para formulários em modo escuro para mobile */
+@media (max-width: 768px) {
+    /* Melhorias para formulários */
+    .form-label {
+        color: #e9ecef;
+        font-weight: 500;
+    }
+    
+    .form-control, .form-select {
+        background-color: #2d3748;
+        border-color: #4b5563;
+        color: #e9ecef;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background-color: #2d3748;
+        border-color: #60a5fa;
+        color: #e9ecef;
+        box-shadow: 0 0 0 0.25rem rgba(96, 165, 250, 0.25);
+    }
+    
+    .form-control::placeholder {
+        color: #9ca3af;
+    }
+    
+    /* Estilo para checkbox e radio */ 
+    .form-check-input {
+        background-color: #2d3748;
+        border-color: #4b5563;
+    }
+    
+    .form-check-input:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .form-check-label {
+        color: #e9ecef;
+    }
+    
+    /* Ajustes para botões em formulários */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
     }
 }
