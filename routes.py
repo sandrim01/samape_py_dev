@@ -208,7 +208,7 @@ def register_routes(app):
             low_stock_items=low_stock_items,
             low_stock_parts=low_stock_parts,
             metrics=metrics,
-            now=datetime.now()
+            now=datetime.now().timestamp()
         )
 
     # Service Order routes

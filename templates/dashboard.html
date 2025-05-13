@@ -3,7 +3,7 @@
 {% block title %}Dashboard - SAMAPE{% endblock %}
 
 {% block extra_css %}
-<link href="{{ url_for('static', filename='css/dashboard-compact.css') }}?v={{ now() }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/dashboard-compact.css') }}?v={{ now }}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -225,11 +225,11 @@
     </div>
 </div>
 
-<!-- Third row: Recent data tables -->
-<div class="row">
-    <!-- Latest service orders -->
-    <div class="col-md-6 mb-4">
-        <div class="card h-100 bg-light">
+<!-- Terceira linha: Tabelas mais compactas -->
+<div class="dashboard-grid mt-4">
+    <!-- OS Recentes -->
+    <div class="dashboard-col-6">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-clipboard-list me-2"></i>Ordens Recentes
@@ -237,10 +237,10 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 compact-table">
                         <thead>
                             <tr>
-                                <th class="px-3">ID</th>
+                                <th class="px-2">ID</th>
                                 <th>Cliente</th>
                                 <th>Equipamento</th>
                                 <th>Data</th>
@@ -250,7 +250,7 @@
                         <tbody>
                             {% for order in recent_orders %}
                             <tr>
-                                <td class="px-3">{{ order.id }}</td>
+                                <td class="px-2">{{ order.id }}</td>
                                 <td>{{ order.client.name }}</td>
                                 <td>
                                     {% if order.equipment %}
@@ -259,7 +259,7 @@
                                     -
                                     {% endif %}
                                 </td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-eye"></i>
@@ -271,15 +271,15 @@
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-white text-end">
-                <a href="{{ url_for('service_orders') }}" class="btn btn-outline-primary btn-sm">Ver Todos</a>
+            <div class="card-footer text-end">
+                <a href="{{ url_for('service_orders') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
             </div>
         </div>
     </div>
 
-    <!-- Recent system logs -->
-    <div class="col-md-6 mb-4">
-        <div class="card h-100 bg-light">
+    <!-- Atividades Recentes -->
+    <div class="dashboard-col-6">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-history me-2"></i>Atividades Recentes
@@ -289,7 +289,7 @@
                 <div class="activity-timeline">
                     {% for log in recent_logs %}
                     <div class="activity-item">
-                        <div class="activity-icon bg-light">
+                        <div class="activity-icon">
                             {% if log.entity_type == 'service_order' %}
                             <i class="fas fa-clipboard-list text-primary"></i>
                             {% elif log.entity_type == 'client' %}
@@ -306,23 +306,21 @@
                         </div>
                         <div class="activity-content">
                             <div class="activity-text">{{ log.action }}</div>
-                            <small class="text-muted">{{ log.timestamp.strftime('%d/%m/%Y %H:%M') if log.timestamp else 'Data não definida' }}</small>
+                            <small class="text-muted">{{ log.timestamp.strftime('%d/%m/%Y %H:%M') if log.timestamp else '-' }}</small>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-            <div class="card-footer bg-white text-end">
-                <a href="{{ url_for('logs') }}" class="btn btn-outline-primary btn-sm">Ver Histórico Completo</a>
+            <div class="card-footer text-end">
+                <a href="{{ url_for('logs') }}" class="btn btn-sm btn-outline-primary">Histórico Completo</a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Fourth row: Supplier orders -->
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card bg-light">
+    <!-- Pedidos a Fornecedores Pendentes -->
+    <div class="dashboard-col-12">
+        <div class="card compact-card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-truck me-2"></i>Pedidos a Fornecedores Pendentes
@@ -330,10 +328,10 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 compact-table">
                         <thead>
                             <tr>
-                                <th class="px-3">ID</th>
+                                <th class="px-2">ID</th>
                                 <th>Fornecedor</th>
                                 <th>Valor</th>
                                 <th>Status</th>
@@ -344,20 +342,20 @@
                         <tbody>
                             {% for order in pending_supplier_orders %}
                             <tr>
-                                <td class="px-3">{{ order.id }}</td>
+                                <td class="px-2">{{ order.id }}</td>
                                 <td>{{ order.supplier.name }}</td>
                                 <td>R$ {{ "%.2f"|format(order.total_value) if order.total_value else '-' }}</td>
                                 <td>
-                                    <span class="badge {% if order.status.name == 'pendente' %}bg-warning
-                                                      {% elif order.status.name == 'aprovado' %}bg-info
-                                                      {% elif order.status.name == 'enviado' %}bg-primary
-                                                      {% elif order.status.name == 'entregue' %}bg-success
-                                                      {% elif order.status.name == 'cancelado' %}bg-danger
+                                    <span class="badge {% if order.status.name == 'pendente' %}status-pending
+                                                      {% elif order.status.name == 'aprovado' %}status-progress
+                                                      {% elif order.status.name == 'enviado' %}status-progress
+                                                      {% elif order.status.name == 'entregue' %}status-finished
+                                                      {% elif order.status.name == 'cancelado' %}status-canceled
                                                       {% else %}bg-secondary{% endif %}">
                                         {{ order.status.value }}
                                     </span>
                                 </td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else '-' }}</td>
                                 <td>
                                     <a href="{{ url_for('view_supplier_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-eye"></i>
@@ -365,12 +363,17 @@
                                 </td>
                             </tr>
                             {% endfor %}
+                            {% if not pending_supplier_orders %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3">Não há pedidos pendentes</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-white text-end">
-                <a href="{{ url_for('supplier_orders') }}" class="btn btn-outline-primary btn-sm">Ver Todos</a>
+            <div class="card-footer text-end">
+                <a href="{{ url_for('supplier_orders') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
             </div>
         </div>
     </div>
