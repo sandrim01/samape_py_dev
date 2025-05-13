@@ -1041,6 +1041,21 @@ def register_routes(app):
         flash('Equipamento excluído com sucesso!', 'success')
         return redirect(url_for('equipment'))
 
+    # Service Order Image route
+    @app.route('/imagem_os/<int:image_id>')
+    @login_required
+    def view_service_order_image(image_id):
+        """Rota para visualizar uma imagem de ordem de serviço"""
+        image = ServiceOrderImage.query.get_or_404(image_id)
+        
+        # Verificar se o arquivo existe
+        file_path = os.path.join(current_app.static_folder, image.filename)
+        if not os.path.exists(file_path):
+            # Se o arquivo não existir, exibir uma imagem padrão
+            return redirect(url_for('static', filename='img/image-not-found.svg'))
+            
+        return redirect(url_for('static', filename=image.filename))
+    
     # Employee routes
     @app.route('/funcionarios')
     @manager_required

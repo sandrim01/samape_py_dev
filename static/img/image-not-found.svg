@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#2c3e50" />
+  <text x="100" y="100" font-family="Arial" font-size="16" fill="#ecf0f1" text-anchor="middle">Imagem não encontrada</text>
+  <circle cx="100" cy="70" r="30" fill="none" stroke="#e74c3c" stroke-width="4" />
+  <line x1="80" y1="50" x2="120" y2="90" stroke="#e74c3c" stroke-width="4" />
+  <line x1="120" y1="50" x2="80" y2="90" stroke="#e74c3c" stroke-width="4" />
+  <text x="100" y="130" font-family="Arial" font-size="12" fill="#ecf0f1" text-anchor="middle">SAMAPE</text>
+</svg>

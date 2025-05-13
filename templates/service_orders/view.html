@@ -190,8 +190,8 @@
                     {% for image in service_order.images %}
                     <div class="col-4 mb-3">
                         <div class="text-center">
-                            <a href="{{ url_for('static', filename=image.filename) }}" target="_blank" title="{{ image.description or 'Ver imagem em tamanho original' }}">
-                                <img src="{{ url_for('static', filename=image.filename) }}" alt="{{ image.description or 'Imagem ' ~ loop.index }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            <a href="{{ url_for('view_service_order_image', image_id=image.id) }}" target="_blank" title="{{ image.description or 'Ver imagem em tamanho original' }}">
+                                <img src="{{ url_for('view_service_order_image', image_id=image.id) }}" alt="{{ image.description or 'Imagem ' ~ loop.index }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
                             </a>
                             {% if image.description %}
                             <div class="mt-1">
