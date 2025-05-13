@@ -93,7 +93,7 @@
                                     <strong>Série:</strong> 1
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <strong>Data de Emissão:</strong> {{ service_order.invoice_date.strftime('%d/%m/%Y') }}
+                                    <strong>Data de Emissão:</strong> {{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }}
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <strong>Valor Total:</strong> R$ {{ "%.2f"|format(service_order.invoice_amount) }}
@@ -177,7 +177,7 @@
                                     <strong>Observações:</strong>
                                     <p class="mt-1">
                                         Nota fiscal referente à prestação de serviços de manutenção em equipamentos.
-                                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') }}.
+                                        OS finalizada em {{ service_order.closed_at.strftime('%d/%m/%Y') if service_order.closed_at else 'data não definida' }}.
                                     </p>
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
             
             <div class="nfe-footer mt-4">
                 <div class="nfe-protocol">
-                    <strong>Protocolo de Autorização:</strong> {{ "99999999999999" }} - {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}
+                    <strong>Protocolo de Autorização:</strong> {{ "99999999999999" }} - {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') if service_order.invoice_date else 'Data não definida' }}
                 </div>
                 <p class="text-center small">
                     Documento emitido por ME ou EPP optante pelo Simples Nacional<br>
@@ -255,7 +255,7 @@
         <div class="nfe-header">
             <div class="header-left">
                 <div class="recibo-box">
-                    <div class="recibo-text">RECEBEMOS OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA AO LADO. EMISSÃO: {{ service_order.invoice_date.strftime('%d/%m/%Y') }} VALOR TOTAL: R$ {{ "%.2f"|format(service_order.invoice_amount) }} DESTINATÁRIO: {{ service_order.client.name }}</div>
+                    <div class="recibo-text">RECEBEMOS OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA AO LADO. EMISSÃO: {{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }} VALOR TOTAL: R$ {{ "%.2f"|format(service_order.invoice_amount) }} DESTINATÁRIO: {{ service_order.client.name }}</div>
                     <div class="recibo-signature">
                         <div>DATA DE RECEBIMENTO</div>
                         <div>IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR</div>
@@ -318,7 +318,7 @@
             <div class="natureza-operacao-label">NATUREZA DA OPERAÇÃO</div>
             <div class="natureza-operacao-value">PRESTAÇÃO DE SERVIÇO DE MANUTENÇÃO EM EQUIPAMENTOS</div>
             <div class="protocolo-label">PROTOCOLO DE AUTORIZAÇÃO DE USO</div>
-            <div class="protocolo-value">{{ "999999999999999" }} {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') }}</div>
+            <div class="protocolo-value">{{ "999999999999999" }} {{ service_order.invoice_date.strftime('%d/%m/%Y %H:%M:%S') if service_order.invoice_date else 'Data não definida' }}</div>
         </div>
         
         <!-- Dados do destinatário -->
@@ -330,14 +330,14 @@
                 <div class="dest-cnpj-label">CNPJ / CPF</div>
                 <div class="dest-cnpj-value">{{ service_order.client.document }}</div>
                 <div class="dest-data-label">DATA EMISSÃO</div>
-                <div class="dest-data-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') }}</div>
+                <div class="dest-data-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }}</div>
                 
                 <div class="dest-endereco-label">ENDEREÇO</div>
                 <div class="dest-endereco-value">{% if service_order.client.address %}{{ service_order.client.address }}{% else %}Não informado{% endif %}</div>
                 <div class="dest-bairro-label">BAIRRO</div>
                 <div class="dest-bairro-value">-</div>
                 <div class="dest-data-saida-label">DATA SAÍDA</div>
-                <div class="dest-data-saida-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') }}</div>
+                <div class="dest-data-saida-value">{{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }}</div>
                 
                 <div class="dest-municipio-label">MUNICÍPIO</div>
                 <div class="dest-municipio-value">-</div>

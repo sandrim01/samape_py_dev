@@ -256,7 +256,7 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Data de Fechamento:</span>
-                    <span>{{ service_order.closed_at.strftime('%d/%m/%Y') }}</span>
+                    <span>{{ service_order.closed_at.strftime('%d/%m/%Y') if service_order.closed_at else 'Data não definida' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Observações:</span>
@@ -277,7 +277,7 @@
         <div class="footer">
             <p>SAMAPE - Sistema de Gestão de Serviços</p>
             <p>Esta nota fiscal é válida como comprovante de prestação de serviços</p>
-            <p>Data de Emissão: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+            <p>Data de Emissão: {{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }}</p>
         </div>
     </div>
 </body>
