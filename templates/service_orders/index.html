@@ -106,7 +106,7 @@
                                 {{ order.status.value }}
                             </span>
                         </td>
-                        <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                         <td>{{ order.closed_at.strftime('%d/%m/%Y') if order.closed_at else '-' }}</td>
                         <td class="table-actions">
                             <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar">

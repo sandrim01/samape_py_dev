@@ -46,7 +46,7 @@
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-bold">Data de Abertura</h6>
-                        <p>{{ service_order.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p>{{ service_order.created_at.strftime('%d/%m/%Y %H:%M') if service_order.created_at else 'Data não definida' }}</p>
                     </div>
                 </div>
                 
@@ -80,7 +80,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <h6 class="fw-bold">Data de Fechamento</h6>
-                        <p>{{ service_order.closed_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p>{{ service_order.closed_at.strftime('%d/%m/%Y %H:%M') if service_order.closed_at else 'Não fechada' }}</p>
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-bold">Número NF-e</h6>
@@ -123,7 +123,7 @@
                         <tbody>
                             {% for entry in service_order.financial_entries %}
                             <tr>
-                                <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ entry.date.strftime('%d/%m/%Y') if entry.date else 'Data não definida' }}</td>
                                 <td>{{ entry.description }}</td>
                                 <td>
                                     <span class="badge {% if entry.type.name == 'entrada' %}bg-success{% else %}bg-danger{% endif %}">

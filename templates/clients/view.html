@@ -56,7 +56,7 @@
                 
                 <div class="mb-3">
                     <h6 class="fw-bold">Cadastrado em</h6>
-                    <p>{{ client.created_at.strftime('%d/%m/%Y') }}</p>
+                    <p>{{ client.created_at.strftime('%d/%m/%Y') if client.created_at else 'Data não definida' }}</p>
                 </div>
                 
                 {% if current_user.is_admin() %}
@@ -155,7 +155,7 @@
                                         {{ order.status.value }}
                                     </span>
                                 </td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                                 <td class="table-actions">
                                     <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar">
                                         <i class="fas fa-eye"></i>
