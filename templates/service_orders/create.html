@@ -44,14 +44,18 @@
             <div class="mb-3">
                 <label class="form-label">Equipamentos</label>
                 <div id="equipment-container">
-                    <p class="text-muted">Selecione um cliente para mostrar os equipamentos disponíveis.</p>
-                    <select id="equipment_select" class="form-control" multiple style="display: none;">
-                    </select>
-                    <div id="selected-equipment-container" style="display: none;">
-                        <div class="mt-2 mb-2">
-                            <strong>Equipamentos selecionados:</strong>
-                        </div>
-                        <div id="selected_equipment" class="d-flex flex-wrap">
+                    <p class="text-muted" id="equipment-instructions">Selecione um cliente para mostrar os equipamentos disponíveis.</p>
+                    <div class="equipment-select-container" id="equipment-select-container" style="display: none;">
+                        <select id="equipment_select" class="form-control" multiple>
+                        </select>
+                        <div class="form-text mt-1">Mantenha a tecla Ctrl pressionada para selecionar múltiplos equipamentos.</div>
+                        
+                        <div id="selected-equipment-container" style="display: none; margin-top: 15px;">
+                            <div class="mt-2 mb-2">
+                                <strong>Equipamentos selecionados:</strong>
+                            </div>
+                            <div id="selected_equipment" class="d-flex flex-wrap">
+                            </div>
                         </div>
                     </div>
                 </div>

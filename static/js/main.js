@@ -150,29 +150,49 @@ function updateEquipmentSelection() {
 }
 
 function updateEquipmentOptions(clientId) {
+    console.log('Atualizando equipamentos para o cliente ID:', clientId);
+    
+    // Obter o container de instruções e o container de seleção
+    const equipmentInstructions = document.getElementById('equipment-instructions');
+    const equipmentSelectContainer = document.getElementById('equipment-select-container');
+    
     // Obter select de equipamentos
     const equipmentSelect = document.getElementById('equipment_select');
-    if (!equipmentSelect) return;
-    
-    // Mostrar o select e esconder a mensagem de aviso
-    equipmentSelect.style.display = 'block';
-    const equipmentContainer = document.getElementById('equipment-container');
-    if (equipmentContainer) {
-        const warningMessage = equipmentContainer.querySelector('p.text-muted');
-        if (warningMessage) {
-            warningMessage.style.display = 'none';
-        }
+    if (!equipmentSelect) {
+        console.error('Elemento equipment_select não encontrado!');
+        return;
     }
     
     // Fazer requisição AJAX para obter equipamentos do cliente usando a URL em português
-    fetch(`/api/cliente/${clientId}/equipamentos`)
-        .then(response => response.json())
+    const url = `/api/cliente/${clientId}/equipamentos`;
+    console.log('Fazendo requisição para:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('Status da resposta:', response.status);
+            if (!response.ok) {
+                throw new Error(`Status da resposta: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Dados recebidos:', data);
+            
+            // Esconder as instruções e mostrar o container de seleção
+            if (equipmentInstructions) {
+                equipmentInstructions.style.display = 'none';
+            }
+            
+            if (equipmentSelectContainer) {
+                equipmentSelectContainer.style.display = 'block';
+            }
+            
             // Limpar opções atuais
             equipmentSelect.innerHTML = '';
             
             if (data.length === 0) {
                 // Se não houver equipamentos, mostrar uma mensagem
+                console.log('Nenhum equipamento encontrado para este cliente');
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Nenhum equipamento cadastrado para este cliente';
@@ -183,9 +203,12 @@ function updateEquipmentOptions(clientId) {
                 data.forEach(equipment => {
                     const option = document.createElement('option');
                     option.value = equipment.id;
-                    option.textContent = `${equipment.type} - ${equipment.brand || ''} ${equipment.model || ''} ${equipment.serial_number ? `(${equipment.serial_number})` : ''}`;
+                    const equipmentText = `${equipment.type || 'Equipamento'}`;
+                    const brandModel = [equipment.brand, equipment.model].filter(Boolean).join(' ');
+                    option.textContent = equipmentText + (brandModel ? ` - ${brandModel}` : '') + (equipment.serial_number ? ` (${equipment.serial_number})` : '');
                     equipmentSelect.appendChild(option);
                 });
+                console.log(`${data.length} equipamentos carregados`);
             }
             
             // Atualizar seleção
@@ -200,6 +223,15 @@ function updateEquipmentOptions(clientId) {
             option.textContent = 'Erro ao carregar equipamentos';
             option.disabled = true;
             equipmentSelect.appendChild(option);
+            
+            // Mostrar o container mesmo em caso de erro
+            if (equipmentInstructions) {
+                equipmentInstructions.style.display = 'none';
+            }
+            
+            if (equipmentSelectContainer) {
+                equipmentSelectContainer.style.display = 'block';
+            }
         });
 }
 
