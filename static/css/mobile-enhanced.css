@@ -1,7 +1,7 @@
 /* Estilos aprimorados para versão mobile do SAMAPE */
 
-/* Aplicados apenas em telas pequenas */
-@media (max-width: 576px) {
+/* Aplicados apenas em telas pequenas e médias */
+@media (max-width: 992px) {
     /* Melhorias para o dashboard */
     .dashboard-metrics .card {
         position: relative;
@@ -62,9 +62,97 @@
     /* Melhorias na exibição de tabelas */
     .table-responsive {
         border-radius: 10px;
-        overflow: hidden;
+        overflow-x: auto;
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Melhoria nas tabelas para visualizações mobile */
+    .table-mobile-optimized thead {
+        display: none;
+    }
+    
+    .table-mobile-optimized tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        background-color: #fff;
+    }
+    
+    .table-mobile-optimized tbody td {
+        display: flex;
+        padding: 12px 15px !important;
+        text-align: left !important;
+        border-bottom: 1px solid #f0f0f0;
+        word-break: break-word;
+        align-items: center;
+    }
+    
+    .table-mobile-optimized tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #555;
+        width: 40%;
+        min-width: 100px;
+        margin-right: 15px;
+    }
+    
+    .table-mobile-optimized tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Estilos para cards de informação em mobile */
+    .info-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+    }
+    
+    .info-card:active {
+        transform: scale(0.98);
+    }
+    
+    .info-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-card-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #333;
+    }
+    
+    .info-card-body {
+        font-size: 0.95rem;
+    }
+    
+    .info-card-row {
+        display: flex;
+        margin-bottom: 6px;
+    }
+    
+    .info-card-label {
+        font-weight: 600;
+        color: #666;
+        width: 40%;
+        padding-right: 10px;
+    }
+    
+    .info-card-value {
+        color: #333;
+        flex: 1;
     }
     
     /* Melhorias na lista de ordens de serviço */
@@ -118,6 +206,46 @@
         border-radius: 8px;
         padding: 10px 15px;
         width: 100%;
+    }
+    
+    /* Melhorias em select e campos de entrada */
+    select.form-control,
+    input.form-control {
+        font-size: 16px !important; /* Evita zoom automático em iOS */
+        height: auto;
+        padding: 12px 15px;
+        border-radius: 8px;
+    }
+    
+    /* Destaque para campos selecionados */
+    select.form-control:focus,
+    input.form-control:focus {
+        box-shadow: 0 0 0 3px rgba(45, 139, 247, 0.25);
+        border-color: #2D8BF7;
+    }
+    
+    /* Estilos para mensagens de ajuda */
+    .form-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    /* Estilos para selects em mobile */
+    .mobile-select-helper {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+        color: #495057;
+    }
+    
+    .mobile-select-helper i {
+        margin-right: 8px;
+        color: #2D8BF7;
     }
     
     /* Estilo para abas em páginas com tabs */
@@ -296,5 +424,119 @@
     
     .action-menu.open .action-items {
         display: flex;
+    }
+    
+    /* Melhorias específicas para telas muito pequenas */
+    @media (max-width: 480px) {
+        /* Ajustes para listas de clientes e equipamentos */
+        .client-item, .equipment-item {
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+        
+        .client-item:active, .equipment-item:active {
+            transform: scale(0.98);
+        }
+        
+        .client-item-header, .equipment-item-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .client-item-title, .equipment-item-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+        }
+        
+        .client-item-subtitle, .equipment-item-subtitle {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .client-item-body, .equipment-item-body {
+            padding: 12px 15px;
+        }
+        
+        .client-item-detail, .equipment-item-detail {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .client-item-label, .equipment-item-label {
+            font-weight: 600;
+            color: #666;
+            width: 40%;
+            padding-right: 10px;
+        }
+        
+        .client-item-value, .equipment-item-value {
+            color: #333;
+            flex: 1;
+        }
+        
+        /* Melhoria no estilo de detalhes em modais */
+        .modal-body .detail-row {
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .modal-body .detail-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .modal-body .detail-value {
+            font-size: 0.95rem;
+        }
+        
+        /* Estilos para toasts (mensagens temporárias) */
+        .mobile-toast {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: rgba(45, 139, 247, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            font-weight: 500;
+            max-width: 80%;
+            text-align: center;
+            animation: fadeInUp 0.3s, fadeOut 0.3s 2.7s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     }
 }
