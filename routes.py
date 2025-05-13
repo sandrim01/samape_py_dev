@@ -16,8 +16,7 @@ from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
     SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage, equipment_service_orders,
-    StockItem, StockMovement, StockItemType, StockItemStatus, Vehicle, Refueling, 
-    VehicleMaintenance, VehicleTravelLog, VehicleStatus, FuelType, MaintenanceType
+    StockItem, StockMovement, StockItemType, StockItemStatus
 )
 from utils import get_system_setting
 from utils import log_action
@@ -25,8 +24,7 @@ from forms import (
     LoginForm, UserForm, ClientForm, EquipmentForm, ServiceOrderForm,
     CloseServiceOrderForm, FinancialEntryForm, ProfileForm, SystemSettingsForm,
     SupplierForm, PartForm, PartSaleForm, SupplierOrderForm, OrderItemForm,
-    FlaskForm, StockItemForm, StockMovementForm, VehicleForm, RefuelingForm,
-    VehicleMaintenanceForm, VehicleTravelLogForm, VehicleTravelLogCompleteForm
+    FlaskForm, StockItemForm, StockMovementForm
 )
 from utils import (
     role_required, admin_required, manager_required, log_action,
@@ -98,9 +96,7 @@ def register_routes(app):
             
             if user and user.check_password(form.password.data) and user.active:
                 try:
-                    # Definir a sessão como permanente e definir o tempo de vida
-                    session.permanent = True
-                    login_user(user, remember=True)  # Forçar remember=True
+                    login_user(user, remember=form.remember_me.data)
                     record_login_attempt(username, True)
                     
                     try:
@@ -108,11 +104,6 @@ def register_routes(app):
                     except Exception:
                         # Se falhar o registro de log, continuar sem interferir no fluxo
                         db.session.rollback()
-                    
-                    # Adicionar informações extras na sessão
-                    session['user_id'] = user.id
-                    session['user_role'] = user.role.name
-                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     
                     next_page = request.args.get('next')
                     if not next_page or not next_page.startswith('/'):
@@ -185,21 +176,8 @@ def register_routes(app):
             Part.stock_quantity <= Part.minimum_stock
         ).order_by(Part.stock_quantity.asc()).limit(5).all()
         
-        # Get vehicle statistics
-        from sqlalchemy import func
-        from datetime import datetime, timedelta
-        
-        # Count active vehicles
-        active_vehicles_count = Vehicle.query.filter_by(status=VehicleStatus.ativo).count()
-        
-        # Count vehicles in maintenance
-        maintenance_vehicles_count = Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count()
-        
-        # Count recent refuelings (last 30 days)
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        refuelings_count = Refueling.query.filter(Refueling.date >= thirty_days_ago).count()
-        
         # Add current timestamp to prevent caching
+        from datetime import datetime
         
         # Prepare metrics for dashboard
         import json
@@ -230,11 +208,7 @@ def register_routes(app):
             low_stock_items=low_stock_items,
             low_stock_parts=low_stock_parts,
             metrics=metrics,
-            now=datetime.now().timestamp(),
-            # Vehicle statistics
-            active_vehicles_count=active_vehicles_count,
-            maintenance_vehicles_count=maintenance_vehicles_count,
-            refuelings_count=refuelings_count
+            now=datetime.now().timestamp()
         )
 
     # Service Order routes
@@ -309,14 +283,8 @@ def register_routes(app):
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     description=form.description.data,
                     estimated_value=form.estimated_value.data,
-                    total_value=form.total_value.data,
                     status=ServiceOrderStatus[form.status.data]
                 )
-                
-                # Se um valor total foi definido e status é "fechada", registrar data de fechamento
-                if form.total_value.data and form.status.data == 'fechada':
-                    service_order.closed_at = datetime.utcnow()
-                    service_order.invoice_amount = form.total_value.data
                 
                 # Add equipment relationships if selected
                 if form.equipment_ids.data:
@@ -406,19 +374,7 @@ def register_routes(app):
             service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
             service_order.description = form.description.data
             service_order.estimated_value = form.estimated_value.data
-            service_order.total_value = form.total_value.data
-            
-            # Se um valor total foi definido, sugerir fechar a OS se estiver em andamento
-            if form.total_value.data and service_order.status == ServiceOrderStatus.em_andamento:
-                if form.status.data == 'fechada' or request.form.get('fechar_os') == 'true':
-                    service_order.status = ServiceOrderStatus.fechada
-                    service_order.closed_at = datetime.utcnow()
-                    service_order.invoice_amount = form.total_value.data
-                    flash('Ordem de serviço fechada com sucesso!', 'success')
-                else:
-                    flash('Um valor total foi definido. Você pode fechar esta OS quando estiver pronto.', 'info')
-            else:
-                service_order.status = ServiceOrderStatus[form.status.data]
+            service_order.status = ServiceOrderStatus[form.status.data]
             
             # Update equipment relationships
             service_order.equipment = []
