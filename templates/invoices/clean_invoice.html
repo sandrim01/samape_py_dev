@@ -164,7 +164,7 @@
             <div class="invoice-title">
                 <h1>Nota Fiscal de Serviço</h1>
                 <p>Nº {{ service_order.invoice_number }}</p>
-                <p>Data: {{ service_order.invoice_date.strftime('%d/%m/%Y') }}</p>
+                <p>Data: {{ service_order.invoice_date.strftime('%d/%m/%Y') if service_order.invoice_date else 'Data não definida' }}</p>
             </div>
         </div>
 
