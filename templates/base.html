@@ -165,6 +165,11 @@
                                 <i class="fas fa-shipping-fast"></i> Pedidos a Fornecedores
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/estoque' in request.path %}active{% endif %}" href="{{ url_for('stock_items') }}">
+                                <i class="fas fa-hard-hat"></i> EPIs e Ferramentas
+                            </a>
+                        </li>
                         {% if current_user.role == UserRole.admin or current_user.role == UserRole.gerente %}
                         <li class="nav-item">
                             <a class="nav-link {% if '/funcionarios' in request.path %}active{% endif %}" href="{{ url_for('employees') }}">

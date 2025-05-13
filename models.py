@@ -331,6 +331,13 @@ class StockMovement(db.Model):
     
     # Relações
     service_order = db.relationship('ServiceOrder', backref='stock_movements')
+    user = db.relationship('User', backref='stock_movements')
     
     def __repr__(self):
         return f'<StockMovement {self.id} - {self.quantity}>'
+        
+    def get_creator(self):
+        """Retorna o usuário que criou o movimento"""
+        if self.created_by:
+            return User.query.get(self.created_by)
+        return None

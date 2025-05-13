@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if item else 'Novo' }} Item de Estoque{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Adicionar estilos específicos para esta página, se necessário -->
+    <style>
+        .custom-file-label::after {
+            content: "Procurar";
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <a href="{{ url_for('stock_items') if not item else url_for('view_stock_item', id=item.id) }}" class="btn btn-sm btn-circle btn-outline-secondary mr-2">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            {{ 'Editar' if item else 'Novo' }} Item de Estoque
+        </h1>
+    </div>
+
+    <!-- Card principal -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-gradient-primary">
+            <h6 class="m-0 font-weight-bold text-white">{{ 'Editar' if item else 'Novo' }} Item</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" id="stock-item-form">
+                {{ form.hidden_tag() }}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name">{{ form.name.label }} <span class="text-danger">*</span></label>
+                        {{ form.name(class="form-control", placeholder="Nome do item") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="type">{{ form.type.label }} <span class="text-danger">*</span></label>
+                        {{ form.type(class="form-control") }}
+                        {% if form.type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description">{{ form.description.label }}</label>
+                    {{ form.description(class="form-control", rows=3, placeholder="Descrição detalhada do item") }}
+                    {% if form.description.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.description.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="quantity">{{ form.quantity.label }} <span class="text-danger">*</span></label>
+                        {{ form.quantity(class="form-control", placeholder="0") }}
+                        {% if form.quantity.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.quantity.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Quantidade inicial em estoque.
+                            {% if item %}
+                            Para ajustar quantidades após o cadastro, use a tela de movimentação.
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="min_quantity">{{ form.min_quantity.label }} <span class="text-danger">*</span></label>
+                        {{ form.min_quantity(class="form-control", placeholder="5") }}
+                        {% if form.min_quantity.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.min_quantity.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Quantidade mínima desejada (para alertas de estoque baixo).
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="price">{{ form.price.label }}</label>
+                        {{ form.price(class="form-control", placeholder="R$ 0,00") }}
+                        {% if form.price.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.price.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="location">{{ form.location.label }}</label>
+                        {{ form.location(class="form-control", placeholder="Ex: Prateleira A, Gaveta 3") }}
+                        {% if form.location.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.location.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="supplier_id">{{ form.supplier_id.label }}</label>
+                        {{ form.supplier_id(class="form-control") }}
+                        {% if form.supplier_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.supplier_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Campos específicos para EPIs -->
+                <div class="row epi-fields" id="epi-fields">
+                    <div class="col-md-6 mb-3">
+                        <label for="ca_number">{{ form.ca_number.label }}</label>
+                        {{ form.ca_number(class="form-control", placeholder="Número do Certificado de Aprovação") }}
+                        {% if form.ca_number.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.ca_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Apenas para Equipamentos de Proteção Individual (EPIs).
+                        </small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="expiration_date">{{ form.expiration_date.label }}</label>
+                        {{ form.expiration_date(class="form-control", placeholder="AAAA-MM-DD", type="date") }}
+                        {% if form.expiration_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.expiration_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Apenas para EPIs ou itens com prazo de validade.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Upload de imagem -->
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="image">{{ form.image.label }}</label>
+                        <div class="custom-file">
+                            {{ form.image(class="custom-file-input", id="customFile") }}
+                            <label class="custom-file-label" for="customFile">Escolher arquivo</label>
+                        </div>
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.image.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Formatos aceitos: jpg, jpeg, png. Tamanho máximo: 5MB.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Exibir imagem atual, se existir -->
+                {% if item and item.image %}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label>Imagem Atual:</label>
+                        <div class="text-center">
+                            <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                        <div class="form-text text-muted text-center">
+                            Faça upload de uma nova imagem para substituir a atual.
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-right mt-4">
+                    <a href="{{ url_for('stock_items') if not item else url_for('view_stock_item', id=item.id) }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Atualiza o nome do arquivo selecionado no input
+        $(".custom-file-input").on("change", function() {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
+        
+        // Controla visibilidade dos campos específicos para EPIs
+        function toggleEPIFields() {
+            const itemType = $("#type").val();
+            if (itemType === "epi") {
+                $(".epi-fields").show();
+            } else {
+                $(".epi-fields").hide();
+            }
+        }
+        
+        // Executa ao carregar e quando mudar o tipo
+        toggleEPIFields();
+        $("#type").change(toggleEPIFields);
+    });
+</script>
+{% endblock %}
