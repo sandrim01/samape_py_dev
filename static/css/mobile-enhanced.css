@@ -588,8 +588,68 @@
     }
 }
 
+/* Estilos para tabelas em modo escuro (independente do tamanho da tela) */
+.table {
+    color: #e9ecef;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #1a2334;
+}
+
+.table-hover > tbody > tr:hover {
+    background-color: #2d3748;
+}
+
+.table thead th {
+    background-color: #111827;
+    color: #e9ecef;
+    border-bottom-color: #374151;
+}
+
+.table td, .table th {
+    border-color: #374151;
+}
+
 /* Estilos para formulários em modo escuro para mobile */
 @media (max-width: 768px) {
+    /* Ajustes para exibição de cards */
+    .card {
+        margin-bottom: 20px;
+        background-color: #1f2937;
+        color: #e9ecef;
+        border-color: #374151;
+    }
+    
+    .card-header {
+        background: linear-gradient(to right, #2D8BF7, #215B9C);
+        font-weight: 600;
+        color: #ffffff;
+        border-bottom: 1px solid #374151;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+    
+    /* Ajustes para texto em cards */
+    .card-text {
+        color: #e9ecef;
+    }
+    
+    .text-muted {
+        color: #9ca3af !important;
+    }
+    
+    /* Ajustes para links em cards */
+    .card a:not(.btn) {
+        color: #60a5fa;
+        text-decoration: none;
+    }
+    
+    .card a:not(.btn):hover {
+        text-decoration: underline;
+    }
     /* Melhorias para formulários */
     .form-label {
         color: #e9ecef;
@@ -637,5 +697,45 @@
     
     .action-buttons .btn {
         width: 100%;
+    }
+    
+    /* Melhorar contraste nos botões outline */
+    .btn-outline-primary, 
+    .btn-outline-secondary,
+    .btn-outline-danger {
+        border-width: 2px;
+    }
+    
+    .btn-outline-primary {
+        color: #60a5fa;
+        border-color: #60a5fa;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+    
+    .btn-outline-secondary {
+        color: #9ca3af;
+        border-color: #6b7280;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #4b5563;
+        border-color: #4b5563;
+        color: #ffffff;
+    }
+    
+    .btn-outline-danger {
+        color: #f87171;
+        border-color: #ef4444;
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: #dc2626;
+        border-color: #dc2626;
+        color: #ffffff;
     }
 }
