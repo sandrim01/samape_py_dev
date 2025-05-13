@@ -215,14 +215,18 @@
                                 
                                 <p><strong>Equipamentos:</strong></p>
                                 <ul class="equipment-list">
-                                    {% for eq in service_order.equipment %}
-                                    <li>
-                                        <strong>{{ eq.type }}</strong> 
-                                        {% if eq.brand %}{{ eq.brand }}{% endif %}
-                                        {% if eq.model %} - Modelo: {{ eq.model }}{% endif %}
-                                        {% if eq.serial_number %} - S/N: {{ eq.serial_number }}{% endif %}
-                                    </li>
-                                    {% endfor %}
+                                    {% if service_order.equipment %}
+                                        {% for eq in service_order.equipment %}
+                                        <li>
+                                            <strong>{{ eq.type }}</strong> 
+                                            {% if eq.brand %}{{ eq.brand }}{% endif %}
+                                            {% if eq.model %} - Modelo: {{ eq.model }}{% endif %}
+                                            {% if eq.serial_number %} - S/N: {{ eq.serial_number }}{% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    {% else %}
+                                        <li>Nenhum equipamento associado</li>
+                                    {% endif %}
                                 </ul>
                             </div>
                         </td>
