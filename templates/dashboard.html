@@ -126,6 +126,34 @@
             </div>
         </div>
     </div>
+    
+    <!-- Controle de Frota -->
+    <div class="dashboard-col-3">
+        <div class="card compact-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-truck me-2"></i>Frota de Veículos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="status-indicator">
+                    <div class="indicator-label">Veículos Ativos</div>
+                    <div class="indicator-value">{{ active_vehicles_count|default(0) }}</div>
+                </div>
+                <div class="status-indicator">
+                    <div class="indicator-label">Em Manutenção</div>
+                    <div class="indicator-value">{{ maintenance_vehicles_count|default(0) }}</div>
+                </div>
+                <div class="status-indicator">
+                    <div class="indicator-label">Abastecimentos</div>
+                    <div class="indicator-value">{{ refuelings_count|default(0) }}</div>
+                </div>
+                <a href="{{ url_for('vehicles') }}" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                    <i class="fas fa-eye me-1"></i>Ver Veículos
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Segunda linha: Financeiro + 2 colunas de estoque -->
     <!-- Resumo financeiro -->
