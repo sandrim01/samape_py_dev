@@ -98,7 +98,9 @@ def register_routes(app):
             
             if user and user.check_password(form.password.data) and user.active:
                 try:
-                    login_user(user, remember=form.remember_me.data)
+                    # Definir a sessão como permanente e definir o tempo de vida
+                    session.permanent = True
+                    login_user(user, remember=True)  # Forçar remember=True
                     record_login_attempt(username, True)
                     
                     try:
@@ -106,6 +108,11 @@ def register_routes(app):
                     except Exception:
                         # Se falhar o registro de log, continuar sem interferir no fluxo
                         db.session.rollback()
+                    
+                    # Adicionar informações extras na sessão
+                    session['user_id'] = user.id
+                    session['user_role'] = user.role.name
+                    session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     
                     next_page = request.args.get('next')
                     if not next_page or not next_page.startswith('/'):

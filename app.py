@@ -39,10 +39,10 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Configure session
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = False  # Alterado para False em ambiente de desenvolvimento
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=24)  # Aumentando para 24 horas
+app.config["SESSION_COOKIE_SECURE"] = False  # Desativado em ambiente de desenvolvimento
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SAMESITE"] = None  # Desativando SameSite para corrigir problemas de sessão
 
 # Configure CSRF protection (temporariamente desabilitado para resolver problemas)
 app.config["WTF_CSRF_ENABLED"] = False 
