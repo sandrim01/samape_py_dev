@@ -58,7 +58,7 @@
                 
                 <div class="mb-3">
                     <h6 class="fw-bold">Cadastrado em</h6>
-                    <p>{{ equipment.created_at.strftime('%d/%m/%Y') }}</p>
+                    <p>{{ equipment.created_at.strftime('%d/%m/%Y') if equipment.created_at else 'Data não definida' }}</p>
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                             {% for order in service_orders %}
                             <tr>
                                 <td>{{ order.id }}</td>
-                                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                                 <td>
                                     <span class="status-badge status-{{ order.status.name }}">
                                         {{ order.status.value }}

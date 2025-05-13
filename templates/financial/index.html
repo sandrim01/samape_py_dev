@@ -155,7 +155,7 @@
                 <tbody>
                     {% for entry in entries %}
                     <tr>
-                        <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ entry.date.strftime('%d/%m/%Y') if entry.date else 'Data não definida' }}</td>
                         <td>{{ entry.description }}</td>
                         <td>
                             <span class="badge {% if entry.type.name == 'entrada' %}bg-success{% else %}bg-danger{% endif %}">
