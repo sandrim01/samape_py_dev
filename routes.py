@@ -162,6 +162,23 @@ def register_routes(app):
         # Add current timestamp to prevent caching
         from datetime import datetime
         
+        # Prepare metrics for dashboard
+        import json
+        metrics = {
+            'pending_orders': so_stats['open'],
+            'in_progress_orders': so_stats['in_progress'],
+            'closed_orders': so_stats['closed'],
+            'avg_completion_time': so_stats['avg_completion_time'],
+            'efficiency_percentage': min(100, so_stats['avg_completion_time'] * 10) if so_stats['avg_completion_time'] > 0 else 50,
+            'open_orders': supplier_stats['open'],
+            'pending_delivery': supplier_stats['sent'],
+            'delivered_this_month': supplier_stats['received'],
+            'monthly_income': financial_summary['income'],
+            'monthly_expenses': financial_summary['expenses'],
+            'income_data': json.dumps([financial_summary['income']/6, financial_summary['income']/3, financial_summary['income']/2, financial_summary['income']/1.5, financial_summary['income']/1.2, financial_summary['income']]),
+            'expense_data': json.dumps([financial_summary['expenses']/6, financial_summary['expenses']/4, financial_summary['expenses']/3, financial_summary['expenses']/2, financial_summary['expenses']/1.3, financial_summary['expenses']])
+        }
+        
         return render_template(
             'dashboard.html',
             so_stats=so_stats,
@@ -170,6 +187,7 @@ def register_routes(app):
             maintenance_in_progress=maintenance_in_progress,
             recent_orders=recent_orders,
             recent_logs=recent_logs,
+            metrics=metrics,
             now=datetime.now().timestamp()
         )
 

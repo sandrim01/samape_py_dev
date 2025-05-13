@@ -226,7 +226,7 @@
                                 </ul>
                             </div>
                         </td>
-                        <td class="amount-col">{{ "%.2f"|format(service_order.invoice_amount) }}</td>
+                        <td class="amount-col">{{ "%.2f"|format(service_order.invoice_amount if service_order.invoice_amount else 0) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -235,15 +235,15 @@
         <div class="totals">
             <div class="total-row">
                 <div class="total-label">Subtotal:</div>
-                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount if service_order.invoice_amount else 0) }}</div>
             </div>
             <div class="total-row">
                 <div class="total-label">Impostos (5%):</div>
-                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount * Decimal('0.05')) }}</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount * Decimal('0.05') if service_order.invoice_amount else 0) }}</div>
             </div>
             <div class="total-row grand-total">
                 <div class="total-label">VALOR TOTAL:</div>
-                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount) }}</div>
+                <div class="total-value">R$ {{ "%.2f"|format(service_order.invoice_amount if service_order.invoice_amount else 0) }}</div>
             </div>
         </div>
 
