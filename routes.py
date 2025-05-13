@@ -1607,6 +1607,12 @@ def register_routes(app):
         
         # Passamos o tipo Decimal para o template para facilitar operações matemáticas
         try:
+            app.logger.debug(f"Renderizando template para OS #{id}. Service Order: {service_order}")
+            if service_order.equipment:
+                app.logger.debug(f"Equipamentos encontrados: {len(service_order.equipment)}")
+            else:
+                app.logger.debug("Nenhum equipamento associado.")
+                
             return render_template('invoices/clean_invoice.html', 
                                 service_order=service_order,
                                 Decimal=Decimal)
