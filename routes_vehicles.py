@@ -516,11 +516,27 @@ def add_maintenance():
         db.session.add(maintenance)
         db.session.commit()
         
+        # Registrar a manutenção no financeiro como saída
+        from models import FinancialEntry, FinancialEntryType
+        vehicle_plate = vehicle.plate if vehicle else "Desconhecido"
+        
+        financial_entry = FinancialEntry(
+            description=f"Manutenção - {vehicle_plate} - {form.maintenance_type.data}",
+            amount=form.cost.data,
+            type=FinancialEntryType.saida,
+            date=form.date.data,
+            entry_type='maintenance',
+            reference_id=maintenance.id,
+            created_by=current_user.id
+        )
+        
+        db.session.add(financial_entry)
+        db.session.commit()
+        
         # Criar log da ação
-        vehicle_plate = Vehicle.query.get(form.vehicle_id.data).plate
         log_action('Manutenção registrada', 'maintenance', maintenance.id, f'{vehicle_plate} - {form.maintenance_type.data} - R${form.cost.data:.2f}')
         
-        flash('Manutenção registrada com sucesso!', 'success')
+        flash('Manutenção registrada com sucesso e lançada no financeiro!', 'success')
         return redirect(url_for('maintenances'))
     
     return render_template(
