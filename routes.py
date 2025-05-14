@@ -2658,7 +2658,7 @@ def register_routes(app):
             # Adicionar novo item ao pedido
             item = OrderItem(
                 order_id=order.id,
-                part_id=form.part_id.data if form.part_id.data else None,
+                stock_item_id=form.stock_item_id.data if form.stock_item_id.data else None,
                 description=form.description.data,
                 quantity=form.quantity.data,
                 unit_price=form.unit_price.data or 0,
@@ -2690,12 +2690,12 @@ def register_routes(app):
         
         if request.method == 'GET':
             # Preencher o formulário com os valores atuais
-            if item.part_id:
-                form.part_id.data = item.part_id
+            if item.stock_item_id:
+                form.stock_item_id.data = item.stock_item_id
         
         if form.validate_on_submit():
             # Atualizar o item
-            item.part_id = form.part_id.data if form.part_id.data else None
+            item.stock_item_id = form.stock_item_id.data if form.stock_item_id.data else None
             item.description = form.description.data
             item.quantity = form.quantity.data
             item.unit_price = form.unit_price.data or 0
