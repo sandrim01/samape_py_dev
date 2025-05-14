@@ -370,7 +370,10 @@
                         <i class="fas fa-truck-pickup text-primary mr-2"></i>Veículos da Frota
                     </h5>
                     <div>
-                        <a href="/frota/novo" class="btn btn-sm btn-primary rounded-pill px-3">
+                        <a href="{{ url_for('vehicle_maintenance_history') }}" class="btn btn-sm btn-outline-info rounded-pill px-3 mr-2">
+                            <i class="fas fa-history mr-1"></i> Histórico Manutenções
+                        </a>
+                        <a href="{{ url_for('new_vehicle') }}" class="btn btn-sm btn-primary rounded-pill px-3">
                             <i class="fas fa-plus-circle mr-1"></i> Novo Veículo
                         </a>
                         <button type="button" class="btn btn-sm btn-light rounded-circle ml-2" data-card-widget="maximize">
@@ -549,7 +552,7 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <a href="/frota/{{ vehicle.id }}/manutencao/novo" 
+                                        <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" 
                                            class="btn btn-sm btn-outline-info rounded-circle"
                                            data-toggle="tooltip" title="Registrar manutenção">
                                             <i class="fas fa-tools"></i>
