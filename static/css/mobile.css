@@ -10,11 +10,14 @@
   --light-bg: #2c3e50;
   --dark-bg: #1a252f;
   --card-bg: #34495e;
+  --card-bg-hover: #3a526e;
   --text-color: #ecf0f1;
   --muted-text: #bdc3c7;
   --border-radius: 8px;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.4);
   --transition: all 0.3s ease;
+  --animation-speed: 0.2s;
 }
 
 /* Estilos gerais para mobile */
@@ -153,6 +156,13 @@
   .btn-warning {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
+  }
+  
+  /* Efeito de pressionar botão */
+  .btn-pressed {
+    transform: scale(0.96) !important;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0.1) !important;
+    opacity: 0.9;
   }
   
   .btn-danger {
