@@ -168,8 +168,8 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>
-                                    {% if item.part %}
-                                    <a href="{{ url_for('view_part', id=item.part_id) }}">
+                                    {% if item.stock_item %}
+                                    <a href="{{ url_for('view_stock_item', id=item.stock_item_id) }}">
                                         {{ item.description }}
                                     </a>
                                     {% else %}
@@ -251,11 +251,11 @@
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="part_id" class="form-label">Peça (opcional)</label>
-                            {{ item_form.part_id(class="form-control", id="part_id") }}
-                            {% if item_form.part_id.errors %}
+                            <label for="stock_item_id" class="form-label">Item de Estoque (opcional)</label>
+                            {{ item_form.stock_item_id(class="form-control", id="stock_item_id") }}
+                            {% if item_form.stock_item_id.errors %}
                                 <div class="invalid-feedback d-block">
-                                    {% for error in item_form.part_id.errors %}
+                                    {% for error in item_form.stock_item_id.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>
@@ -350,17 +350,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Preenchimento automático para peças selecionadas
-    const partSelect = document.getElementById('part_id');
+    // Preenchimento automático para itens de estoque selecionados
+    const stockItemSelect = document.getElementById('stock_item_id');
     const descriptionField = document.getElementById('description');
     const unitPriceField = document.getElementById('unit_price');
     
-    // Ao selecionar uma peça, preencher a descrição e o preço
-    partSelect.addEventListener('change', function() {
+    // Ao selecionar um item de estoque, preencher a descrição e o preço
+    stockItemSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         
         if (selectedOption.value) {
-            // Preencher a descrição com o nome da peça selecionada
+            // Preencher a descrição com o nome do item selecionado
             descriptionField.value = selectedOption.textContent.trim();
             
             // Aqui você pode adicionar mais lógica para preencher outros campos,

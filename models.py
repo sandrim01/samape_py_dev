@@ -318,7 +318,7 @@ class StockItem(db.Model):
     # Relações
     supplier = db.relationship('Supplier', backref='stock_items')
     movements = db.relationship('StockMovement', backref='stock_item', lazy=True, cascade="all, delete-orphan")
-    stock_order_items = db.relationship('OrderItem', foreign_keys='OrderItem.stock_item_id', lazy=True)
+    stock_order_items = db.relationship('OrderItem', foreign_keys='OrderItem.stock_item_id', lazy=True, overlaps="stock_item")
     
     def __repr__(self):
         return f'<StockItem {self.name}>'

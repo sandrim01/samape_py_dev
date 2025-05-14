@@ -30,11 +30,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    {{ form.part_id.label(class="form-label") }}
-                                    {{ form.part_id(class="form-select") }}
-                                    {% if form.part_id.errors %}
+                                    {{ form.stock_item_id.label(class="form-label") }}
+                                    {{ form.stock_item_id(class="form-select") }}
+                                    {% if form.stock_item_id.errors %}
                                         <div class="invalid-feedback d-block">
-                                            {% for error in form.part_id.errors %}
+                                            {% for error in form.stock_item_id.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
