@@ -91,8 +91,8 @@
                                 <select name="status" id="status" class="form-control">
                                     <option value="">Todos</option>
                                     <option value="ativo" {% if request.args.get('status') == 'ativo' %}selected{% endif %}>Ativo</option>
-                                    <option value="manutencao" {% if request.args.get('status') == 'manutencao' %}selected{% endif %}>Em Manutenção</option>
-                                    <option value="reservado" {% if request.args.get('status') == 'reservado' %}selected{% endif %}>Reservado</option>
+                                    <option value="em_manutencao" {% if request.args.get('status') == 'em_manutencao' %}selected{% endif %}>Em Manutenção</option>
+                                    <!-- Opção 'reservado' removida - não existe no banco de dados -->
                                     <option value="inativo" {% if request.args.get('status') == 'inativo' %}selected{% endif %}>Inativo</option>
                                 </select>
                             </div>
