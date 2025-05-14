@@ -27,7 +27,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            Registrar manutenção para {{ vehicle.identifier }} ({{ vehicle.brand }} {{ vehicle.model }})
+                            Registrar manutenção para {{ vehicle.plate }} ({{ vehicle.brand }} {{ vehicle.model }})
                         </h3>
                     </div>
                     <div class="card-body">
@@ -52,7 +52,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         {{ form.mileage.label(class="form-label") }}
-                                        {{ form.mileage(class="form-control", value=vehicle.mileage) }}
+                                        {{ form.mileage(class="form-control", value=vehicle.current_km) }}
                                         {% if form.mileage.errors %}
                                         <div class="invalid-feedback" style="display:block">
                                             {% for error in form.mileage.errors %}
