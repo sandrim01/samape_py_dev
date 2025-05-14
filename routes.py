@@ -3233,23 +3233,22 @@ def register_routes(app):
         if busca:
             query = query.filter(
                 or_(
-                    Vehicle.identifier.ilike(f'%{busca}%'),
+                    Vehicle.plate.ilike(f'%{busca}%'),
                     Vehicle.brand.ilike(f'%{busca}%'),
                     Vehicle.model.ilike(f'%{busca}%'),
-                    Vehicle.license_plate.ilike(f'%{busca}%'),
                     Vehicle.chassis.ilike(f'%{busca}%')
                 )
             )
         
         # Ordenação
-        order_by = request.args.get('order_by', 'identifier')
+        order_by = request.args.get('order_by', 'plate')
         order_dir = request.args.get('order_dir', 'asc')
         
-        if order_by == 'identifier':
+        if order_by == 'identifier' or order_by == 'plate':
             if order_dir == 'asc':
-                query = query.order_by(Vehicle.identifier)
+                query = query.order_by(Vehicle.plate)
             else:
-                query = query.order_by(Vehicle.identifier.desc())
+                query = query.order_by(Vehicle.plate.desc())
         elif order_by == 'type':
             if order_dir == 'asc':
                 query = query.order_by(Vehicle.type)
@@ -3266,7 +3265,7 @@ def register_routes(app):
             else:
                 query = query.order_by(Vehicle.brand.desc())
         else:
-            query = query.order_by(Vehicle.identifier)
+            query = query.order_by(Vehicle.plate)
         
         # Paginação
         vehicles = query.paginate(page=page, per_page=per_page)
@@ -3385,10 +3384,10 @@ def register_routes(app):
         
         if request.method == 'GET':
             # Converter datas para o formato correto para o formulário
-            if vehicle.purchase_date:
-                form.purchase_date.data = vehicle.purchase_date.strftime('%Y-%m-%d')
-            if vehicle.last_maintenance_date:
-                form.last_maintenance_date.data = vehicle.last_maintenance_date.strftime('%Y-%m-%d')
+            if vehicle.acquisition_date:
+                form.acquisition_date.data = vehicle.acquisition_date.strftime('%Y-%m-%d')
+            if vehicle.insurance_expiry:
+                form.insurance_expiry.data = vehicle.insurance_expiry.strftime('%Y-%m-%d')
             if vehicle.next_maintenance_date:
                 form.next_maintenance_date.data = vehicle.next_maintenance_date.strftime('%Y-%m-%d')
                 
