@@ -17,7 +17,7 @@ from models import (
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
     SupplierOrder, OrderItem, OrderStatus, ServiceOrderImage, equipment_service_orders,
     StockItem, StockMovement, StockItemType, StockItemStatus, VehicleType, VehicleStatus,
-    Vehicle, VehicleMaintenance
+    Vehicle, VehicleMaintenance, FuelType, MaintenanceType, Refueling, VehicleTravelLog
 )
 from utils import get_system_setting
 from utils import log_action
@@ -3347,7 +3347,7 @@ def register_routes(app):
                     'Cadastro de Veículo',
                     'vehicle',
                     vehicle.id,
-                    f"Veículo {vehicle.identifier} cadastrado"
+                    f"Veículo placa {vehicle.plate} cadastrado"
                 )
                 
                 return redirect(url_for('view_vehicle', id=vehicle.id))
@@ -3402,13 +3402,13 @@ def register_routes(app):
         if form.validate_on_submit():
             try:
                 # Tratar datas
-                purchase_date = None
-                if form.purchase_date.data:
-                    purchase_date = datetime.strptime(form.purchase_date.data, '%Y-%m-%d').date()
+                acquisition_date = None
+                if form.acquisition_date.data:
+                    acquisition_date = datetime.strptime(form.acquisition_date.data, '%Y-%m-%d').date()
                 
-                last_maintenance_date = None
-                if form.last_maintenance_date.data:
-                    last_maintenance_date = datetime.strptime(form.last_maintenance_date.data, '%Y-%m-%d').date()
+                insurance_expiry = None
+                if form.insurance_expiry.data:
+                    insurance_expiry = datetime.strptime(form.insurance_expiry.data, '%Y-%m-%d').date()
                 
                 next_maintenance_date = None
                 if form.next_maintenance_date.data:
@@ -3435,19 +3435,20 @@ def register_routes(app):
                     vehicle.image = filename
                 
                 # Atualizar campos do veículo
-                vehicle.identifier = form.identifier.data
                 vehicle.type = VehicleType[form.type.data]
+                vehicle.plate = form.plate.data
                 vehicle.brand = form.brand.data
                 vehicle.model = form.model.data
                 vehicle.year = form.year.data
-                vehicle.license_plate = form.license_plate.data
                 vehicle.color = form.color.data
                 vehicle.chassis = form.chassis.data
-                vehicle.purchase_date = purchase_date
-                vehicle.purchase_value = form.purchase_value.data
-                vehicle.current_value = form.current_value.data
-                vehicle.mileage = form.mileage.data
-                vehicle.last_maintenance_date = last_maintenance_date
+                vehicle.renavam = form.renavam.data
+                vehicle.acquisition_date = acquisition_date
+                vehicle.fuel_type = FuelType[form.fuel_type.data] if form.fuel_type.data else None
+                vehicle.insurance_policy = form.insurance_policy.data
+                vehicle.insurance_expiry = insurance_expiry
+                vehicle.current_km = form.current_km.data
+                vehicle.next_maintenance_km = form.next_maintenance_km.data
                 vehicle.next_maintenance_date = next_maintenance_date
                 vehicle.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
                 vehicle.status = VehicleStatus[form.status.data]
