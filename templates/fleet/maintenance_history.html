@@ -11,8 +11,8 @@
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left mr-1"></i> Voltar
+                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar para Frota
                     </a>
                 </div>
             </div>
@@ -27,35 +27,35 @@
                 <div class="card card-info">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-truck mr-2"></i>{{ vehicle.brand }} {{ vehicle.model }} - {{ vehicle.identifier }}
+                            <i class="fas fa-tools mr-2"></i>Histórico Geral de Manutenções
                         </h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="info-box bg-info">
-                                    <span class="info-box-icon"><i class="fas fa-calendar"></i></span>
+                                    <span class="info-box-icon"><i class="fas fa-truck"></i></span>
                                     <div class="info-box-content">
-                                        <span class="info-box-text">Última Manutenção</span>
-                                        <span class="info-box-number">{{ vehicle.last_maintenance_date.strftime('%d/%m/%Y') if vehicle.last_maintenance_date else 'Não registrada' }}</span>
+                                        <span class="info-box-text">Total de Veículos</span>
+                                        <span class="info-box-number">{{ vehicles|length }}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="info-box bg-warning">
-                                    <span class="info-box-icon"><i class="fas fa-tachometer-alt"></i></span>
+                                    <span class="info-box-icon"><i class="fas fa-tools"></i></span>
                                     <div class="info-box-content">
-                                        <span class="info-box-text">Hodômetro Atual</span>
-                                        <span class="info-box-number">{{ vehicle.mileage if vehicle.mileage is not none else 'Não informado' }}</span>
+                                        <span class="info-box-text">Total de Manutenções</span>
+                                        <span class="info-box-number">{{ maintenance_history.total }}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="info-box bg-success">
-                                    <span class="info-box-icon"><i class="fas fa-calendar-plus"></i></span>
+                                    <span class="info-box-icon"><i class="fas fa-calendar-alt"></i></span>
                                     <div class="info-box-content">
-                                        <span class="info-box-text">Próxima Manutenção</span>
-                                        <span class="info-box-number">{{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') if vehicle.next_maintenance_date else 'Não programada' }}</span>
+                                        <span class="info-box-text">Período</span>
+                                        <span class="info-box-number">{{ data_inicio if data_inicio else 'Todas' }} até {{ data_fim if data_fim else 'Hoje' }}</span>
                                     </div>
                                 </div>
                             </div>
