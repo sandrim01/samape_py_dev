@@ -212,16 +212,16 @@
                     </div>
                     <div class="col-sm-12 col-md-7">
                         <div class="dataTables_paginate paging_simple_numbers float-right">
-                            {% if pagination.pages > 1 %}
+                            {% if vehicles.pages > 1 %}
                             <ul class="pagination">
-                                <li class="paginate_button page-item previous {% if not pagination.has_prev %}disabled{% endif %}">
-                                    <a href="{{ url_for('fleet', page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}" class="page-link">
+                                <li class="paginate_button page-item previous {% if not vehicles.has_prev %}disabled{% endif %}">
+                                    <a href="{{ url_for('fleet', page=vehicles.prev_num, **request.args) if vehicles.has_prev else '#' }}" class="page-link">
                                         Anterior
                                     </a>
                                 </li>
-                                {% for page in pagination.iter_pages() %}
+                                {% for page in vehicles.iter_pages() %}
                                     {% if page %}
-                                        <li class="paginate_button page-item {% if page == pagination.page %}active{% endif %}">
+                                        <li class="paginate_button page-item {% if page == vehicles.page %}active{% endif %}">
                                             <a href="{{ url_for('fleet', page=page, **request.args) }}" class="page-link">{{ page }}</a>
                                         </li>
                                     {% else %}
@@ -230,8 +230,8 @@
                                         </li>
                                     {% endif %}
                                 {% endfor %}
-                                <li class="paginate_button page-item next {% if not pagination.has_next %}disabled{% endif %}">
-                                    <a href="{{ url_for('fleet', page=pagination.next_num, **request.args) if pagination.has_next else '#' }}" class="page-link">
+                                <li class="paginate_button page-item next {% if not vehicles.has_next %}disabled{% endif %}">
+                                    <a href="{{ url_for('fleet', page=vehicles.next_num, **request.args) if vehicles.has_next else '#' }}" class="page-link">
                                         Próximo
                                     </a>
                                 </li>
