@@ -107,39 +107,47 @@
         <div class="card-body">
             <!-- Versão Mobile: Cards Interativos -->
             <div class="d-lg-none">
+                <!-- Abas de navegação mobile (similar ao screenshot) -->
+                <div class="mobile-tabs text-center mb-3">
+                    <a href="{{ url_for('stock_items') }}" class="mobile-tab {% if not type_filter %}active{% endif %}">
+                        Todos
+                    </a>
+                    <a href="{{ url_for('stock_items', type='epi') }}" class="mobile-tab {% if type_filter == 'epi' %}active{% endif %}">
+                        EPIs
+                    </a>
+                    <a href="{{ url_for('stock_items', type='ferramenta') }}" class="mobile-tab {% if type_filter == 'ferramenta' %}active{% endif %}">
+                        Ferramentas
+                    </a>
+                </div>
+                
                 {% if items.items %}
                     {% for item in items.items %}
-                    <div class="interactive-card" data-type="{{ item.type.name }}" data-status="{{ item.status.name }}">
-                        <div class="card-icon" style="background-color: {% if item.type.name == 'epi' %}#3498db{% elif item.type.name == 'ferramenta' %}#e67e22{% else %}#2ecc71{% endif %}">
-                            <i class="fas {% if item.type.name == 'epi' %}fa-hard-hat{% elif item.type.name == 'ferramenta' %}fa-tools{% else %}fa-box{% endif %}"></i>
+                    <div class="mobile-item-card mb-3" data-type="{{ item.type.name }}" data-status="{{ item.status.name }}">
+                        <div class="item-header">
+                            <h5 class="item-name">{{ item.name }}</h5>
+                            <span class="status-badge {% if item.status == item_statuses.disponivel %}completed{% elif item.status == item_statuses.baixo %}pending{% elif item.status == item_statuses.esgotado %}cancelled{% elif item.status == item_statuses.vencido %}cancelled{% endif %}">
+                                {{ item.status.value }}
+                            </span>
                         </div>
-                        <div class="content">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="title">{{ item.name }}</div>
-                                <span class="status-badge {% if item.status == item_statuses.disponivel %}completed{% elif item.status == item_statuses.baixo %}pending{% elif item.status == item_statuses.esgotado %}cancelled{% elif item.status == item_statuses.vencido %}cancelled{% endif %}">
-                                    {{ item.status.value }}
-                                </span>
+                        <div class="item-details">
+                            <div class="qty-info">
+                                <span>Qtd: {{ item.quantity }}</span>
+                                <span class="ms-3">Min: {{ item.min_quantity }}</span>
                             </div>
-                            <div class="subtitle">
-                                <div class="d-flex justify-content-between">
-                                    <span>Qtd: {{ item.quantity }}</span>
-                                    <span>Min: {{ item.min_quantity }}</span>
-                                </div>
-                                <div class="mt-1 text-truncate">
-                                    {{ item.location or 'Sem localização' }} | {{ item.supplier.name if item.supplier else 'Sem fornecedor' }}
-                                </div>
+                            <div class="location-info mt-1 text-truncate">
+                                {{ item.location or 'Sem localização' }}
                             </div>
-                            <div class="mt-2 d-flex justify-content-end">
-                                <a href="{{ url_for('view_stock_item', id=item.id) }}" class="btn btn-sm btn-info me-1">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ url_for('edit_stock_item', id=item.id) }}" class="btn btn-sm btn-primary me-1">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <a href="{{ url_for('view_stock_item', id=item.id) }}" class="action-btn view-btn">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('edit_stock_item', id=item.id) }}" class="action-btn edit-btn">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="action-btn delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                     

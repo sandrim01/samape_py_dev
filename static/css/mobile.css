@@ -15,6 +15,12 @@
   --border-radius: 8px;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   --transition: all 0.3s ease;
+  
+  /* Novos tons azulados/escuros para o tema */
+  --blue-dark: #1a2530;
+  --blue-medium: #2c3e50;
+  --blue-light: #3a536b;
+  --blue-accent: #00aeff;
 }
 
 /* Estilos gerais para mobile */
