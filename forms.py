@@ -320,7 +320,7 @@ class SystemSettingsForm(FlaskForm):
     
 class VehicleForm(FlaskForm):
     """Formulário para cadastro e edição de veículos da frota"""
-    type = SelectField('Tipo *', choices=[(t.name, t.value) for t in VehicleType], validators=[DataRequired()])
+    # Campo type removido - não existe na tabela
     plate = StringField('Placa *', validators=[DataRequired(), Length(max=20)])
     brand = StringField('Marca', validators=[Optional(), Length(max=50)])
     model = StringField('Modelo', validators=[Optional(), Length(max=100)])
