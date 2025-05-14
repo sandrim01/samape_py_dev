@@ -161,7 +161,7 @@
                             <tr>
                                 <td>{{ vehicle.identifier }}</td>
                                 <td>{{ vehicle.brand }} {{ vehicle.model }}</td>
-                                <td>{{ vehicle.type.value }}</td>
+                                <td>{{ vehicle.fuel_type.value if vehicle.fuel_type else '-' }}</td>
                                 <td>{{ vehicle.license_plate or '-' }}</td>
                                 <td>{{ vehicle.mileage if vehicle.mileage is not none else '-' }}</td>
                                 <td>
@@ -175,8 +175,7 @@
                                 <td>
                                     <span class="badge badge-{{ 
                                         'success' if vehicle.status.name == 'ativo' else 
-                                        'warning' if vehicle.status.name == 'manutencao' else 
-                                        'info' if vehicle.status.name == 'reservado' else 
+                                        'warning' if vehicle.status.name == 'em_manutencao' else 
                                         'secondary' }}">
                                         {{ vehicle.status.value }}
                                     </span>
