@@ -22,8 +22,8 @@
     <div class="col-md-6">
         <!-- Equipment Details -->
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-tools me-1"></i> Dados do Equipamento
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-tools me-1"></i> Dados do Equipamento</h6>
             </div>
             <div class="card-body">
                 <div class="mb-3">
@@ -63,10 +63,65 @@
             </div>
         </div>
         
+        <!-- Equipment Images -->
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-images me-1"></i> Imagens do Equipamento</h6>
+            </div>
+            <div class="card-body">
+                {% if equipment.images %}
+                <div class="row g-3">
+                    <div class="col-12 mb-2 d-lg-none">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Toque nas imagens para ampliá-las
+                        </div>
+                    </div>
+                    
+                    {% for image in equipment.images %}
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                <a href="{{ url_for('view_equipment_image', image_id=image.id) }}" 
+                                   data-fancybox="equipment-gallery" 
+                                   data-caption="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                   target="_blank">
+                                    <img src="{{ url_for('view_equipment_image', image_id=image.id) }}" 
+                                         alt="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                         class="card-img-top gallery-image" 
+                                         style="height: 150px; object-fit: cover;"
+                                         onerror="this.onerror=null; this.src='/static/img/placeholder.svg';">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" 
+                                         style="background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease; border-radius: 4px;">
+                                        <i class="fas fa-search-plus text-white fa-2x"></i>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="card-body p-2">
+                                {% if image.description %}
+                                <p class="card-text small text-truncate">{{ image.description }}</p>
+                                {% else %}
+                                <p class="card-text small text-muted">Imagem {{ loop.index }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-images fa-3x text-muted"></i>
+                    </div>
+                    <p class="text-muted">Não há imagens disponíveis para este equipamento.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
         <!-- Client Info -->
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-user me-1"></i> Dados do Cliente
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-user me-1"></i> Dados do Cliente</h6>
             </div>
             <div class="card-body">
                 <h5>{{ equipment.client.name }}</h5>
@@ -96,8 +151,8 @@
     <div class="col-md-6">
         <!-- Service Order History -->
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-history me-1"></i> Histórico de Manutenções
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-history me-1"></i> Histórico de Manutenções</h6>
             </div>
             <div class="card-body">
                 {% if service_orders %}

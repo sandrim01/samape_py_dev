@@ -260,6 +260,43 @@
         });
     </script>
     
+    <!-- Fancybox JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    <script>
+        // Inicializar Fancybox para galerias de imagens
+        document.addEventListener("DOMContentLoaded", function() {
+            Fancybox.bind("[data-fancybox]", {
+                // Opções personalizadas
+                Toolbar: {
+                    display: [
+                        { id: "prev", position: "center" },
+                        { id: "counter", position: "center" },
+                        { id: "next", position: "center" },
+                        { id: "zoom", position: "right" },
+                        { id: "close", position: "right" },
+                    ],
+                },
+                Thumbs: {
+                    autoStart: false,
+                },
+                Image: {
+                    zoom: true,
+                },
+                on: {
+                    initLayout: (fancybox) => {
+                        // Personalizar cores para combinar com o tema dark
+                        const $container = fancybox.$container;
+                        
+                        if ($container) {
+                            $container.style.setProperty("--f-bg-color", "rgba(33, 37, 41, 0.95)");
+                            $container.style.setProperty("--f-button-color", "#fff");
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
     
     <!-- Mobile Bottom Navigation Bar -->
