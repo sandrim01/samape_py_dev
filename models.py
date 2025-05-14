@@ -356,54 +356,175 @@ class StockMovement(db.Model):
             return User.query.get(self.created_by)
         return None
 
+class FuelType(enum.Enum):
+    """Tipo de combustível"""
+    gasolina = "Gasolina"
+    etanol = "Etanol"
+    diesel = "Diesel"
+    flex = "Flex (Gasolina/Etanol)"
+    hibrido = "Híbrido"
+    eletrico = "Elétrico"
+    outro = "Outro"
+
 class Vehicle(db.Model):
     """Modelo para veículos da frota"""
     id = db.Column(db.Integer, primary_key=True)
-    identifier = db.Column(db.String(50), unique=True, nullable=False)  # Placa ou ID interno
     type = db.Column(Enum(VehicleType), nullable=False)
     brand = db.Column(db.String(50))
     model = db.Column(db.String(100))
     year = db.Column(db.Integer)
-    license_plate = db.Column(db.String(20))
+    plate = db.Column(db.String(20))  # Placa
     color = db.Column(db.String(50))
     chassis = db.Column(db.String(50))
-    purchase_date = db.Column(db.Date)
-    purchase_value = db.Column(db.Numeric(10, 2))
-    current_value = db.Column(db.Numeric(10, 2))
-    mileage = db.Column(db.Integer)
-    last_maintenance_date = db.Column(db.Date)
-    next_maintenance_date = db.Column(db.Date)
+    renavam = db.Column(db.String(50))
+    fuel_type = db.Column(Enum(FuelType), default=FuelType.flex)
+    acquisition_date = db.Column(db.Date)  # Data de aquisição
+    insurance_policy = db.Column(db.String(50))  # Número da apólice de seguro
+    insurance_expiry = db.Column(db.Date)  # Data de vencimento do seguro
+    current_km = db.Column(db.Integer)  # Quilometragem atual
+    next_maintenance_date = db.Column(db.Date)  # Data da próxima manutenção
+    next_maintenance_km = db.Column(db.Integer)  # Km para próxima manutenção
     responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     status = db.Column(Enum(VehicleStatus), default=VehicleStatus.ativo, nullable=False)
-    image = db.Column(db.String(255))
-    notes = db.Column(db.Text)
+    image = db.Column(db.String(255))  # Caminho da imagem
+    notes = db.Column(db.Text)  # Observações
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     responsible = db.relationship('User', backref='vehicles', foreign_keys=[responsible_id])
     maintenance_history = db.relationship('VehicleMaintenance', backref='vehicle', lazy=True, cascade="all, delete-orphan")
+    refuelings = db.relationship('Refueling', lazy=True, cascade="all, delete-orphan")
+    travel_logs = db.relationship('VehicleTravelLog', lazy=True, cascade="all, delete-orphan")
+    
+    @property
+    def identifier(self):
+        """Retorna a placa como identificador do veículo"""
+        return self.plate or f"{self.brand} {self.model} ({self.id})"
+    
+    @property
+    def mileage(self):
+        """Compatibilidade para templates existentes"""
+        return self.current_km
+    
+    @property
+    def purchase_date(self):
+        """Compatibilidade para templates existentes"""
+        return self.acquisition_date
+        
+    @property
+    def license_plate(self):
+        """Compatibilidade para templates existentes"""
+        return self.plate
     
     def __repr__(self):
-        return f'<Vehicle {self.identifier} - {self.brand} {self.model}>'
+        return f'<Vehicle {self.plate} - {self.brand} {self.model}>'
+
+class MaintenanceType(enum.Enum):
+    """Tipo de manutenção"""
+    preventiva = "Preventiva"
+    corretiva = "Corretiva"
+    revisao = "Revisão"
+    outra = "Outra"
 
 class VehicleMaintenance(db.Model):
     """Registro de manutenções realizadas nos veículos"""
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    mileage = db.Column(db.Integer)
+    date = db.Column(db.DateTime, nullable=False)
+    odometer = db.Column(db.Integer)  # Odômetro na data da manutenção
     description = db.Column(db.Text, nullable=False)
-    cost = db.Column(db.Numeric(10, 2))
-    service_provider = db.Column(db.String(100))
-    invoice_number = db.Column(db.String(50))
-    performed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    maintenance_type = db.Column(Enum(MaintenanceType), default=MaintenanceType.revisao)
+    completed = db.Column(db.Boolean, default=True)  # Se a manutenção foi concluída
+    cost = db.Column(db.Float)  # Custo da manutenção
+    workshop = db.Column(db.String(100))  # Oficina/local onde foi realizada
+    invoice_number = db.Column(db.String(50))  # Número da nota fiscal
+    invoice_image = db.Column(db.String(255))  # Imagem da nota fiscal
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'))  # OS relacionada
+    next_maintenance_date = db.Column(db.Date)  # Data da próxima manutenção
+    next_maintenance_km = db.Column(db.Integer)  # Km para próxima manutenção
+    notes = db.Column(db.Text)  # Observações adicionais
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    performed_by = db.relationship('User', backref='maintenance_performed', foreign_keys=[performed_by_id])
+    service_order = db.relationship('ServiceOrder', backref='vehicle_maintenance')
     creator = db.relationship('User', backref='maintenance_created', foreign_keys=[created_by])
+    
+    @property
+    def mileage(self):
+        """Compatibilidade para templates existentes"""
+        return self.odometer
+        
+    @property
+    def service_provider(self):
+        """Compatibilidade para templates existentes"""
+        return self.workshop
+        
+    @property
+    def performed_by(self):
+        """Compatibilidade para templates existentes"""
+        if self.created_by:
+            return User.query.get(self.created_by)
+        return None
     
     def __repr__(self):
         return f'<VehicleMaintenance {self.id} - {self.date}>'
+        
+        
+class Refueling(db.Model):
+    """Registros de abastecimento de veículos"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)  # Data do abastecimento
+    odometer = db.Column(db.Integer)  # Hodômetro na data do abastecimento
+    fuel_type = db.Column(Enum(FuelType), default=FuelType.flex)  # Tipo de combustível
+    liters = db.Column(db.Float)  # Quantidade em litros
+    price_per_liter = db.Column(db.Float)  # Preço por litro
+    total_cost = db.Column(db.Float)  # Custo total
+    full_tank = db.Column(db.Boolean, default=False)  # Tanque completo
+    gas_station = db.Column(db.String(100))  # Posto de combustível
+    receipt_image = db.Column(db.String(255))  # Imagem do comprovante
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Motorista
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'))  # OS relacionada
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))  # Quem criou o registro
+    notes = db.Column(db.Text)  # Observações
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Data de criação
+    
+    # Relationships
+    vehicle = db.relationship('Vehicle', foreign_keys=[vehicle_id])
+    service_order = db.relationship('ServiceOrder', backref='refuelings')
+    driver = db.relationship('User', backref='refuelings_as_driver', foreign_keys=[driver_id])
+    creator = db.relationship('User', backref='refuelings_created', foreign_keys=[created_by])
+    
+    def __repr__(self):
+        return f'<Refueling {self.id} - {self.date}>'
+        
+        
+class VehicleTravelLog(db.Model):
+    """Registro de viagens/deslocamentos de veículos"""
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Motorista
+    start_date = db.Column(db.DateTime, nullable=False)  # Data/hora de início
+    end_date = db.Column(db.DateTime)  # Data/hora de término
+    start_odometer = db.Column(db.Integer)  # Hodômetro de início
+    end_odometer = db.Column(db.Integer)  # Hodômetro de término
+    distance = db.Column(db.Float)  # Distância percorrida
+    destination = db.Column(db.String(255))  # Destino
+    purpose = db.Column(db.Text)  # Finalidade da viagem
+    service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'))  # OS relacionada
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))  # Quem criou o registro
+    notes = db.Column(db.Text)  # Observações
+    status = db.Column(db.String(20), default='concluído')  # Status: em andamento, concluído, cancelado
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Data de criação
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Data de atualização
+    
+    # Relationships
+    vehicle = db.relationship('Vehicle', foreign_keys=[vehicle_id])
+    service_order = db.relationship('ServiceOrder', backref='vehicle_travel_logs')
+    driver = db.relationship('User', backref='travel_logs_as_driver', foreign_keys=[driver_id])
+    creator = db.relationship('User', backref='travel_logs_created', foreign_keys=[created_by])
+    
+    def __repr__(self):
+        return f'<VehicleTravelLog {self.id} - {self.destination}>'

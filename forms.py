@@ -4,7 +4,7 @@ from wtforms import StringField, PasswordField, BooleanField, TextAreaField, Sel
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange, Regexp
 import re
 from datetime import datetime
-from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder, VehicleType, VehicleStatus, Vehicle
+from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder, VehicleType, VehicleStatus, Vehicle, FuelType, MaintenanceType
 
 class DeleteImageForm(FlaskForm):
     """Formulário simples para exclusão de imagens"""
@@ -320,27 +320,28 @@ class SystemSettingsForm(FlaskForm):
     
 class VehicleForm(FlaskForm):
     """Formulário para cadastro e edição de veículos da frota"""
-    identifier = StringField('Identificador/Placa *', validators=[DataRequired(), Length(max=50)])
     type = SelectField('Tipo *', choices=[(t.name, t.value) for t in VehicleType], validators=[DataRequired()])
+    plate = StringField('Placa *', validators=[DataRequired(), Length(max=20)])
     brand = StringField('Marca', validators=[Optional(), Length(max=50)])
     model = StringField('Modelo', validators=[Optional(), Length(max=100)])
-    year = IntegerField('Ano', validators=[Optional(), NumberRange(min=1950, max=2100)])
-    license_plate = StringField('Placa', validators=[Optional(), Length(max=20)])
+    year = IntegerField('Ano', validators=[Optional(), NumberRange(min=1950, max=datetime.now().year + 1)])
     color = StringField('Cor', validators=[Optional(), Length(max=50)])
-    chassis = StringField('Chassis/Série', validators=[Optional(), Length(max=50)])
-    purchase_date = StringField('Data de Aquisição', validators=[Optional()])
-    purchase_value = DecimalField('Valor de Compra (R$)', validators=[Optional()], places=2)
-    current_value = DecimalField('Valor Atual (R$)', validators=[Optional()], places=2)
-    mileage = IntegerField('Hodômetro (Km)', validators=[Optional(), NumberRange(min=0)])
-    last_maintenance_date = StringField('Data da Última Manutenção', validators=[Optional()])
-    next_maintenance_date = StringField('Data da Próxima Manutenção', validators=[Optional()])
-    responsible_id = SelectField('Responsável', coerce=int, validators=[Optional()])
-    status = SelectField('Status *', choices=[(status.name, status.value) for status in VehicleStatus], validators=[DataRequired()])
+    chassis = StringField('Chassi/Número de Série', validators=[Optional(), Length(max=50)])
+    renavam = StringField('Renavam', validators=[Optional(), Length(max=50)])
+    fuel_type = SelectField('Tipo de Combustível', choices=[(f.name, f.value) for f in FuelType], validators=[Optional()])
+    acquisition_date = StringField('Data de Aquisição', validators=[Optional()], render_kw={"type": "date"})
+    insurance_policy = StringField('Apólice de Seguro', validators=[Optional(), Length(max=50)])
+    insurance_expiry = StringField('Vencimento do Seguro', validators=[Optional()], render_kw={"type": "date"})
+    current_km = IntegerField('Hodômetro/Horímetro (Km)', validators=[Optional(), NumberRange(min=0)])
+    next_maintenance_date = StringField('Data da Próxima Manutenção', validators=[Optional()], render_kw={"type": "date"})
+    next_maintenance_km = IntegerField('Km para Próxima Manutenção', validators=[Optional(), NumberRange(min=0)])
+    responsible_id = SelectField('Responsável', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    status = SelectField('Status *', choices=[(s.name, s.value) for s in VehicleStatus], validators=[DataRequired()])
     image = FileField('Imagem do Veículo', validators=[
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas!')
     ])
-    notes = TextAreaField('Observações', validators=[Optional()])
+    notes = TextAreaField('Observações', validators=[Optional(), Length(max=1000)])
     
     def __init__(self, *args, **kwargs):
         super(VehicleForm, self).__init__(*args, **kwargs)
@@ -412,34 +413,7 @@ class StockMovementForm(FlaskForm):
             (s.id, f"OS #{s.id} - {s.client.name}") 
             for s in ServiceOrder.query.filter(ServiceOrder.status != ServiceOrderStatus.fechada).order_by(ServiceOrder.id.desc()).all()
         ]
-        
-class VehicleForm(FlaskForm):
-    identifier = StringField('Identificador/Nome', validators=[DataRequired(), Length(max=50)])
-    type = SelectField('Tipo', choices=[(status.name, status.value) for status in VehicleType], validators=[DataRequired()])
-    brand = StringField('Marca', validators=[DataRequired(), Length(max=50)])
-    model = StringField('Modelo', validators=[DataRequired(), Length(max=50)])
-    year = IntegerField('Ano', validators=[Optional(), NumberRange(min=1900, max=datetime.now().year + 1)])
-    license_plate = StringField('Placa', validators=[Optional(), Length(max=20)])
-    color = StringField('Cor', validators=[Optional(), Length(max=30)])
-    chassis = StringField('Chassi/Número de Série', validators=[Optional(), Length(max=50)])
-    purchase_date = StringField('Data de Aquisição', validators=[Optional()], render_kw={"type": "date"})
-    purchase_value = DecimalField('Valor de Aquisição (R$)', validators=[Optional()], places=2)
-    current_value = DecimalField('Valor Atual (R$)', validators=[Optional()], places=2)
-    mileage = IntegerField('Hodômetro/Horímetro', validators=[Optional()])
-    last_maintenance_date = StringField('Última Manutenção', validators=[Optional()], render_kw={"type": "date"})
-    next_maintenance_date = StringField('Próxima Manutenção', validators=[Optional()], render_kw={"type": "date"})
-    responsible_id = SelectField('Responsável', validators=[Optional()], coerce=lambda x: int(x) if x else None)
-    status = SelectField('Status', choices=[(status.name, status.value) for status in VehicleStatus], validators=[DataRequired()])
-    image = FileField('Imagem do Veículo', validators=[Optional(), FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas.')])
-    notes = TextAreaField('Observações', validators=[Optional(), Length(max=1000)])
-    
-    def __init__(self, *args, **kwargs):
-        super(VehicleForm, self).__init__(*args, **kwargs)
-        # Lista de responsáveis para o select
-        self.responsible_id.choices = [(0, 'A ser definido')] + [
-            (u.id, f"{u.name}") 
-            for u in User.query.filter_by(active=True).order_by(User.name).all()
-        ]
+
         
 class VehicleMaintenanceForm(FlaskForm):
     vehicle_id = SelectField('Veículo', validators=[DataRequired()], coerce=int)
