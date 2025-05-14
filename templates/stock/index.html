@@ -14,8 +14,12 @@
     </div>
 
     <!-- Filtros -->
-    <div class="card card-body mb-4 bg-gradient-dark border-left-primary">
-        <form method="GET" action="{{ url_for('stock_items') }}" id="filter-form">
+    <div class="card mb-4">
+        <div class="card-header py-3 bg-gradient-primary">
+            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-filter me-1"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('stock_items') }}" id="filter-form">
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label for="search" class="form-label">Pesquisar</label>
