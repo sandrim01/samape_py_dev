@@ -3461,7 +3461,7 @@ def register_routes(app):
                     'Edição de Veículo',
                     'vehicle',
                     vehicle.id,
-                    f"Veículo {vehicle.identifier} atualizado"
+                    f"Veículo placa {vehicle.plate} atualizado"
                 )
                 
                 return redirect(url_for('view_vehicle', id=vehicle.id))
@@ -3491,7 +3491,7 @@ def register_routes(app):
                     app.logger.warning(f"Erro ao remover imagem do veículo: {str(e)}")
             
             # Registrar informações antes de excluir
-            identifier = vehicle.identifier
+            plate = vehicle.plate
             
             # Excluir o veículo
             db.session.delete(vehicle)
@@ -3502,7 +3502,7 @@ def register_routes(app):
                 'Exclusão de Veículo',
                 'vehicle',
                 id,
-                f"Veículo {identifier} excluído"
+                f"Veículo placa {plate} excluído"
             )
             
         except Exception as e:
@@ -3544,18 +3544,18 @@ def register_routes(app):
                 db.session.add(maintenance)
                 
                 # Atualizar dados do veículo
-                vehicle.last_maintenance_date = maintenance_date
+                # Não definir last_maintenance_date pois não temos esse campo no modelo
                 
                 # Atualizar hodômetro do veículo se o valor informado é maior que o atual
-                if form.mileage.data and (vehicle.mileage is None or form.mileage.data > vehicle.mileage):
-                    vehicle.mileage = form.mileage.data
+                if form.mileage.data and (vehicle.current_km is None or form.mileage.data > vehicle.current_km):
+                    vehicle.current_km = form.mileage.data
                 
                 db.session.commit()
                 
                 # Criar entrada financeira se houver custo
                 if form.cost.data:
                     financial_entry = FinancialEntry(
-                        description=f"Manutenção do veículo {vehicle.identifier} - {form.description.data[:50]}",
+                        description=f"Manutenção do veículo placa {vehicle.plate} - {form.description.data[:50]}",
                         amount=form.cost.data,
                         type=FinancialEntryType.saida,
                         date=maintenance_date,
@@ -3572,7 +3572,7 @@ def register_routes(app):
                     'Registro de Manutenção',
                     'vehicle_maintenance',
                     maintenance.id,
-                    f"Manutenção registrada para o veículo {vehicle.identifier}"
+                    f"Manutenção registrada para o veículo placa {vehicle.plate}"
                 )
                 
                 return redirect(url_for('view_vehicle', id=vehicle.id))
