@@ -3255,7 +3255,8 @@ def register_routes(app):
                 # Ordenação por tipo removida - campo não existe na tabela
                 query = query.order_by(Vehicle.brand)
             else:
-                query = query.order_by(Vehicle.type.desc())
+                # Ordenação por tipo removida - campo não existe na tabela
+                query = query.order_by(Vehicle.brand.desc())
         elif order_by == 'status':
             if order_dir == 'asc':
                 query = query.order_by(Vehicle.status)
