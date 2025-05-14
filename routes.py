@@ -3244,7 +3244,7 @@ def register_routes(app):
         order_by = request.args.get('order_by', 'plate')
         order_dir = request.args.get('order_dir', 'asc')
         
-        if order_by == 'identifier' or order_by == 'plate':
+        if order_by == 'plate':
             if order_dir == 'asc':
                 query = query.order_by(Vehicle.plate)
             else:
@@ -3623,7 +3623,7 @@ def register_routes(app):
         maintenance_history = query.paginate(page=page, per_page=per_page)
         
         # Obter lista de veículos para o filtro
-        vehicles = Vehicle.query.order_by(Vehicle.identifier).all()
+        vehicles = Vehicle.query.order_by(Vehicle.plate).all()
         
         return render_template(
             'fleet/maintenance_history.html',
