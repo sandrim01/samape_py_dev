@@ -7,13 +7,16 @@
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Gerenciamento de Frota</h1>
+                <h1 class="m-0"><i class="fas fa-truck-pickup mr-2"></i>Gerenciamento de Frota</h1>
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
                     {% if current_user.role.value in ['admin', 'gerente'] %}
-                    <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary">
-                        <i class="fas fa-plus mr-1"></i> Novo Veículo
+                    <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus mr-1"></i> Adicionar Novo Veículo
+                    </a>
+                    <a href="{{ url_for('vehicle_maintenance_history') }}" class="btn btn-info btn-lg ml-2">
+                        <i class="fas fa-wrench mr-1"></i> Histórico de Manutenções
                     </a>
                     {% endif %}
                 </div>
@@ -27,7 +30,7 @@
         <!-- Estatísticas da Frota -->
         <div class="row">
             <div class="col-lg-3 col-6">
-                <div class="small-box bg-success">
+                <div class="small-box bg-gradient-success">
                     <div class="inner">
                         <h3>{{ stats.active }}</h3>
                         <p>Veículos Ativos</p>
@@ -35,10 +38,13 @@
                     <div class="icon">
                         <i class="fas fa-truck"></i>
                     </div>
+                    <a href="{{ url_for('fleet', status='ativo') }}" class="small-box-footer">
+                        Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
-                <div class="small-box bg-warning">
+                <div class="small-box bg-gradient-warning">
                     <div class="inner">
                         <h3>{{ stats.maintenance }}</h3>
                         <p>Em Manutenção</p>
@@ -46,21 +52,27 @@
                     <div class="icon">
                         <i class="fas fa-tools"></i>
                     </div>
+                    <a href="{{ url_for('fleet', status='em_manutencao') }}" class="small-box-footer">
+                        Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
-                <div class="small-box bg-info">
+                <div class="small-box bg-gradient-primary">
                     <div class="inner">
-                        <h3>{{ stats.reserved }}</h3>
-                        <p>Reservados</p>
+                        <h3>{{ stats.total }}</h3>
+                        <p>Total de Veículos</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-bookmark"></i>
+                        <i class="fas fa-car-alt"></i>
                     </div>
+                    <a href="{{ url_for('fleet') }}" class="small-box-footer">
+                        Ver todos <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger">
+                <div class="small-box bg-gradient-danger">
                     <div class="inner">
                         <h3>{{ stats.inactive }}</h3>
                         <p>Inativos</p>
@@ -68,14 +80,17 @@
                     <div class="icon">
                         <i class="fas fa-ban"></i>
                     </div>
+                    <a href="{{ url_for('fleet', status='inativo') }}" class="small-box-footer">
+                        Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
             </div>
         </div>
 
         <!-- Filtros -->
-        <div class="card">
+        <div class="card card-outline card-primary">
             <div class="card-header">
-                <h3 class="card-title">Filtros</h3>
+                <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtros de Busca</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-minus"></i>
@@ -87,44 +102,56 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="status">Status</label>
-                                <select name="status" id="status" class="form-control">
-                                    <option value="">Todos</option>
-                                    <option value="ativo" {% if request.args.get('status') == 'ativo' %}selected{% endif %}>Ativo</option>
-                                    <option value="em_manutencao" {% if request.args.get('status') == 'em_manutencao' %}selected{% endif %}>Em Manutenção</option>
-                                    <!-- Opção 'reservado' removida - não existe no banco de dados -->
-                                    <option value="inativo" {% if request.args.get('status') == 'inativo' %}selected{% endif %}>Inativo</option>
+                                <label for="status">Status do Veículo</label>
+                                <select name="status" id="status" class="form-control select2">
+                                    <option value="">Todos os Status</option>
+                                    <option value="ativo" {% if request.args.get('status') == 'ativo' %}selected{% endif %}>
+                                        <i class="fas fa-check text-success"></i> Ativo
+                                    </option>
+                                    <option value="em_manutencao" {% if request.args.get('status') == 'em_manutencao' %}selected{% endif %}>
+                                        <i class="fas fa-tools text-warning"></i> Em Manutenção
+                                    </option>
+                                    <option value="inativo" {% if request.args.get('status') == 'inativo' %}selected{% endif %}>
+                                        <i class="fas fa-ban text-danger"></i> Inativo
+                                    </option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="type">Tipo</label>
-                                <select name="type" id="type" class="form-control">
-                                    <option value="">Todos</option>
-                                    <option value="caminhao" {% if request.args.get('type') == 'caminhao' %}selected{% endif %}>Caminhão</option>
-                                    <option value="carro" {% if request.args.get('type') == 'carro' %}selected{% endif %}>Carro</option>
-                                    <option value="maquina" {% if request.args.get('type') == 'maquina' %}selected{% endif %}>Máquina</option>
-                                    <option value="motocicleta" {% if request.args.get('type') == 'motocicleta' %}selected{% endif %}>Motocicleta</option>
-                                    <option value="outro" {% if request.args.get('type') == 'outro' %}selected{% endif %}>Outro</option>
+                                <label for="fuel_type">Tipo de Combustível</label>
+                                <select name="fuel_type" id="fuel_type" class="form-control select2">
+                                    <option value="">Todos os Tipos</option>
+                                    <option value="gasolina" {% if request.args.get('fuel_type') == 'gasolina' %}selected{% endif %}>Gasolina</option>
+                                    <option value="diesel" {% if request.args.get('fuel_type') == 'diesel' %}selected{% endif %}>Diesel</option>
+                                    <option value="alcool" {% if request.args.get('fuel_type') == 'alcool' %}selected{% endif %}>Álcool</option>
+                                    <option value="flex" {% if request.args.get('fuel_type') == 'flex' %}selected{% endif %}>Flex</option>
+                                    <option value="gnv" {% if request.args.get('fuel_type') == 'gnv' %}selected{% endif %}>GNV</option>
+                                    <option value="eletrico" {% if request.args.get('fuel_type') == 'eletrico' %}selected{% endif %}>Elétrico</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="search">Buscar</label>
-                                <input type="text" name="q" id="search" class="form-control" placeholder="Identificador, placa, marca..." value="{{ request.args.get('q', '') }}">
+                                <div class="input-group">
+                                    <input type="text" name="busca" id="search" class="form-control" 
+                                           placeholder="Placa, marca, modelo, chassi..." 
+                                           value="{{ request.args.get('busca', '') }}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>&nbsp;</label>
                                 <div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-search mr-1"></i> Filtrar
-                                    </button>
-                                    <a href="{{ url_for('fleet') }}" class="btn btn-default">
-                                        <i class="fas fa-times mr-1"></i> Limpar
+                                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary btn-block">
+                                        <i class="fas fa-undo mr-1"></i> Limpar Filtros
                                     </a>
                                 </div>
                             </div>
@@ -135,61 +162,110 @@
         </div>
 
         <!-- Lista de Veículos -->
-        <div class="card">
+        <div class="card card-outline card-primary">
             <div class="card-header">
-                <h3 class="card-title">Veículos</h3>
+                <h3 class="card-title"><i class="fas fa-car-side mr-2"></i>Lista de Veículos</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="maximize">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body p-0">
-                {% if vehicles %}
+                {% if vehicles and vehicles.items|length > 0 %}
                 <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                    <table class="table table-hover table-striped">
+                        <thead class="thead-dark">
                             <tr>
-                                <th style="width: 10%">Identificador</th>
+                                <th style="width: 8%">Identificador</th>
                                 <th style="width: 15%">Marca/Modelo</th>
-                                <th style="width: 10%">Tipo</th>
+                                <th style="width: 10%">Combustível</th>
                                 <th style="width: 10%">Placa</th>
                                 <th style="width: 10%">Hodômetro</th>
                                 <th style="width: 12%">Próxima Manutenção</th>
                                 <th style="width: 10%">Status</th>
                                 <th style="width: 13%">Responsável</th>
-                                <th style="width: 10%">Ações</th>
+                                <th style="width: 12%">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for vehicle in vehicles %}
+                            {% for vehicle in vehicles.items %}
                             <tr>
-                                <td>{{ vehicle.identifier }}</td>
-                                <td>{{ vehicle.brand }} {{ vehicle.model }}</td>
-                                <td>{{ vehicle.fuel_type.value if vehicle.fuel_type else '-' }}</td>
-                                <td>{{ vehicle.license_plate or '-' }}</td>
-                                <td>{{ vehicle.mileage if vehicle.mileage is not none else '-' }}</td>
                                 <td>
-                                    {{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') if vehicle.next_maintenance_date else '-' }}
-                                    {% if vehicle.next_maintenance_date and vehicle.next_maintenance_date <= today %}
-                                    <span class="badge badge-danger">Atrasada</span>
-                                    {% elif vehicle.next_maintenance_date and (vehicle.next_maintenance_date - today).days <= 7 %}
-                                    <span class="badge badge-warning">Próxima</span>
+                                    <span class="badge badge-secondary">{{ vehicle.identifier }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ vehicle.brand }}</strong><br>
+                                    <small class="text-muted">{{ vehicle.model }} ({{ vehicle.year or 'N/A' }})</small>
+                                </td>
+                                <td>
+                                    {% if vehicle.fuel_type %}
+                                        <span class="badge badge-info">{{ vehicle.fuel_type.value }}</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Não definido</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if vehicle.license_plate %}
+                                        <span class="badge badge-primary">{{ vehicle.license_plate }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if vehicle.mileage is not none %}
+                                        {{ "{:,}".format(vehicle.mileage).replace(',', '.') }} km
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if vehicle.next_maintenance_date %}
+                                        {{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') }}
+                                        {% if vehicle.next_maintenance_date <= today %}
+                                            <span class="badge badge-danger">Atrasada</span>
+                                        {% elif (vehicle.next_maintenance_date - today).days <= 7 %}
+                                            <span class="badge badge-warning">Próxima</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Não programada</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge badge-{{ 
                                         'success' if vehicle.status.name == 'ativo' else 
                                         'warning' if vehicle.status.name == 'em_manutencao' else 
-                                        'secondary' }}">
+                                        'danger' }}">
                                         {{ vehicle.status.value }}
                                     </span>
                                 </td>
-                                <td>{{ vehicle.responsible.name if vehicle.responsible else 'Não definido' }}</td>
                                 <td>
-                                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-info mr-1">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    {% if current_user.role.value in ['admin', 'gerente'] %}
-                                    <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                    {% if vehicle.responsible %}
+                                        <i class="fas fa-user mr-1"></i> {{ vehicle.responsible.name }}
+                                    {% else %}
+                                        <span class="text-muted"><i class="fas fa-user-slash mr-1"></i> Não definido</span>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-info" 
+                                           title="Visualizar detalhes">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if current_user.role.value in ['admin', 'gerente'] %}
+                                        <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-warning" 
+                                           title="Editar veículo">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-sm btn-primary" 
+                                           title="Registrar manutenção">
+                                            <i class="fas fa-tools"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
