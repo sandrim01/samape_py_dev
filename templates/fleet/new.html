@@ -177,11 +177,11 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.purchase_value.label(class="form-label") }}
-                                        {{ form.purchase_value(class="form-control") }}
-                                        {% if form.purchase_value.errors %}
+                                        {{ form.renavam.label(class="form-label") }}
+                                        {{ form.renavam(class="form-control") }}
+                                        {% if form.renavam.errors %}
                                         <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.purchase_value.errors %}
+                                            {% for error in form.renavam.errors %}
                                             <span>{{ error }}</span>
                                             {% endfor %}
                                         </div>
@@ -190,11 +190,11 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.current_value.label(class="form-label") }}
-                                        {{ form.current_value(class="form-control") }}
-                                        {% if form.current_value.errors %}
+                                        {{ form.insurance_policy.label(class="form-label") }}
+                                        {{ form.insurance_policy(class="form-control") }}
+                                        {% if form.insurance_policy.errors %}
                                         <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.current_value.errors %}
+                                            {% for error in form.insurance_policy.errors %}
                                             <span>{{ error }}</span>
                                             {% endfor %}
                                         </div>
@@ -206,11 +206,11 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.last_maintenance_date.label(class="form-label") }}
-                                        {{ form.last_maintenance_date(class="form-control") }}
-                                        {% if form.last_maintenance_date.errors %}
+                                        <label class="form-label">Vencimento do Seguro</label>
+                                        {{ form.insurance_expiry(class="form-control") }}
+                                        {% if form.insurance_expiry.errors %}
                                         <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.last_maintenance_date.errors %}
+                                            {% for error in form.insurance_expiry.errors %}
                                             <span>{{ error }}</span>
                                             {% endfor %}
                                         </div>
