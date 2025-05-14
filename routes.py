@@ -3213,77 +3213,108 @@ def register_routes(app):
     @login_required
     def fleet():
         """Lista de veículos da frota"""
-        page = request.args.get('page', 1, type=int)
-        per_page = int(get_system_setting('items_per_page', '20'))
-        
-        # Query base
-        query = Vehicle.query
-        
-        # Aplicar filtros
-        status_filter = request.args.get('status')
-        tipo_filter = request.args.get('tipo')
-        busca = request.args.get('busca')
-        
-        if status_filter:
-            query = query.filter(Vehicle.status == VehicleStatus[status_filter])
+        try:
+            # Adicionar logging
+            app.logger.info("Acessando página de frota")
             
-        if tipo_filter:
-            # Filtro de tipo removido - campo não existe na tabela
-            pass
+            # Contador de estatísticas
+            stats = {
+                'active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
+                'maintenance': Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count(),
+                'inactive': Vehicle.query.filter_by(status=VehicleStatus.inativo).count(),
+                'total': Vehicle.query.count()
+            }
             
-        if busca:
-            query = query.filter(
-                or_(
-                    Vehicle.plate.ilike(f'%{busca}%'),
-                    Vehicle.brand.ilike(f'%{busca}%'),
-                    Vehicle.model.ilike(f'%{busca}%'),
-                    Vehicle.chassis.ilike(f'%{busca}%')
+            # Inicializar variáveis com valores padrão
+            page = request.args.get('page', 1, type=int)
+            per_page = int(get_system_setting('items_per_page', '20'))
+            
+            today = datetime.now().date()
+            
+            app.logger.info("Preparando query para lista de veículos")
+            
+            # Query base
+            query = Vehicle.query
+            
+            # Aplicar filtros
+            status_filter = request.args.get('status')
+            tipo_filter = request.args.get('tipo')
+            busca = request.args.get('busca')
+            
+            if status_filter:
+                app.logger.info(f"Aplicando filtro por status: {status_filter}")
+                query = query.filter(Vehicle.status == VehicleStatus[status_filter])
+                
+            if tipo_filter:
+                # Filtro de tipo removido - campo não existe na tabela
+                app.logger.info(f"Filtro por tipo ignorado (campo não existe): {tipo_filter}")
+                pass
+                
+            if busca:
+                app.logger.info(f"Aplicando busca: {busca}")
+                query = query.filter(
+                    or_(
+                        Vehicle.plate.ilike(f'%{busca}%'),
+                        Vehicle.brand.ilike(f'%{busca}%'),
+                        Vehicle.model.ilike(f'%{busca}%'),
+                        Vehicle.chassis.ilike(f'%{busca}%')
+                    )
                 )
-            )
-        
-        # Ordenação
-        order_by = request.args.get('order_by', 'plate')
-        order_dir = request.args.get('order_dir', 'asc')
-        
-        if order_by == 'plate':
-            if order_dir == 'asc':
+            
+            # Ordenação
+            order_by = request.args.get('order_by', 'plate')
+            order_dir = request.args.get('order_dir', 'asc')
+            app.logger.info(f"Ordenando por: {order_by} ({order_dir})")
+            
+            if order_by == 'plate':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.plate)
+                else:
+                    query = query.order_by(Vehicle.plate.desc())
+            elif order_by == 'type':
+                if order_dir == 'asc':
+                    # Ordenação por tipo removida - campo não existe na tabela
+                    query = query.order_by(Vehicle.brand)
+                else:
+                    # Ordenação por tipo removida - campo não existe na tabela
+                    query = query.order_by(Vehicle.brand.desc())
+            elif order_by == 'status':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.status)
+                else:
+                    query = query.order_by(Vehicle.status.desc())
+            elif order_by == 'brand':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.brand)
+                else:
+                    query = query.order_by(Vehicle.brand.desc())
+            else:
                 query = query.order_by(Vehicle.plate)
-            else:
-                query = query.order_by(Vehicle.plate.desc())
-        elif order_by == 'type':
-            if order_dir == 'asc':
-                # Ordenação por tipo removida - campo não existe na tabela
-                query = query.order_by(Vehicle.brand)
-            else:
-                # Ordenação por tipo removida - campo não existe na tabela
-                query = query.order_by(Vehicle.brand.desc())
-        elif order_by == 'status':
-            if order_dir == 'asc':
-                query = query.order_by(Vehicle.status)
-            else:
-                query = query.order_by(Vehicle.status.desc())
-        elif order_by == 'brand':
-            if order_dir == 'asc':
-                query = query.order_by(Vehicle.brand)
-            else:
-                query = query.order_by(Vehicle.brand.desc())
-        else:
-            query = query.order_by(Vehicle.plate)
-        
-        # Paginação
-        vehicles = query.paginate(page=page, per_page=per_page)
-        
-        return render_template(
-            'fleet/index.html',
-            vehicles=vehicles,
-            status_filter=status_filter,
-            tipo_filter=tipo_filter,
-            busca=busca,
-            order_by=order_by,
-            order_dir=order_dir,
-            vehicle_statuses=VehicleStatus,
-            # vehicle_types removido - campo não existe na tabela
-        )
+            
+            # Paginação
+            app.logger.info(f"Aplicando paginação: página {page}, {per_page} itens por página")
+            vehicles = query.paginate(page=page, per_page=per_page)
+            
+            app.logger.info(f"Renderizando template com {vehicles.total} veículos encontrados")
+            
+            return render_template(
+                'fleet/index.html',
+                vehicles=vehicles,
+                status_filter=status_filter,
+                tipo_filter=tipo_filter,
+                busca=busca,
+                order_by=order_by,
+                order_dir=order_dir,
+                vehicle_statuses=VehicleStatus,
+                today=today,
+                stats=stats
+            )
+        except Exception as e:
+            app.logger.error(f"Erro ao acessar página de frota: {str(e)}")
+            import traceback
+            app.logger.error(traceback.format_exc())
+            flash(f"Erro ao carregar página de frota: {str(e)}", "danger")
+            return redirect(url_for('dashboard'))
         
     @app.route('/frota/novo', methods=['GET', 'POST'])
     @login_required
