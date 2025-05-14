@@ -394,8 +394,8 @@ class Vehicle(db.Model):
     # Relationships
     responsible = db.relationship('User', backref='vehicles', foreign_keys=[responsible_id])
     maintenance_history = db.relationship('VehicleMaintenance', backref='vehicle', lazy=True, cascade="all, delete-orphan")
-    refuelings = db.relationship('Refueling', lazy=True, cascade="all, delete-orphan")
-    travel_logs = db.relationship('VehicleTravelLog', lazy=True, cascade="all, delete-orphan")
+    refuelings = db.relationship('Refueling', back_populates='vehicle', lazy=True, cascade="all, delete-orphan")
+    travel_logs = db.relationship('VehicleTravelLog', back_populates='vehicle', lazy=True, cascade="all, delete-orphan")
     
     @property
     def identifier(self):
@@ -492,7 +492,7 @@ class Refueling(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Data de criação
     
     # Relationships
-    vehicle = db.relationship('Vehicle', foreign_keys=[vehicle_id])
+    vehicle = db.relationship('Vehicle', back_populates='refuelings', foreign_keys=[vehicle_id])
     service_order = db.relationship('ServiceOrder', backref='refuelings')
     driver = db.relationship('User', backref='refuelings_as_driver', foreign_keys=[driver_id])
     creator = db.relationship('User', backref='refuelings_created', foreign_keys=[created_by])
@@ -521,7 +521,7 @@ class VehicleTravelLog(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Data de atualização
     
     # Relationships
-    vehicle = db.relationship('Vehicle', foreign_keys=[vehicle_id])
+    vehicle = db.relationship('Vehicle', back_populates='travel_logs', foreign_keys=[vehicle_id])
     service_order = db.relationship('ServiceOrder', backref='vehicle_travel_logs')
     driver = db.relationship('User', backref='travel_logs_as_driver', foreign_keys=[driver_id])
     creator = db.relationship('User', backref='travel_logs_created', foreign_keys=[created_by])
