@@ -44,8 +44,8 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-info-circle me-1"></i> Informações do Fornecedor
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-info-circle me-1"></i> Informações do Fornecedor</h6>
             </div>
             <div class="card-body">
                 <table class="table table-striped">
@@ -118,9 +118,9 @@
     
     <div class="col-md-6">
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-cogs me-1"></i> Peças Fornecidas
-                <a href="{{ url_for('new_part', supplier_id=supplier.id) }}" class="float-end btn btn-sm btn-primary">
+            <div class="card-header py-3 bg-gradient-primary d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-cogs me-1"></i> Peças Fornecidas</h6>
+                <a href="{{ url_for('new_part', supplier_id=supplier.id) }}" class="btn btn-sm btn-light">
                     <i class="fas fa-plus"></i> Nova Peça
                 </a>
             </div>

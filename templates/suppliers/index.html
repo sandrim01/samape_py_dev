@@ -13,8 +13,8 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-search me-1"></i> Buscar Fornecedores
+    <div class="card-header py-3 bg-gradient-primary">
+        <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-search me-1"></i> Buscar Fornecedores</h6>
     </div>
     <div class="card-body">
         <form method="get" action="{{ url_for('suppliers') }}" class="row g-3">
@@ -31,8 +31,8 @@
 </div>
 
 <div class="card">
-    <div class="card-header">
-        <i class="fas fa-truck me-1"></i> Lista de Fornecedores
+    <div class="card-header py-3 bg-gradient-primary">
+        <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-truck me-1"></i> Lista de Fornecedores</h6>
     </div>
     <div class="card-body">
         {% if suppliers %}
