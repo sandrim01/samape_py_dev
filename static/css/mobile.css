@@ -706,4 +706,57 @@
     align-items: center;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   }
+  
+  /* Menu lateral mobile */
+  .offcanvas-start {
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    max-width: 85%;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .offcanvas-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .offcanvas-header .offcanvas-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-color);
+  }
+  
+  .offcanvas-body {
+    padding: 1rem;
+  }
+  
+  .offcanvas-body .list-group-item {
+    background-color: transparent;
+    color: var(--text-color);
+    border-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+  }
+  
+  .offcanvas-body .list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .offcanvas-body .list-group-item.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+  }
+  
+  .offcanvas-body .border-top {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .offcanvas-body .text-danger {
+    color: var(--danger-color) !important;
+  }
+  
+  .offcanvas-body .text-danger:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+  }
 }
