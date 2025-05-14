@@ -349,10 +349,10 @@
             
             if (filter === 'all') {
                 // Mostra todos os cards
-                $('.interactive-card').show();
+                $('.mobile-item-card').show();
             } else {
                 // Filtra cards baseado no tipo ou status
-                $('.interactive-card').each(function() {
+                $('.mobile-item-card').each(function() {
                     const cardType = $(this).data('type');
                     const cardStatus = $(this).data('status');
                     
@@ -365,7 +365,7 @@
             }
             
             // Mostra mensagem se nenhum item encontrado
-            const visibleCards = $('.interactive-card:visible').length;
+            const visibleCards = $('.mobile-item-card:visible').length;
             if (visibleCards === 0) {
                 if ($('.no-results-message').length === 0) {
                     const noResults = $('<div class="text-center py-4 no-results-message">' +
@@ -385,10 +385,10 @@
         });
         
         // Melhorar navegação de cards mobile
-        $('.interactive-card').click(function(e) {
+        $('.mobile-item-card').click(function(e) {
             // Ignora clique se for em botões ou links
             if (!$(e.target).closest('a, button').length) {
-                const id = $(this).find('a').attr('href');
+                const id = $(this).find('a:first').attr('href');
                 if (id) {
                     window.location.href = id;
                 }
