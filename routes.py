@@ -3228,7 +3228,8 @@ def register_routes(app):
             query = query.filter(Vehicle.status == VehicleStatus[status_filter])
             
         if tipo_filter:
-            query = query.filter(Vehicle.type == VehicleType[tipo_filter])
+            # Filtro de tipo removido - campo não existe na tabela
+            pass
             
         if busca:
             query = query.filter(
@@ -3251,7 +3252,8 @@ def register_routes(app):
                 query = query.order_by(Vehicle.plate.desc())
         elif order_by == 'type':
             if order_dir == 'asc':
-                query = query.order_by(Vehicle.type)
+                # Ordenação por tipo removida - campo não existe na tabela
+                query = query.order_by(Vehicle.brand)
             else:
                 query = query.order_by(Vehicle.type.desc())
         elif order_by == 'status':
@@ -3279,7 +3281,7 @@ def register_routes(app):
             order_by=order_by,
             order_dir=order_dir,
             vehicle_statuses=VehicleStatus,
-            vehicle_types=VehicleType
+            # vehicle_types removido - campo não existe na tabela
         )
         
     @app.route('/frota/novo', methods=['GET', 'POST'])
@@ -3318,7 +3320,7 @@ def register_routes(app):
                 
                 # Criar objeto de veículo
                 vehicle = Vehicle(
-                    type=VehicleType[form.type.data],
+                    # type removido - campo não existe no banco de dados
                     plate=form.plate.data,
                     brand=form.brand.data,
                     model=form.model.data,
@@ -3392,7 +3394,7 @@ def register_routes(app):
                 form.next_maintenance_date.data = vehicle.next_maintenance_date.strftime('%Y-%m-%d')
                 
             # Lidar com dados do enum
-            form.type.data = vehicle.type.name
+            # type removido - campo não existe no banco de dados
             form.status.data = vehicle.status.name
             
             # Definir responsável
@@ -3435,7 +3437,7 @@ def register_routes(app):
                     vehicle.image = filename
                 
                 # Atualizar campos do veículo
-                vehicle.type = VehicleType[form.type.data]
+                # type removido - campo não existe no banco de dados
                 vehicle.plate = form.plate.data
                 vehicle.brand = form.brand.data
                 vehicle.model = form.model.data
