@@ -76,7 +76,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <form method="get" action="{{ url_for('vehicle_maintenance_history', id=vehicle.id) }}">
+                <form method="get" action="{{ url_for('vehicle_maintenance_history') }}">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
@@ -103,7 +103,7 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-search mr-1"></i> Filtrar
                                     </button>
-                                    <a href="{{ url_for('vehicle_maintenance_history', id=vehicle.id) }}" class="btn btn-default">
+                                    <a href="{{ url_for('vehicle_maintenance_history') }}" class="btn btn-default">
                                         <i class="fas fa-times mr-1"></i> Limpar
                                     </a>
                                 </div>
@@ -120,8 +120,8 @@
                 <h3 class="card-title">Registros de Manutenção</h3>
                 {% if current_user.role.value in ['admin', 'gerente'] %}
                 <div class="card-tools">
-                    <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus mr-1"></i> Nova Manutenção
+                    <a href="{{ url_for('fleet') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-truck mr-1"></i> Selecione um Veículo
                     </a>
                 </div>
                 {% endif %}

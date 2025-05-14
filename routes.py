@@ -3557,6 +3557,9 @@ def register_routes(app):
         # Pré-selecionar o veículo
         form.vehicle_id.data = vehicle.id
         
+        # Passar o veículo para o template
+        today = datetime.now().strftime('%Y-%m-%d')
+        
         if form.validate_on_submit():
             try:
                 # Converter a data
