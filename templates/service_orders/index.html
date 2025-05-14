@@ -96,10 +96,21 @@
     <div class="card-body">
         <!-- Tabs para Mobile -->
         <div class="mobile-tabs d-lg-none mb-3">
-            <button class="mobile-tab {% if not status_filter %}active{% endif %}" data-filter="all">Todas</button>
-            <button class="mobile-tab {% if status_filter == 'aberta' %}active{% endif %}" data-filter="aberta">Em Aberto</button>
-            <button class="mobile-tab {% if status_filter == 'em_andamento' %}active{% endif %}" data-filter="em_andamento">Em Andamento</button>
-            <button class="mobile-tab {% if status_filter == 'fechada' %}active{% endif %}" data-filter="fechada">Concluídas</button>
+            <button class="mobile-tab {% if not status_filter %}active{% endif %}" data-filter="all">
+                Todas
+            </button>
+            <button class="mobile-tab {% if status_filter == 'aberta' %}active{% endif %}" data-filter="aberta">
+                Em Aberto
+            </button>
+            <button class="mobile-tab {% if status_filter == 'em_andamento' %}active{% endif %}" data-filter="em_andamento">
+                Em Andamento
+            </button>
+            <button class="mobile-tab {% if status_filter == 'fechada' %}active{% endif %}" data-filter="fechada">
+                Concluídas
+            </button>
+            <button class="mobile-tab {% if status_filter == 'cancelada' %}active{% endif %}" data-filter="cancelada">
+                Canceladas
+            </button>
         </div>
         
         {% if service_orders %}
@@ -113,35 +124,40 @@
                 <div class="content">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="title">OS #{{ order.id }}</div>
-                        <span class="status-badge {% if order.status.name == 'aberta' %}pending{% elif order.status.name == 'em_andamento' %}pending{% elif order.status.name == 'fechada' %}completed{% else %}cancelled{% endif %}">
+                        <span class="status-badge with-icon {% if order.status.name == 'aberta' %}pending{% elif order.status.name == 'em_andamento' %}pending{% elif order.status.name == 'fechada' %}completed{% else %}cancelled{% endif %}">
+                            {% if order.status.name == 'aberta' %}<i class="fas fa-exclamation-circle"></i>{% elif order.status.name == 'em_andamento' %}<i class="fas fa-spinner fa-spin"></i>{% elif order.status.name == 'fechada' %}<i class="fas fa-check-circle"></i>{% else %}<i class="fas fa-times-circle"></i>{% endif %}
                             {{ order.status.value }}
                         </span>
                     </div>
                     <div class="subtitle">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span>{{ order.client.name }}</span>
+                            <span class="fw-semibold">{{ order.client.name }}</span>
                         </div>
-                        <div class="mt-1 d-flex justify-content-between">
-                            <small class="text-muted">
-                                <i class="fas fa-calendar-alt me-1"></i> {{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-user me-1"></i> {{ order.responsible.name if order.responsible else 'Não definido' }}
-                            </small>
+                        <div class="mt-2 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-calendar-alt me-1 text-primary"></i> 
+                                    <span>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</span>
+                                </div>
+                                <div class="d-flex align-items-center mt-1">
+                                    <i class="fas fa-user me-1 text-primary"></i> 
+                                    <span>{{ order.responsible.name if order.responsible else 'Não definido' }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-info me-1">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-sm btn-primary me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if order.status.name == 'fechada' %}
+                                <a href="{{ url_for('view_invoice', id=order.id) }}" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-file-invoice"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-2 d-flex justify-content-end">
-                        <a href="{{ url_for('view_service_order', id=order.id) }}" class="btn btn-sm btn-info me-1">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-sm btn-primary me-1">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        {% if order.status.name == 'fechada' %}
-                        <a href="{{ url_for('view_invoice', id=order.id) }}" class="btn btn-sm btn-secondary">
-                            <i class="fas fa-file-invoice"></i>
-                        </a>
-                        {% endif %}
                     </div>
                 </div>
             </div>

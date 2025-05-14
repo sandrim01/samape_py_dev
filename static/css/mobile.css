@@ -78,12 +78,15 @@
   
   /* Status markers */
   .status-badge {
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: inline-block;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
   
   .status-badge.pending {
@@ -99,6 +102,17 @@
   .status-badge.cancelled {
     background-color: var(--danger-color);
     color: white;
+  }
+  
+  /* Status badge com ícones */
+  .status-badge.with-icon {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .status-badge.with-icon i {
+    font-size: 10px;
   }
   
   /* Listas mais limpas */
@@ -212,10 +226,53 @@
     align-items: center;
     background-color: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 12px 16px;
-    margin-bottom: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
     box-shadow: var(--shadow);
     transition: var(--transition);
+    border-left: 4px solid transparent;
+  }
+  
+  /* Estilização por tipos */
+  .interactive-card[data-type="epi"] {
+    border-left-color: #3498db;
+  }
+  
+  .interactive-card[data-type="ferramenta"] {
+    border-left-color: #e67e22;
+  }
+  
+  .interactive-card[data-type="consumivel"] {
+    border-left-color: #2ecc71;
+  }
+  
+  /* Estilização por status */
+  .interactive-card[data-status="baixo"] {
+    border-left-color: #f39c12;
+  }
+  
+  .interactive-card[data-status="esgotado"] {
+    border-left-color: #e74c3c;
+  }
+  
+  .interactive-card[data-status="vencido"] {
+    border-left-color: #e74c3c;
+  }
+  
+  .interactive-card[data-status="aberta"] {
+    border-left-color: #f39c12;
+  }
+  
+  .interactive-card[data-status="em_andamento"] {
+    border-left-color: #3498db;
+  }
+  
+  .interactive-card[data-status="fechada"] {
+    border-left-color: #2ecc71;
+  }
+  
+  .interactive-card[data-status="cancelada"] {
+    border-left-color: #e74c3c;
   }
   
   .interactive-card:active {
@@ -223,19 +280,37 @@
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
   }
   
+  .interactive-card .card-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    color: white;
+    margin-right: 15px;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  
   .interactive-card .content {
     flex: 1;
+    min-width: 0; /* Evita que o conteúdo extrapole o card */
   }
   
   .interactive-card .title {
-    font-weight: 500;
-    margin-bottom: 4px;
+    font-weight: 600;
+    margin-bottom: 6px;
     font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .interactive-card .subtitle {
     color: var(--muted-text);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
   }
   
   .interactive-card .action {
@@ -356,23 +431,56 @@
   .mobile-tabs {
     display: flex;
     overflow-x: auto;
-    padding-bottom: 10px;
-    margin-bottom: 16px;
+    padding: 4px;
+    margin-bottom: 20px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    -webkit-overflow-scrolling: touch; /* Melhor scrolling para iOS */
+    scrollbar-width: none; /* Esconde a scrollbar para Firefox */
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none; /* Esconde a scrollbar para Chrome */
   }
   
   .mobile-tab {
-    padding: 8px 16px;
+    padding: 10px 18px;
     background-color: transparent;
     color: var(--muted-text);
     border: none;
-    border-bottom: 2px solid transparent;
-    margin-right: 10px;
+    border-radius: 12px;
+    margin-right: 4px;
     white-space: nowrap;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
   }
   
   .mobile-tab.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+    color: white;
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+  }
+  
+  .mobile-tab:last-child {
+    margin-right: 0;
+  }
+  
+  /* Versão com contagem */
+  .mobile-tab .count {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    margin-left: 5px;
+  }
+  
+  .mobile-tab.active .count {
+    background-color: rgba(0, 0, 0, 0.2);
   }
   
   /* Modal melhorado para mobile */
