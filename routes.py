@@ -206,9 +206,9 @@ def register_routes(app):
         # Adicionar estatísticas da frota
         metrics.update({
             'fleet_active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
-            'fleet_maintenance': Vehicle.query.filter_by(status=VehicleStatus.manutencao).count(),
+            'fleet_maintenance': Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count(),
             'fleet_inactive': Vehicle.query.filter_by(status=VehicleStatus.inativo).count(),
-            'fleet_reserved': Vehicle.query.filter_by(status=VehicleStatus.reservado).count(),
+            # 'fleet_reserved' removido - não existe no banco de dados
             'fleet_total': Vehicle.query.count()
         })
         

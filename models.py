@@ -22,9 +22,9 @@ class FinancialEntryType(enum.Enum):
     
 class VehicleStatus(enum.Enum):
     ativo = "Ativo"
-    manutencao = "Em Manutenção"
+    em_manutencao = "Em Manutenção"  # Atualizado para corresponder ao banco de dados
     inativo = "Inativo"
-    reservado = "Reservado"
+    # reservado removido - não existe no banco de dados
     
 class VehicleType(enum.Enum):
     carro = "Carro"

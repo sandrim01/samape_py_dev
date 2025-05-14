@@ -39,8 +39,7 @@
                             <i class="fas fa-truck mr-2"></i>{{ vehicle.identifier }}
                             <span class="badge badge-{{ 
                                 'success' if vehicle.status.name == 'ativo' else 
-                                'warning' if vehicle.status.name == 'manutencao' else 
-                                'info' if vehicle.status.name == 'reservado' else 
+                                'warning' if vehicle.status.name == 'em_manutencao' else 
                                 'secondary' }} ml-2">
                                 {{ vehicle.status.value }}
                             </span>
