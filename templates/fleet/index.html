@@ -1,270 +1,248 @@
 {% extends 'base.html' %}
-{% block title %}Controle de Frota{% endblock %}
 
-{% block styles %}
-<style>
-    .vehicle-card {
-        transition: transform 0.3s;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .vehicle-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
-    .vehicle-img-container {
-        height: 180px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #343a40;
-    }
-    .vehicle-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .vehicle-header {
-        background: linear-gradient(135deg, #343a40 0%, #212529 100%);
-        padding: 15px;
-        color: white;
-    }
-    .vehicle-body {
-        padding: 15px;
-    }
-    .vehicle-status {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        border-radius: 20px;
-        padding: 5px 15px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    .status-ativo {
-        background-color: #28a745;
-        color: white;
-    }
-    .status-manutencao {
-        background-color: #ffc107;
-        color: #212529;
-    }
-    .status-inativo {
-        background-color: #dc3545;
-        color: white;
-    }
-    .status-reservado {
-        background-color: #17a2b8;
-        color: white;
-    }
-    .filters-container {
-        background-color: #343a40;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    .filter-form .form-control {
-        background-color: #495057;
-        border: none;
-        color: white;
-    }
-    .filter-form .form-control::placeholder {
-        color: #adb5bd;
-    }
-    .type-icon {
-        font-size: 24px;
-        margin-right: 10px;
-    }
-    .page-link {
-        background-color: #343a40;
-        border-color: #495057;
-        color: #adb5bd;
-    }
-    .page-link:hover {
-        background-color: #495057;
-        border-color: #6c757d;
-        color: white;
-    }
-    .page-item.active .page-link {
-        background-color: #007bff;
-        border-color: #007bff;
-    }
-    @media (max-width: 768px) {
-        .filters-container {
-            padding: 15px;
-        }
-        .vehicle-img-container {
-            height: 140px;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Frota{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="my-4">
-        <i class="fas fa-truck-monster mr-2"></i> Controle de Frota
-        {% if current_user.is_manager() %}
-        <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary float-right">
-            <i class="fas fa-plus-circle"></i> Novo Veículo
-        </a>
-        {% endif %}
-    </h1>
-
-    <!-- Filtros -->
-    <div class="filters-container">
-        <form method="GET" action="{{ url_for('fleet') }}" class="filter-form">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label for="busca" class="text-light">Pesquisar</label>
-                    <input type="text" class="form-control" id="busca" name="busca" 
-                           placeholder="ID, marca, modelo..." value="{{ busca or '' }}">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="status" class="text-light">Status</label>
-                    <select class="form-control" id="status" name="status">
-                        <option value="">Todos</option>
-                        {% for status in vehicle_statuses %}
-                        <option value="{{ status.name }}" {% if status_filter == status.name %}selected{% endif %}>
-                            {{ status.value }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="tipo" class="text-light">Tipo</label>
-                    <select class="form-control" id="tipo" name="tipo">
-                        <option value="">Todos</option>
-                        {% for tipo in vehicle_types %}
-                        <option value="{{ tipo.name }}" {% if tipo_filter == tipo.name %}selected{% endif %}>
-                            {{ tipo.value }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="text-light">&nbsp;</label>
-                    <div>
-                        <button type="submit" class="btn btn-primary mr-2">
-                            <i class="fas fa-search"></i> Filtrar
-                        </button>
-                        <a href="{{ url_for('fleet') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-sync"></i> Limpar
-                        </a>
-                    </div>
-                </div>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Gerenciamento de Frota</h1>
             </div>
-        </form>
-    </div>
-
-    <!-- Lista de Veículos -->
-    {% if vehicles.items %}
-    <div class="row">
-        {% for vehicle in vehicles.items %}
-        <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card vehicle-card bg-dark text-light">
-                <div class="vehicle-img-container">
-                    {% if vehicle.image %}
-                    <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" class="vehicle-img" alt="{{ vehicle.identifier }}">
-                    {% else %}
-                    <div class="text-center" style="width: 100%;">
-                        <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }}" style="font-size: 80px; color: #6c757d;"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="vehicle-status status-{{ vehicle.status.name }}">
-                        {{ vehicle.status.value }}
-                    </div>
-                </div>
-                <div class="vehicle-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }} type-icon"></i>
-                        {{ vehicle.identifier }}
-                    </h5>
-                </div>
-                <div class="vehicle-body">
-                    <p class="card-text">
-                        <strong>Marca/Modelo:</strong> {{ vehicle.brand or '-' }} {{ vehicle.model or '' }}<br>
-                        <strong>Tipo:</strong> {{ vehicle.type.value }}<br>
-                        <strong>Placa:</strong> {{ vehicle.license_plate or '-' }}<br>
-                        <strong>Resp.:</strong> {{ vehicle.responsible.name if vehicle.responsible else '-' }}
-                    </p>
-                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-primary btn-block">
-                        <i class="fas fa-eye"></i> Detalhes
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    {% if current_user.role.value in ['admin', 'gerente'] %}
+                    <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Novo Veículo
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-
-    <!-- Paginação -->
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-            {% if vehicles.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('fleet', page=vehicles.prev_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
-                    <i class="fas fa-chevron-left"></i> Anterior
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
-            </li>
-            {% endif %}
-
-            {% for page_num in vehicles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    {% if page_num == vehicles.page %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_num }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('fleet', page=page_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
-                            {{ page_num }}
-                        </a>
-                    </li>
-                    {% endif %}
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">…</span>
-                </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if vehicles.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('fleet', page=vehicles.next_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
-                    Próximo <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link">Próximo <i class="fas fa-chevron-right"></i></span>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> Nenhum veículo encontrado.
-        {% if status_filter or tipo_filter or busca %}
-            <a href="{{ url_for('fleet') }}" class="alert-link">Limpar filtros</a>.
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-    $(document).ready(function() {
-        // Atualizar automaticamente ao mudar filtros
-        $('#status, #tipo').change(function() {
-            $('.filter-form').submit();
-        });
-    });
-</script>
+<div class="content">
+    <div class="container-fluid">
+        <!-- Estatísticas da Frota -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>{{ stats.active }}</h3>
+                        <p>Veículos Ativos</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>{{ stats.maintenance }}</h3>
+                        <p>Em Manutenção</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>{{ stats.reserved }}</h3>
+                        <p>Reservados</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-bookmark"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>{{ stats.inactive }}</h3>
+                        <p>Inativos</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Filtros</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{{ url_for('fleet') }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="status">Status</label>
+                                <select name="status" id="status" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="ativo" {% if request.args.get('status') == 'ativo' %}selected{% endif %}>Ativo</option>
+                                    <option value="manutencao" {% if request.args.get('status') == 'manutencao' %}selected{% endif %}>Em Manutenção</option>
+                                    <option value="reservado" {% if request.args.get('status') == 'reservado' %}selected{% endif %}>Reservado</option>
+                                    <option value="inativo" {% if request.args.get('status') == 'inativo' %}selected{% endif %}>Inativo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="type">Tipo</label>
+                                <select name="type" id="type" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="caminhao" {% if request.args.get('type') == 'caminhao' %}selected{% endif %}>Caminhão</option>
+                                    <option value="carro" {% if request.args.get('type') == 'carro' %}selected{% endif %}>Carro</option>
+                                    <option value="maquina" {% if request.args.get('type') == 'maquina' %}selected{% endif %}>Máquina</option>
+                                    <option value="motocicleta" {% if request.args.get('type') == 'motocicleta' %}selected{% endif %}>Motocicleta</option>
+                                    <option value="outro" {% if request.args.get('type') == 'outro' %}selected{% endif %}>Outro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="search">Buscar</label>
+                                <input type="text" name="q" id="search" class="form-control" placeholder="Identificador, placa, marca..." value="{{ request.args.get('q', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search mr-1"></i> Filtrar
+                                    </button>
+                                    <a href="{{ url_for('fleet') }}" class="btn btn-default">
+                                        <i class="fas fa-times mr-1"></i> Limpar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Veículos -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Veículos</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if vehicles %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%">Identificador</th>
+                                <th style="width: 15%">Marca/Modelo</th>
+                                <th style="width: 10%">Tipo</th>
+                                <th style="width: 10%">Placa</th>
+                                <th style="width: 10%">Hodômetro</th>
+                                <th style="width: 12%">Próxima Manutenção</th>
+                                <th style="width: 10%">Status</th>
+                                <th style="width: 13%">Responsável</th>
+                                <th style="width: 10%">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vehicle in vehicles %}
+                            <tr>
+                                <td>{{ vehicle.identifier }}</td>
+                                <td>{{ vehicle.brand }} {{ vehicle.model }}</td>
+                                <td>{{ vehicle.type.value }}</td>
+                                <td>{{ vehicle.license_plate or '-' }}</td>
+                                <td>{{ vehicle.mileage if vehicle.mileage is not none else '-' }}</td>
+                                <td>
+                                    {{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') if vehicle.next_maintenance_date else '-' }}
+                                    {% if vehicle.next_maintenance_date and vehicle.next_maintenance_date <= today %}
+                                    <span class="badge badge-danger">Atrasada</span>
+                                    {% elif vehicle.next_maintenance_date and (vehicle.next_maintenance_date - today).days <= 7 %}
+                                    <span class="badge badge-warning">Próxima</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ 
+                                        'success' if vehicle.status.name == 'ativo' else 
+                                        'warning' if vehicle.status.name == 'manutencao' else 
+                                        'info' if vehicle.status.name == 'reservado' else 
+                                        'secondary' }}">
+                                        {{ vehicle.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ vehicle.responsible.name if vehicle.responsible else 'Não definido' }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-info mr-1">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if current_user.role.value in ['admin', 'gerente'] %}
+                                    <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-truck fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum veículo encontrado com os filtros selecionados.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-sm-12 col-md-5">
+                        <div class="dataTables_info" role="status">
+                            Mostrando {{ vehicles|length }} de {{ total_vehicles }} veículos
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-7">
+                        <div class="dataTables_paginate paging_simple_numbers float-right">
+                            {% if pagination.pages > 1 %}
+                            <ul class="pagination">
+                                <li class="paginate_button page-item previous {% if not pagination.has_prev %}disabled{% endif %}">
+                                    <a href="{{ url_for('fleet', page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}" class="page-link">
+                                        Anterior
+                                    </a>
+                                </li>
+                                {% for page in pagination.iter_pages() %}
+                                    {% if page %}
+                                        <li class="paginate_button page-item {% if page == pagination.page %}active{% endif %}">
+                                            <a href="{{ url_for('fleet', page=page, **request.args) }}" class="page-link">{{ page }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="paginate_button page-item disabled">
+                                            <a href="#" class="page-link">...</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="paginate_button page-item next {% if not pagination.has_next %}disabled{% endif %}">
+                                    <a href="{{ url_for('fleet', page=pagination.next_num, **request.args) if pagination.has_next else '#' }}" class="page-link">
+                                        Próximo
+                                    </a>
+                                </li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

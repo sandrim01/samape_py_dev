@@ -1,319 +1,307 @@
 {% extends 'base.html' %}
-{% block title %}Histórico de Manutenções{% endblock %}
 
-{% block styles %}
-<style>
-    .filters-container {
-        background-color: #343a40;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    .filter-form .form-control {
-        background-color: #495057;
-        border: none;
-        color: white;
-    }
-    .filter-form .form-control::placeholder {
-        color: #adb5bd;
-    }
-    .maintenance-table {
-        background-color: #343a40;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .maintenance-table th {
-        background-color: #212529;
-        color: #f8f9fa;
-        border-color: #495057;
-    }
-    .maintenance-table td {
-        border-color: #495057;
-        vertical-align: middle;
-    }
-    .maintenance-card {
-        background-color: #343a40;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        padding: 15px;
-        border-left: 4px solid #007bff;
-    }
-    .maintenance-date {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #f8f9fa;
-    }
-    .maintenance-vehicle {
-        background-color: #212529;
-        color: #f8f9fa;
-        padding: 5px 10px;
-        border-radius: 4px;
-        margin-top: 5px;
-        display: inline-block;
-    }
-    .maintenance-details {
-        color: #adb5bd;
-        margin-top: 10px;
-    }
-    .maintenance-cost {
-        color: #dc3545;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-    .maintenance-meta {
-        font-size: 0.8rem;
-        color: #6c757d;
-        margin-top: 10px;
-    }
-    .page-link {
-        background-color: #343a40;
-        border-color: #495057;
-        color: #adb5bd;
-    }
-    .page-link:hover {
-        background-color: #495057;
-        border-color: #6c757d;
-        color: white;
-    }
-    .page-item.active .page-link {
-        background-color: #007bff;
-        border-color: #007bff;
-    }
-    @media (min-width: 992px) {
-        .maintenance-table-container {
-            display: block;
-        }
-        .maintenance-cards-container {
-            display: none;
-        }
-    }
-    @media (max-width: 991px) {
-        .maintenance-table-container {
-            display: none;
-        }
-        .maintenance-cards-container {
-            display: block;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Histórico de Manutenção{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="my-4">
-        <i class="fas fa-history mr-2"></i> Histórico de Manutenções
-    </h1>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Histórico de Manutenção</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Filtros -->
-    <div class="filters-container">
-        <form method="GET" action="{{ url_for('vehicle_maintenance_history') }}" class="filter-form">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="vehicle_id" class="text-light">Veículo</label>
-                    <select class="form-control" id="vehicle_id" name="vehicle_id">
-                        <option value="">Todos os Veículos</option>
-                        {% for v in vehicles %}
-                        <option value="{{ v.id }}" {% if vehicle_id == v.id %}selected{% endif %}>
-                            {{ v.identifier }} - {{ v.brand }} {{ v.model }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="data_inicio" class="text-light">Data Inicial</label>
-                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
-                           value="{{ data_inicio or '' }}">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="data_fim" class="text-light">Data Final</label>
-                    <input type="date" class="form-control" id="data_fim" name="data_fim" 
-                           value="{{ data_fim or '' }}">
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label class="text-light">&nbsp;</label>
-                    <div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Filtrar
-                        </button>
-                        <a href="{{ url_for('vehicle_maintenance_history') }}" class="btn btn-outline-secondary ml-2">
-                            <i class="fas fa-sync"></i>
-                        </a>
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-truck mr-2"></i>{{ vehicle.brand }} {{ vehicle.model }} - {{ vehicle.identifier }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-box bg-info">
+                                    <span class="info-box-icon"><i class="fas fa-calendar"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Última Manutenção</span>
+                                        <span class="info-box-number">{{ vehicle.last_maintenance_date.strftime('%d/%m/%Y') if vehicle.last_maintenance_date else 'Não registrada' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-warning">
+                                    <span class="info-box-icon"><i class="fas fa-tachometer-alt"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Hodômetro Atual</span>
+                                        <span class="info-box-number">{{ vehicle.mileage if vehicle.mileage is not none else 'Não informado' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-success">
+                                    <span class="info-box-icon"><i class="fas fa-calendar-plus"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Próxima Manutenção</span>
+                                        <span class="info-box-number">{{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') if vehicle.next_maintenance_date else 'Não programada' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </form>
-    </div>
-
-    <!-- Lista de Manutenções (Versão Desktop) -->
-    {% if maintenance_history.items %}
-    <div class="maintenance-table-container">
-        <div class="table-responsive maintenance-table">
-            <table class="table table-dark">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Veículo</th>
-                        <th>Descrição</th>
-                        <th>Km</th>
-                        <th>Prestador de Serviço</th>
-                        <th>NF</th>
-                        <th>Executado por</th>
-                        <th>Custo</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for maintenance in maintenance_history.items %}
-                    <tr>
-                        <td>{{ maintenance.date.strftime('%d/%m/%Y') }}</td>
-                        <td>
-                            <a href="{{ url_for('view_vehicle', id=maintenance.vehicle.id) }}" class="text-primary">
-                                {{ maintenance.vehicle.identifier }}
-                            </a>
-                        </td>
-                        <td>{{ maintenance.description }}</td>
-                        <td>{{ "{:,.0f}".format(maintenance.mileage) if maintenance.mileage else '-' }}</td>
-                        <td>{{ maintenance.service_provider or '-' }}</td>
-                        <td>{{ maintenance.invoice_number or '-' }}</td>
-                        <td>{{ maintenance.performed_by.name if maintenance.performed_by else '-' }}</td>
-                        <td class="text-danger font-weight-bold">
-                            {{ "R$ {:,.2f}".format(maintenance.cost) if maintenance.cost else '-' }}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('view_vehicle', id=maintenance.vehicle.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
-    </div>
-
-    <!-- Lista de Manutenções (Versão Mobile) -->
-    <div class="maintenance-cards-container">
-        {% for maintenance in maintenance_history.items %}
-        <div class="maintenance-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="maintenance-date">{{ maintenance.date.strftime('%d/%m/%Y') }}</div>
-                    <div class="maintenance-vehicle">
-                        <i class="fas fa-{{ 'truck' if maintenance.vehicle.type.name == 'caminhao' else 'car' if maintenance.vehicle.type.name == 'carro' else 'shuttle-van' if maintenance.vehicle.type.name == 'van' else 'bus' if maintenance.vehicle.type.name == 'onibus' else 'truck-monster' if maintenance.vehicle.type.name == 'maquinario' else 'car-side' }} mr-1"></i>
-                        {{ maintenance.vehicle.identifier }}
-                    </div>
+        
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Filtros</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
                 </div>
-                {% if maintenance.cost %}
-                <div class="maintenance-cost">{{ "R$ {:,.2f}".format(maintenance.cost) }}</div>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{{ url_for('vehicle_maintenance_history', id=vehicle.id) }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Data de Início</label>
+                                <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Data de Fim</label>
+                                <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Tipo de Serviço</label>
+                                <input type="text" name="service_type" class="form-control" placeholder="Ex: Troca de óleo" value="{{ request.args.get('service_type', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search mr-1"></i> Filtrar
+                                    </button>
+                                    <a href="{{ url_for('vehicle_maintenance_history', id=vehicle.id) }}" class="btn btn-default">
+                                        <i class="fas fa-times mr-1"></i> Limpar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Histórico de Manutenção -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Registros de Manutenção</h3>
+                {% if current_user.role.value in ['admin', 'gerente'] %}
+                <div class="card-tools">
+                    <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Nova Manutenção
+                    </a>
+                </div>
                 {% endif %}
             </div>
-            
-            <div class="maintenance-details mt-3">
-                <strong>Descrição:</strong> {{ maintenance.description }}
-            </div>
-            
-            {% if maintenance.mileage %}
-            <div class="maintenance-details">
-                <i class="fas fa-tachometer-alt mr-1"></i> {{ "{:,.0f} km".format(maintenance.mileage) }}
-            </div>
-            {% endif %}
-            
-            {% if maintenance.service_provider %}
-            <div class="maintenance-details">
-                <i class="fas fa-store mr-1"></i> {{ maintenance.service_provider }}
-            </div>
-            {% endif %}
-            
-            {% if maintenance.invoice_number %}
-            <div class="maintenance-details">
-                <i class="fas fa-file-invoice mr-1"></i> NF: {{ maintenance.invoice_number }}
-            </div>
-            {% endif %}
-            
-            {% if maintenance.performed_by %}
-            <div class="maintenance-details">
-                <i class="fas fa-user-cog mr-1"></i> {{ maintenance.performed_by.name }}
-            </div>
-            {% endif %}
-            
-            <div class="maintenance-meta">
-                Registrado por {{ maintenance.creator.name if maintenance.creator else 'Sistema' }} em {{ maintenance.created_at.strftime('%d/%m/%Y %H:%M') }}
-            </div>
-            
-            <div class="mt-3">
-                <a href="{{ url_for('view_vehicle', id=maintenance.vehicle.id) }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-eye mr-1"></i> Ver Veículo
-                </a>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Paginação -->
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center">
-            {% if maintenance_history.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('vehicle_maintenance_history', page=maintenance_history.prev_num, vehicle_id=vehicle_id, data_inicio=data_inicio, data_fim=data_fim) }}">
-                    <i class="fas fa-chevron-left"></i> Anterior
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
-            </li>
-            {% endif %}
-
-            {% for page_num in maintenance_history.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    {% if page_num == maintenance_history.page %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_num }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('vehicle_maintenance_history', page=page_num, vehicle_id=vehicle_id, data_inicio=data_inicio, data_fim=data_fim) }}">
-                            {{ page_num }}
-                        </a>
-                    </li>
-                    {% endif %}
+            <div class="card-body p-0">
+                {% if maintenance_records %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%">Data</th>
+                                <th style="width: 30%">Descrição</th>
+                                <th style="width: 10%">Hodômetro</th>
+                                <th style="width: 10%">Custo</th>
+                                <th style="width: 15%">Prestador</th>
+                                <th style="width: 15%">Realizado por</th>
+                                <th style="width: 10%">NF/Recibo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in maintenance_records %}
+                            <tr>
+                                <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ record.description }}</td>
+                                <td>{{ record.mileage if record.mileage is not none else '-' }}</td>
+                                <td>{{ "R$ {:.2f}".format(record.cost) if record.cost else '-' }}</td>
+                                <td>{{ record.service_provider or 'Serviço Interno' }}</td>
+                                <td>{{ record.performed_by.name if record.performed_by else 'Serviço Externo' }}</td>
+                                <td>{{ record.invoice_number or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">…</span>
-                </li>
+                <div class="text-center py-5">
+                    <i class="fas fa-tools fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhum registro de manutenção encontrado.</p>
+                </div>
                 {% endif %}
-            {% endfor %}
-
-            {% if maintenance_history.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('vehicle_maintenance_history', page=maintenance_history.next_num, vehicle_id=vehicle_id, data_inicio=data_inicio, data_fim=data_fim) }}">
-                    Próximo <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled">
-                <span class="page-link">Próximo <i class="fas fa-chevron-right"></i></span>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> Nenhum registro de manutenção encontrado.
-        {% if vehicle_id or data_inicio or data_fim %}
-            <a href="{{ url_for('vehicle_maintenance_history') }}" class="alert-link">Limpar filtros</a>.
-        {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-sm-12 col-md-5">
+                        <div class="dataTables_info" role="status">
+                            Total de {{ maintenance_records|length }} registros
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-7">
+                        <div class="dataTables_paginate paging_simple_numbers float-right">
+                            {% if pagination.pages > 1 %}
+                            <ul class="pagination">
+                                <li class="paginate_button page-item previous {% if not pagination.has_prev %}disabled{% endif %}">
+                                    <a href="{{ url_for('vehicle_maintenance_history', id=vehicle.id, page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}" class="page-link">
+                                        Anterior
+                                    </a>
+                                </li>
+                                {% for page in pagination.iter_pages() %}
+                                    {% if page %}
+                                        <li class="paginate_button page-item {% if page == pagination.page %}active{% endif %}">
+                                            <a href="{{ url_for('vehicle_maintenance_history', id=vehicle.id, page=page, **request.args) }}" class="page-link">{{ page }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="paginate_button page-item disabled">
+                                            <a href="#" class="page-link">...</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="paginate_button page-item next {% if not pagination.has_next %}disabled{% endif %}">
+                                    <a href="{{ url_for('vehicle_maintenance_history', id=vehicle.id, page=pagination.next_num, **request.args) if pagination.has_next else '#' }}" class="page-link">
+                                        Próximo
+                                    </a>
+                                </li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráficos e Estatísticas -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Custos de Manutenção por Mês</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="costChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Estatísticas de Manutenção</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Custo Total</span>
+                                        <span class="info-box-number">R$ {{ "{:.2f}".format(stats.total_cost) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Média por Manutenção</span>
+                                        <span class="info-box-number">R$ {{ "{:.2f}".format(stats.avg_cost) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Intervalo Médio</span>
+                                        <span class="info-box-number">{{ stats.avg_interval_days }} dias</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Total de Manutenções</span>
+                                        <span class="info-box-number">{{ stats.maintenance_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    $(document).ready(function() {
-        // Atualizar automaticamente ao mudar veículo
-        $('#vehicle_id').change(function() {
-            $('.filter-form').submit();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para o gráfico de custos
+        var ctx = document.getElementById('costChart').getContext('2d');
+        
+        var costChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_data.months|tojson }},
+                datasets: [{
+                    label: 'Custo de Manutenção (R$)',
+                    data: {{ chart_data.costs|tojson }},
+                    backgroundColor: 'rgba(60, 141, 188, 0.7)',
+                    borderColor: 'rgba(60, 141, 188, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value;
+                            }
+                        }
+                    }
+                }
+            }
         });
     });
 </script>

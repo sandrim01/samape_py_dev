@@ -3,6 +3,7 @@ from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, TextAreaField, SelectField, DecimalField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange, Regexp
 import re
+from datetime import datetime
 from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder, VehicleType, VehicleStatus, Vehicle
 
 class DeleteImageForm(FlaskForm):
@@ -410,4 +411,54 @@ class StockMovementForm(FlaskForm):
         self.service_order_id.choices = [(0, 'Nenhuma OS relacionada')] + [
             (s.id, f"OS #{s.id} - {s.client.name}") 
             for s in ServiceOrder.query.filter(ServiceOrder.status != ServiceOrderStatus.fechada).order_by(ServiceOrder.id.desc()).all()
+        ]
+        
+class VehicleForm(FlaskForm):
+    identifier = StringField('Identificador/Nome', validators=[DataRequired(), Length(max=50)])
+    type = SelectField('Tipo', choices=[(status.name, status.value) for status in VehicleType], validators=[DataRequired()])
+    brand = StringField('Marca', validators=[DataRequired(), Length(max=50)])
+    model = StringField('Modelo', validators=[DataRequired(), Length(max=50)])
+    year = IntegerField('Ano', validators=[Optional(), NumberRange(min=1900, max=datetime.now().year + 1)])
+    license_plate = StringField('Placa', validators=[Optional(), Length(max=20)])
+    color = StringField('Cor', validators=[Optional(), Length(max=30)])
+    chassis = StringField('Chassi/Número de Série', validators=[Optional(), Length(max=50)])
+    purchase_date = StringField('Data de Aquisição', validators=[Optional()], render_kw={"type": "date"})
+    purchase_value = DecimalField('Valor de Aquisição (R$)', validators=[Optional()], places=2)
+    current_value = DecimalField('Valor Atual (R$)', validators=[Optional()], places=2)
+    mileage = IntegerField('Hodômetro/Horímetro', validators=[Optional()])
+    last_maintenance_date = StringField('Última Manutenção', validators=[Optional()], render_kw={"type": "date"})
+    next_maintenance_date = StringField('Próxima Manutenção', validators=[Optional()], render_kw={"type": "date"})
+    responsible_id = SelectField('Responsável', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    status = SelectField('Status', choices=[(status.name, status.value) for status in VehicleStatus], validators=[DataRequired()])
+    image = FileField('Imagem do Veículo', validators=[Optional(), FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas.')])
+    notes = TextAreaField('Observações', validators=[Optional(), Length(max=1000)])
+    
+    def __init__(self, *args, **kwargs):
+        super(VehicleForm, self).__init__(*args, **kwargs)
+        # Lista de responsáveis para o select
+        self.responsible_id.choices = [(0, 'A ser definido')] + [
+            (u.id, f"{u.name}") 
+            for u in User.query.filter_by(active=True).order_by(User.name).all()
+        ]
+        
+class VehicleMaintenanceForm(FlaskForm):
+    vehicle_id = SelectField('Veículo', validators=[DataRequired()], coerce=int)
+    date = StringField('Data da Manutenção', validators=[DataRequired()], render_kw={"type": "date"})
+    mileage = IntegerField('Hodômetro/Horímetro', validators=[Optional()])
+    description = TextAreaField('Descrição do Serviço', validators=[DataRequired(), Length(max=1000)])
+    cost = DecimalField('Custo (R$)', validators=[Optional()], places=2)
+    service_provider = StringField('Prestador de Serviço', validators=[Optional(), Length(max=100)])
+    invoice_number = StringField('Número da Nota Fiscal', validators=[Optional(), Length(max=50)])
+    performed_by_id = SelectField('Realizado por', validators=[Optional()], coerce=lambda x: int(x) if x else None)
+    
+    def __init__(self, *args, **kwargs):
+        super(VehicleMaintenanceForm, self).__init__(*args, **kwargs)
+        # Lista de veículos
+        self.vehicle_id.choices = [(v.id, f"{v.identifier} ({v.brand} {v.model})") 
+                                    for v in Vehicle.query.order_by(Vehicle.identifier).all()]
+        
+        # Lista de funcionários
+        self.performed_by_id.choices = [(0, 'Serviço Externo')] + [
+            (u.id, f"{u.name}") 
+            for u in User.query.filter_by(active=True).order_by(User.name).all()
         ]

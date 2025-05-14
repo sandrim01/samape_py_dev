@@ -223,6 +223,68 @@
             </div>
         </div>
     </div>
+    
+    <!-- Status da Frota -->
+    <div class="dashboard-col-4">
+        <div class="card compact-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-truck me-2"></i>Status da Frota
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="fleet-status">
+                        <span class="status-label">Ativos:</span>
+                        <span class="status-value text-success fw-bold">{{ metrics.fleet_active }}</span>
+                    </div>
+                    <div class="fleet-status ms-3">
+                        <span class="status-label">Manutenção:</span>
+                        <span class="status-value text-warning fw-bold">{{ metrics.fleet_maintenance }}</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="fleet-status">
+                        <span class="status-label">Reservados:</span>
+                        <span class="status-value text-info fw-bold">{{ metrics.fleet_reserved }}</span>
+                    </div>
+                    <div class="fleet-status ms-3">
+                        <span class="status-label">Inativos:</span>
+                        <span class="status-value text-secondary fw-bold">{{ metrics.fleet_inactive }}</span>
+                    </div>
+                </div>
+                
+                <!-- Barra de progresso de veículos -->
+                <div class="progress mb-2" style="height: 8px;">
+                    {% set active_percent = (metrics.fleet_active / metrics.fleet_total * 100) if metrics.fleet_total > 0 else 0 %}
+                    {% set maint_percent = (metrics.fleet_maintenance / metrics.fleet_total * 100) if metrics.fleet_total > 0 else 0 %}
+                    {% set reserved_percent = (metrics.fleet_reserved / metrics.fleet_total * 100) if metrics.fleet_total > 0 else 0 %}
+                    {% set inactive_percent = (metrics.fleet_inactive / metrics.fleet_total * 100) if metrics.fleet_total > 0 else 0 %}
+                    
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ active_percent }}%" 
+                        aria-valuenow="{{ active_percent }}" aria-valuemin="0" aria-valuemax="100" 
+                        title="Ativos: {{ metrics.fleet_active }}"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ maint_percent }}%" 
+                        aria-valuenow="{{ maint_percent }}" aria-valuemin="0" aria-valuemax="100"
+                        title="Em manutenção: {{ metrics.fleet_maintenance }}"></div>
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ reserved_percent }}%" 
+                        aria-valuenow="{{ reserved_percent }}" aria-valuemin="0" aria-valuemax="100"
+                        title="Reservados: {{ metrics.fleet_reserved }}"></div>
+                    <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ inactive_percent }}%" 
+                        aria-valuenow="{{ inactive_percent }}" aria-valuemin="0" aria-valuemax="100"
+                        title="Inativos: {{ metrics.fleet_inactive }}"></div>
+                </div>
+                
+                <div class="text-center small text-muted mb-2">
+                    Total: {{ metrics.fleet_total }} veículos
+                </div>
+                
+                <a href="{{ url_for('fleet') }}" class="btn btn-sm btn-outline-primary mt-1 w-100">
+                    <i class="fas fa-truck me-1"></i>Gerenciar Frota
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Terceira linha: Tabelas mais compactas -->
