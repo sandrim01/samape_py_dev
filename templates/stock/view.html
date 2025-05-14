@@ -6,17 +6,17 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <a href="{{ url_for('stock_items') }}" class="btn btn-sm btn-circle btn-outline-secondary mr-2">
+            <a href="{{ url_for('stock_items') }}" class="btn btn-sm btn-circle btn-outline-secondary me-2">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            Item: {{ item.name }}
+            <span class="d-none d-md-inline">Item:</span> {{ item.name }}
         </h1>
         <div>
             <a href="{{ url_for('edit_stock_item', id=item.id) }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-edit"></i> Editar
+                <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Editar</span>
             </a>
-            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal">
-                <i class="fas fa-trash"></i> Excluir
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Excluir</span>
             </button>
         </div>
     </div>
@@ -29,106 +29,210 @@
                     <h6 class="m-0 font-weight-bold text-white">Informações do Item</h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <!-- Imagem do Item (se existir) -->
-                        {% if item.image %}
-                        <div class="col-md-4 text-center mb-3">
-                            <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" class="img-fluid border" style="max-height: 200px;">
-                        </div>
-                        <div class="col-md-8">
-                        {% else %}
-                        <div class="col-md-12">
-                        {% endif %}
-                            <table class="table table-bordered">
-                                <tr>
-                                    <th>ID:</th>
-                                    <td>{{ item.id }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Nome:</th>
-                                    <td>{{ item.name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Tipo:</th>
-                                    <td>{{ item.type.value }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Quantidade:</th>
-                                    <td>
-                                        <span class="badge badge-{% if item.quantity <= 0 %}danger{% elif item.quantity < item.min_quantity %}warning{% else %}success{% endif %} badge-lg">
-                                            {{ item.quantity }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Quantidade Mínima:</th>
-                                    <td>{{ item.min_quantity }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Status:</th>
-                                    <td>
-                                        <span class="badge badge-{% if item.status.name == 'disponivel' %}success{% elif item.status.name == 'baixo' %}warning{% elif item.status.name == 'esgotado' %}danger{% elif item.status.name == 'vencido' %}danger{% endif %}">
-                                            {{ item.status.value }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Localização:</th>
-                                    <td>{{ item.location or '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Preço Unitário:</th>
-                                    <td>{{ 'R$ {:.2f}'.format(item.price) if item.price else '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Fornecedor:</th>
-                                    <td>
-                                        {% if item.supplier %}
-                                            <a href="{{ url_for('view_supplier', id=item.supplier.id) }}">{{ item.supplier.name }}</a>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% if item.type.name == 'epi' %}
-                                <tr>
-                                    <th>Nº do CA:</th>
-                                    <td>{{ item.ca_number or '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Data de Validade:</th>
-                                    <td>
-                                        {% if item.expiration_date %}
-                                            {{ item.expiration_date.strftime('%d/%m/%Y') }}
-                                            {% if item.expiration_date < now.date() %}
-                                                <span class="badge badge-danger">Vencido</span>
-                                            {% elif (item.expiration_date - now.date()).days <= 30 %}
-                                                <span class="badge badge-warning">Vence em {{ (item.expiration_date - now.date()).days }} dias</span>
-                                            {% endif %}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endif %}
-                                <tr>
-                                    <th>Criado em:</th>
-                                    <td>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Atualizado em:</th>
-                                    <td>{{ item.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    {% if item.description %}
-                    <div class="mt-3">
-                        <h5>Descrição:</h5>
-                        <p>{{ item.description }}</p>
+                    <!-- Imagem do Item (se existir) -->
+                    {% if item.image %}
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" class="img-fluid border" style="max-height: 200px;">
                     </div>
                     {% endif %}
+                    
+                    <!-- Informações para Mobile -->
+                    <div class="d-lg-none">
+                        <div class="summary-card mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="value">{{ item.quantity }}</div>
+                                    <div class="label">Em Estoque</div>
+                                </div>
+                                <div>
+                                    <span class="status-badge {% if item.status.name == 'disponivel' %}completed{% elif item.status.name == 'baixo' %}pending{% elif item.status.name == 'esgotado' %}cancelled{% elif item.status.name == 'vencido' %}cancelled{% endif %}" style="font-size: 1rem; padding: 8px 15px;">
+                                        {{ item.status.value }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Detalhes em Cards -->
+                        <div class="detail-item">
+                            <div class="detail-label">ID</div>
+                            <div class="detail-value">{{ item.id }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Nome</div>
+                            <div class="detail-value">{{ item.name }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Tipo</div>
+                            <div class="detail-value">{{ item.type.value }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Quantidade Mínima</div>
+                            <div class="detail-value">{{ item.min_quantity }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Localização</div>
+                            <div class="detail-value">{{ item.location or 'Não definida' }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Preço Unitário</div>
+                            <div class="detail-value">{{ 'R$ {:.2f}'.format(item.price) if item.price else 'Não definido' }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Fornecedor</div>
+                            <div class="detail-value">
+                                {% if item.supplier %}
+                                    <a href="{{ url_for('view_supplier', id=item.supplier.id) }}">{{ item.supplier.name }}</a>
+                                {% else %}
+                                    Não definido
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if item.type.name == 'epi' %}
+                        <div class="detail-item">
+                            <div class="detail-label">Nº do CA</div>
+                            <div class="detail-value">{{ item.ca_number or 'Não informado' }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Data de Validade</div>
+                            <div class="detail-value">
+                                {% if item.expiration_date %}
+                                    {{ item.expiration_date.strftime('%d/%m/%Y') }}
+                                    {% if item.expiration_date < now.date() %}
+                                        <span class="status-badge cancelled">Vencido</span>
+                                    {% elif (item.expiration_date - now.date()).days <= 30 %}
+                                        <span class="status-badge pending">Vence em {{ (item.expiration_date - now.date()).days }} dias</span>
+                                    {% endif %}
+                                {% else %}
+                                    Não definida
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if item.description %}
+                        <div class="detail-item">
+                            <div class="detail-label">Descrição</div>
+                            <div class="detail-value">{{ item.description }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Atualizado em</div>
+                            <div class="detail-value">{{ item.updated_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações para Desktop (tabela) -->
+                    <div class="d-none d-lg-block">
+                        <div class="row">
+                            <!-- Imagem do Item (se existir) para desktop -->
+                            {% if item.image %}
+                            <div class="col-md-4 text-center mb-3">
+                                <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}" class="img-fluid border" style="max-height: 200px;">
+                            </div>
+                            <div class="col-md-8">
+                            {% else %}
+                            <div class="col-md-12">
+                            {% endif %}
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>ID:</th>
+                                        <td>{{ item.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Nome:</th>
+                                        <td>{{ item.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Tipo:</th>
+                                        <td>{{ item.type.value }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Quantidade:</th>
+                                        <td>
+                                            <span class="badge bg-{% if item.quantity <= 0 %}danger{% elif item.quantity < item.min_quantity %}warning{% else %}success{% endif %}">
+                                                {{ item.quantity }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Quantidade Mínima:</th>
+                                        <td>{{ item.min_quantity }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td>
+                                            <span class="badge bg-{% if item.status.name == 'disponivel' %}success{% elif item.status.name == 'baixo' %}warning{% elif item.status.name == 'esgotado' %}danger{% elif item.status.name == 'vencido' %}danger{% endif %}">
+                                                {{ item.status.value }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Localização:</th>
+                                        <td>{{ item.location or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Preço Unitário:</th>
+                                        <td>{{ 'R$ {:.2f}'.format(item.price) if item.price else '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fornecedor:</th>
+                                        <td>
+                                            {% if item.supplier %}
+                                                <a href="{{ url_for('view_supplier', id=item.supplier.id) }}">{{ item.supplier.name }}</a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if item.type.name == 'epi' %}
+                                    <tr>
+                                        <th>Nº do CA:</th>
+                                        <td>{{ item.ca_number or '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Data de Validade:</th>
+                                        <td>
+                                            {% if item.expiration_date %}
+                                                {{ item.expiration_date.strftime('%d/%m/%Y') }}
+                                                {% if item.expiration_date < now.date() %}
+                                                    <span class="badge bg-danger">Vencido</span>
+                                                {% elif (item.expiration_date - now.date()).days <= 30 %}
+                                                    <span class="badge bg-warning">Vence em {{ (item.expiration_date - now.date()).days }} dias</span>
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th>Criado em:</th>
+                                        <td>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Atualizado em:</th>
+                                        <td>{{ item.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        {% if item.description %}
+                        <div class="mt-3">
+                            <h5>Descrição:</h5>
+                            <p>{{ item.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -140,43 +244,118 @@
                     <h6 class="m-0 font-weight-bold text-white">Registrar Movimento de Estoque</h6>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('add_stock_movement') }}">
-                        {{ movement_form.hidden_tag() }}
-                        {{ movement_form.stock_item_id }}
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="direction">{{ movement_form.direction.label }}</label>
-                                {{ movement_form.direction(class="form-control") }}
+                    <!-- Versão Mobile: Form simplificado -->
+                    <div class="d-lg-none">
+                        <form method="POST" action="{{ url_for('add_stock_movement') }}">
+                            {{ movement_form.hidden_tag() }}
+                            {{ movement_form.stock_item_id }}
+                            
+                            <div class="form-group mb-3">
+                                <div class="d-flex">
+                                    <div class="form-check form-check-inline flex-fill">
+                                        <input class="form-check-input" type="radio" name="direction" id="entrada" value="entrada" checked>
+                                        <label class="form-check-label" for="entrada">
+                                            <i class="fas fa-arrow-circle-up text-success me-1"></i> Entrada
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline flex-fill">
+                                        <input class="form-check-input" type="radio" name="direction" id="saida" value="saida">
+                                        <label class="form-check-label" for="saida">
+                                            <i class="fas fa-arrow-circle-down text-danger me-1"></i> Saída
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="quantity">{{ movement_form.quantity.label }}</label>
-                                {{ movement_form.quantity(class="form-control") }}
+                            
+                            <div class="form-group mb-3">
+                                <label for="mobile_quantity" class="form-label">{{ movement_form.quantity.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-hashtag"></i>
+                                    </span>
+                                    {{ movement_form.quantity(class="form-control", id="mobile_quantity") }}
+                                </div>
+                                <div class="form-text text-muted">Estoque atual: {{ item.quantity }}</div>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="description">{{ movement_form.description.label }}</label>
-                            {{ movement_form.description(class="form-control", rows=3) }}
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="reference">{{ movement_form.reference.label }}</label>
-                                {{ movement_form.reference(class="form-control") }}
+                            
+                            <div class="form-group mb-3">
+                                <label for="mobile_description" class="form-label">{{ movement_form.description.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-align-left"></i>
+                                    </span>
+                                    {{ movement_form.description(class="form-control", rows=2, id="mobile_description") }}
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="service_order_id">{{ movement_form.service_order_id.label }}</label>
-                                {{ movement_form.service_order_id(class="form-control") }}
+                            
+                            <div class="form-group mb-3">
+                                <label for="mobile_reference" class="form-label">{{ movement_form.reference.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-tag"></i>
+                                    </span>
+                                    {{ movement_form.reference(class="form-control", id="mobile_reference") }}
+                                </div>
                             </div>
-                        </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="mobile_service_order_id" class="form-label">{{ movement_form.service_order_id.label }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-clipboard-list"></i>
+                                    </span>
+                                    {{ movement_form.service_order_id(class="form-control", id="mobile_service_order_id") }}
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus-circle"></i> Registrar Movimento
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Versão Desktop: Form padrão -->
+                    <div class="d-none d-lg-block">
+                        <form method="POST" action="{{ url_for('add_stock_movement') }}">
+                            {{ movement_form.hidden_tag() }}
+                            {{ movement_form.stock_item_id }}
 
-                        <div class="text-right">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus-circle"></i> Registrar Movimento
-                            </button>
-                        </div>
-                    </form>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="direction">{{ movement_form.direction.label }}</label>
+                                    {{ movement_form.direction(class="form-select") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantity">{{ movement_form.quantity.label }}</label>
+                                    {{ movement_form.quantity(class="form-control") }}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description">{{ movement_form.description.label }}</label>
+                                {{ movement_form.description(class="form-control", rows=3) }}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="reference">{{ movement_form.reference.label }}</label>
+                                    {{ movement_form.reference(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="service_order_id">{{ movement_form.service_order_id.label }}</label>
+                                    {{ movement_form.service_order_id(class="form-select") }}
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus-circle"></i> Registrar Movimento
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,7 +367,57 @@
             <h6 class="m-0 font-weight-bold text-white">Histórico de Movimentos</h6>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <!-- Versão Mobile -->
+            <div class="d-lg-none">
+                <div class="mobile-tabs mb-3">
+                    <button class="mobile-tab active" data-filter="all">Todos</button>
+                    <button class="mobile-tab" data-filter="entrada">Entradas</button>
+                    <button class="mobile-tab" data-filter="saida">Saídas</button>
+                </div>
+                
+                {% if movements %}
+                    {% for movement in movements %}
+                    <div class="interactive-card" data-type="{% if movement.quantity > 0 %}entrada{% else %}saida{% endif %}">
+                        <div class="card-icon" style="background-color: {% if movement.quantity > 0 %}var(--secondary-color){% else %}var(--danger-color){% endif %}">
+                            <i class="fas {% if movement.quantity > 0 %}fa-arrow-circle-up{% else %}fa-arrow-circle-down{% endif %}"></i>
+                        </div>
+                        <div class="content">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="title">{{ movement.quantity|abs }} unidades</div>
+                                <span class="status-badge {% if movement.quantity > 0 %}completed{% else %}cancelled{% endif %}">
+                                    {% if movement.quantity > 0 %}Entrada{% else %}Saída{% endif %}
+                                </span>
+                            </div>
+                            <div class="subtitle">
+                                <div>{{ movement.description }}</div>
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        {{ movement.created_at.strftime('%d/%m/%Y %H:%M') }} |
+                                        {% if movement.service_order %}
+                                            <a href="{{ url_for('view_service_order', id=movement.service_order.id) }}">
+                                                OS #{{ movement.service_order.id }}
+                                            </a>
+                                        {% else %}
+                                            {{ movement.reference or 'Sem referência' }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-history fa-3x text-muted"></i>
+                        </div>
+                        <p class="text-muted">Nenhum movimento registrado para este item.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Versão Desktop: Tabela -->
+            <div class="table-responsive d-none d-lg-block">
                 <table class="table table-hover" id="movements-table">
                     <thead>
                         <tr>
@@ -208,9 +437,9 @@
                                 <td>{{ movement.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                 <td>
                                     {% if movement.quantity > 0 %}
-                                        <span class="badge badge-success">Entrada</span>
+                                        <span class="badge bg-success">Entrada</span>
                                     {% else %}
-                                        <span class="badge badge-danger">Saída</span>
+                                        <span class="badge bg-danger">Saída</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ movement.quantity|abs }}</td>
@@ -257,16 +486,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="deleteModalLabel">Confirmar Exclusão</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 Tem certeza que deseja excluir o item <strong>{{ item.name }}</strong>?<br>
                 Esta ação não pode ser desfeita e todas as movimentações relacionadas serão excluídas.
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <form action="{{ url_for('delete_stock_item', id=item.id) }}" method="POST">
                     <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
                 </form>
@@ -299,6 +526,62 @@
         $('#direction').change(function() {
             // Revalida a quantidade quando muda a direção
             $('#quantity').trigger('input');
+        });
+        
+        // Filtro de histórico de movimentos no mobile
+        $('.mobile-tabs .mobile-tab').click(function() {
+            // Atualiza estilo das tabs
+            $('.mobile-tabs .mobile-tab').removeClass('active');
+            $(this).addClass('active');
+            
+            const filter = $(this).data('filter');
+            
+            if (filter === 'all') {
+                // Mostra todos os cards
+                $('.interactive-card').show();
+            } else {
+                // Filtra cards baseado no tipo
+                $('.interactive-card').each(function() {
+                    if ($(this).data('type') === filter) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            }
+            
+            // Mostra mensagem se nenhum movimento encontrado
+            const visibleCards = $('.interactive-card:visible').length;
+            if (visibleCards === 0) {
+                if ($('.no-results-message').length === 0) {
+                    const noResults = $('<div class="text-center py-4 no-results-message">' +
+                        '<div class="mb-3"><i class="fas fa-search fa-3x text-muted"></i></div>' +
+                        '<p class="text-muted">Nenhum movimento encontrado com o filtro selecionado.</p>' +
+                        '</div>');
+                    $('.d-lg-none').append(noResults);
+                }
+            } else {
+                $('.no-results-message').remove();
+            }
+        });
+        
+        // Melhora UX para mobile
+        $('.btn-danger').click(function() {
+            showSnack('Abrindo confirmação de exclusão...');
+        });
+        
+        // Botões de quantidade com feedback tátil para mobile
+        $('.interactive-card').click(function(e) {
+            // Ignora clique se for em elementos interativos
+            if (!$(e.target).closest('a, button, input, select').length) {
+                $(this).css('transform', 'scale(0.98)');
+                setTimeout(() => {
+                    $(this).css('transform', '');
+                }, 150);
+                
+                // Exibe detalhes se necessário
+                // (Pode ser expandido para mostrar detalhes adicionais)
+            }
         });
     });
 </script>

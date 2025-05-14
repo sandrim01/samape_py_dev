@@ -1,0 +1,482 @@
+/* Estilos específicos para dispositivos móveis */
+
+/* Variáveis para temas e cores */
+:root {
+  --primary-color: #3498db;
+  --primary-dark: #2980b9;
+  --secondary-color: #2ecc71;
+  --accent-color: #f39c12;
+  --danger-color: #e74c3c;
+  --light-bg: #2c3e50;
+  --dark-bg: #1a252f;
+  --card-bg: #34495e;
+  --text-color: #ecf0f1;
+  --muted-text: #bdc3c7;
+  --border-radius: 8px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --transition: all 0.3s ease;
+}
+
+/* Estilos gerais para mobile */
+@media (max-width: 991.98px) {
+  body {
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    padding-bottom: 60px;
+  }
+  
+  /* Navbar simplificada */
+  .navbar {
+    padding: 0.5rem 1rem;
+    background-color: var(--dark-bg) !important;
+  }
+  
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+  
+  /* Card design limpo e atraente */
+  .card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: var(--transition);
+  }
+  
+  .card:active {
+    transform: scale(0.98);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border-bottom: none;
+    padding: 12px 16px;
+    font-weight: 500;
+  }
+  
+  .card-body {
+    padding: 16px;
+  }
+  
+  /* Ícones interativos */
+  .card-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    margin-right: 15px;
+    font-size: 1.5rem;
+  }
+  
+  /* Status markers */
+  .status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-badge.pending {
+    background-color: var(--accent-color);
+    color: white;
+  }
+  
+  .status-badge.completed {
+    background-color: var(--secondary-color);
+    color: white;
+  }
+  
+  .status-badge.cancelled {
+    background-color: var(--danger-color);
+    color: white;
+  }
+  
+  /* Listas mais limpas */
+  .list-group {
+    margin-top: 8px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+  }
+  
+  .list-group-item {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    padding: 12px 16px;
+  }
+  
+  /* Botões estilizados */
+  .btn {
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    transition: var(--transition);
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-success {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+  }
+  
+  .btn-warning {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+  }
+  
+  .btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+  }
+  
+  /* Esconde elementos não essenciais em mobile */
+  .d-mobile-none {
+    display: none !important;
+  }
+  
+  /* Tables responsive*/
+  .table-responsive {
+    overflow-x: auto;
+  }
+  
+  /* Action buttons em dropdowns para economizar espaço */
+  .action-dropdown .dropdown-menu {
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .action-dropdown .dropdown-item {
+    color: var(--text-color);
+    padding: 8px 16px;
+  }
+  
+  .action-dropdown .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Cards de resumo */
+  .summary-card {
+    position: relative;
+    padding: 16px;
+    border-radius: var(--border-radius);
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.8), rgba(41, 128, 185, 0.8));
+    color: white;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/static/img/pattern.svg');
+    opacity: 0.05;
+  }
+  
+  .summary-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .summary-card .label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+  }
+  
+  /* Listagem de cards interativos */
+  .interactive-card {
+    display: flex;
+    align-items: center;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+  }
+  
+  .interactive-card:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  .interactive-card .content {
+    flex: 1;
+  }
+  
+  .interactive-card .title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 1rem;
+  }
+  
+  .interactive-card .subtitle {
+    color: var(--muted-text);
+    font-size: 0.8rem;
+  }
+  
+  .interactive-card .action {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+  }
+  
+  /* Bottom navigation */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: var(--dark-bg);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--muted-text);
+    font-size: 0.7rem;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  
+  .nav-item.active {
+    color: var(--primary-color);
+  }
+  
+  .nav-item i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  
+  /* Form inputs mais clean */
+  .form-control, .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    padding: 10px 15px;
+  }
+  
+  .form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+  }
+  
+  .form-label {
+    color: var(--muted-text);
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  /* Snack notifications */
+  .snack-notification {
+    position: fixed;
+    bottom: 70px;
+    left: 16px;
+    right: 16px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1100;
+  }
+  
+  .snack-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  /* Search bar simplified */
+  .search-bar {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  
+  .search-bar input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 20px;
+    padding: 10px 40px 10px 16px;
+    width: 100%;
+    color: var(--text-color);
+  }
+  
+  .search-bar i {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted-text);
+  }
+  
+  /* Ajustes para formulários */
+  .form-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  /* Tabs simplificados */
+  .mobile-tabs {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-tab {
+    padding: 8px 16px;
+    background-color: transparent;
+    color: var(--muted-text);
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  
+  .mobile-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+  }
+  
+  /* Modal melhorado para mobile */
+  .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    border: none;
+  }
+  
+  .modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Ajustes padrões bootstrap */
+  .container-fluid {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  /* Detail display */
+  .detail-item {
+    margin-bottom: 16px;
+  }
+  
+  .detail-label {
+    font-size: 0.8rem;
+    color: var(--muted-text);
+    margin-bottom: 4px;
+  }
+  
+  .detail-value {
+    font-size: 1rem;
+    color: var(--text-color);
+  }
+  
+  /* Breadcrumbs simplificados */
+  .breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+  }
+  
+  .breadcrumb-item a {
+    color: var(--primary-color);
+  }
+  
+  .breadcrumb-item.active {
+    color: var(--muted-text);
+  }
+  
+  /* Ajustes para tabelas que viram cards em mobile */
+  .mobile-card-table .table {
+    display: none;
+  }
+  
+  .mobile-card-row {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  
+  .mobile-card-row .row-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .mobile-card-row .row-header .title {
+    font-weight: 500;
+  }
+  
+  .mobile-card-row .row-item {
+    display: flex;
+    margin-bottom: 4px;
+  }
+  
+  .mobile-card-row .item-label {
+    flex: 1;
+    color: var(--muted-text);
+    font-size: 0.85rem;
+  }
+  
+  .mobile-card-row .item-value {
+    flex: 2;
+    text-align: right;
+  }
+  
+  .mobile-card-row .row-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+  
+  .mobile-card-row .row-actions .btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    margin-left: 8px;
+  }
+}

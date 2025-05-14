@@ -24,6 +24,7 @@
     <link href="{{ url_for('static', filename='css/dashboard-metrics.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/contrast-fixes.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/dark-forms.css') }}?v={{ now }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/mobile.css') }}?v={{ now }}" rel="stylesheet">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -257,5 +258,149 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+    
+    <!-- Mobile Bottom Navigation Bar -->
+    <div class="mobile-bottom-nav d-lg-none">
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.path == url_for('dashboard') %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Início</span>
+        </a>
+        <a href="{{ url_for('service_orders') }}" class="nav-item {% if '/ordens-servico' in request.path %}active{% endif %}">
+            <i class="fas fa-clipboard-list"></i>
+            <span>OS</span>
+        </a>
+        <a href="{{ url_for('clients') }}" class="nav-item {% if '/clientes' in request.path %}active{% endif %}">
+            <i class="fas fa-users"></i>
+            <span>Clientes</span>
+        </a>
+        <a href="{{ url_for('equipment') }}" class="nav-item {% if '/equipamentos' in request.path %}active{% endif %}">
+            <i class="fas fa-tools"></i>
+            <span>Equip.</span>
+        </a>
+        <a href="{{ url_for('stock_items') }}" class="nav-item {% if '/estoque' in request.path %}active{% endif %}">
+            <i class="fas fa-boxes"></i>
+            <span>Estoque</span>
+        </a>
+    </div>
+    
+    <!-- Snack notification para mobile -->
+    <div id="snackNotification" class="snack-notification">
+        <span id="snackText"></span>
+    </div>
+
+    <!-- Mobile JS helper -->
+    <script>
+    // Função para mostrar notificação em estilo snackbar
+    function showSnack(message, duration = 3000) {
+        const snack = document.getElementById('snackNotification');
+        const text = document.getElementById('snackText');
+        
+        text.textContent = message;
+        snack.classList.add('show');
+        
+        setTimeout(() => {
+            snack.classList.remove('show');
+        }, duration);
+    }
+    
+    // Função para converter tabelas para cards em mobile
+    function initMobileCardTables() {
+        document.querySelectorAll('.mobile-card-table').forEach(container => {
+            const table = container.querySelector('table');
+            if (!table) return;
+            
+            const headerRow = table.querySelector('thead tr');
+            if (!headerRow) return;
+            
+            const headings = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+            
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            
+            rows.forEach(row => {
+                const values = Array.from(row.querySelectorAll('td')).map(td => td.innerHTML);
+                
+                // Cria o card
+                const card = document.createElement('div');
+                card.className = 'mobile-card-row d-lg-none';
+                
+                // Header do card (primeiro elemento)
+                const header = document.createElement('div');
+                header.className = 'row-header';
+                
+                const title = document.createElement('div');
+                title.className = 'title';
+                title.innerHTML = values[0];
+                
+                // Status ou badge no header (se existir)
+                const statusIndex = values.findIndex(v => v.includes('badge') || v.includes('status'));
+                
+                if (statusIndex !== -1) {
+                    const status = document.createElement('div');
+                    status.className = 'status';
+                    status.innerHTML = values[statusIndex];
+                    
+                    header.appendChild(title);
+                    header.appendChild(status);
+                } else {
+                    header.appendChild(title);
+                }
+                
+                card.appendChild(header);
+                
+                // Conteúdo do card (exceto primeiro elemento e possível status)
+                for (let i = 1; i < values.length; i++) {
+                    if (i === statusIndex) continue;
+                    
+                    // Pula células vazias ou apenas com espaços
+                    if (!values[i] || values[i].trim() === '') continue;
+                    
+                    // Se for uma célula de ações, cria uma seção especial
+                    if (values[i].includes('btn') || values[i].includes('fa-')) {
+                        const actions = document.createElement('div');
+                        actions.className = 'row-actions';
+                        actions.innerHTML = values[i];
+                        card.appendChild(actions);
+                        continue;
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'row-item';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'item-label';
+                    label.textContent = headings[i];
+                    
+                    const value = document.createElement('div');
+                    value.className = 'item-value';
+                    value.innerHTML = values[i];
+                    
+                    item.appendChild(label);
+                    item.appendChild(value);
+                    card.appendChild(item);
+                }
+                
+                container.appendChild(card);
+            });
+        });
+    }
+    
+    // Executa quando o documento estiver pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializa tabelas para mobile
+        initMobileCardTables();
+        
+        // Fecha o menu ao clicar em um item (em mobile)
+        if (window.innerWidth < 992) {
+            document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    const navbarCollapse = document.querySelector('.navbar-collapse');
+                    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+                        navbarCollapse.classList.remove('show');
+                    }
+                });
+            });
+        }
+    });
+    </script>
 </body>
 </html>
