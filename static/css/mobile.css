@@ -500,4 +500,161 @@
     font-size: 0.7rem;
     margin-left: 8px;
   }
+  
+  /* Novos estilos para cards de itens de estoque (baseado no screenshot) */
+  .mobile-tabs {
+    display: flex;
+    overflow-x: auto;
+    background-color: var(--blue-dark);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    padding: 0;
+    margin-bottom: 16px;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+  
+  .mobile-tab {
+    flex: 1;
+    text-align: center;
+    color: var(--text-color);
+    padding: 12px 5px;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    min-width: 80px;
+  }
+  
+  .mobile-tab.active {
+    color: var(--blue-accent);
+    border-bottom-color: var(--blue-accent);
+  }
+  
+  /* Mobile item card (estoque) */
+  .mobile-item-card {
+    background-color: var(--blue-medium);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  
+  .mobile-item-card .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .mobile-item-card .item-name {
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--text-color);
+  }
+  
+  .mobile-item-card .qty-info {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+  }
+  
+  .mobile-item-card .location-info {
+    color: var(--muted-text);
+    font-size: 0.85rem;
+  }
+  
+  .mobile-item-card .item-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    gap: 10px;
+  }
+  
+  .action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  
+  .view-btn {
+    background-color: #00bcd4;
+  }
+  
+  .edit-btn {
+    background-color: #2196f3;
+  }
+  
+  .delete-btn {
+    background-color: #f44336;
+    border: none;
+  }
+  
+  /* Mobile order card (ordens de serviço) */
+  .mobile-order-card {
+    background-color: var(--blue-medium);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  
+  .mobile-order-card .order-header {
+    margin-bottom: 8px;
+  }
+  
+  .mobile-order-card .order-id {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  .mobile-order-card .client-name {
+    font-size: 1rem;
+    color: var(--text-color);
+  }
+  
+  .mobile-order-card .order-details {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+  }
+  
+  .mobile-order-card .order-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    gap: 10px;
+  }
+  
+  .action-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .view-button {
+    background-color: #00bcd4;
+  }
+  
+  .edit-button {
+    background-color: #2196f3;
+  }
+  
+  .invoice-button {
+    background-color: #9c27b0;
+  }
 }
