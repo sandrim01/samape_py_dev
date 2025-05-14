@@ -127,7 +127,7 @@
                 {% endif %}
             </div>
             <div class="card-body p-0">
-                {% if maintenance_records %}
+                {% if maintenance_history.items %}
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
@@ -142,7 +142,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for record in maintenance_records %}
+                            {% for record in maintenance_history.items %}
                             <tr>
                                 <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
                                 <td>{{ record.description }}</td>

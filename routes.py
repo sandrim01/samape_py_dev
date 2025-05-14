@@ -3619,7 +3619,7 @@ def register_routes(app):
                 flash(f'Erro ao registrar manutenção: {str(e)}', 'danger')
                 app.logger.error(f"Erro ao registrar manutenção para veículo {id}: {str(e)}")
         
-        return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle)
+        return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle, today=today)
         
     @app.route('/frota/manutencoes')
     @login_required
