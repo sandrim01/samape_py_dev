@@ -204,3 +204,52 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-submit form when select filters change
+    $('#status, #client, #responsible, #date_range, #search').change(function() {
+        $('#searchForm').submit();
+    });
+    
+    // Filtrar cards mobile via tabs
+    $('.mobile-tab').click(function() {
+        // Se já estiver usando URL parameters, redirecionar
+        const filterValue = $(this).data('filter');
+        if (filterValue !== 'all') {
+            window.location.href = "{{ url_for('service_orders') }}?status=" + filterValue;
+            return;
+        } else {
+            window.location.href = "{{ url_for('service_orders') }}";
+            return;
+        }
+    });
+    
+    // Feedback tátil em cards mobile
+    $('.interactive-card').click(function(e) {
+        // Ignora clique em botões ou links
+        if (!$(e.target).closest('a, button').length) {
+            // Simula um feedback tátil no card
+            $(this).css('transform', 'scale(0.98)');
+            setTimeout(() => {
+                $(this).css('transform', '');
+            }, 150);
+            
+            // Pega o id da primeira tag <a> dentro do card (a de visualização)
+            const viewUrl = $(this).find('a:first').attr('href');
+            if (viewUrl) {
+                window.location.href = viewUrl;
+            }
+        }
+    });
+    
+    // Mostrar notificação ao fazer ações
+    $('.btn-danger').click(function() {
+        if (typeof showSnack === 'function') {
+            showSnack('Excluindo ordem de serviço...');
+        }
+    });
+});
+</script>
+{% endblock %}
