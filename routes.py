@@ -40,6 +40,12 @@ def register_routes(app):
     # Define o admin_or_manager_required como alias para manager_required
     admin_or_manager_required = manager_required
     
+    # Importações necessárias para as rotas
+    from datetime import date
+    import os
+    import uuid
+    from werkzeug.utils import secure_filename
+    
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):
@@ -196,6 +202,15 @@ def register_routes(app):
             'income_data': json.dumps([financial_summary['income']/6, financial_summary['income']/3, financial_summary['income']/2, financial_summary['income']/1.5, financial_summary['income']/1.2, financial_summary['income']]),
             'expense_data': json.dumps([financial_summary['expenses']/6, financial_summary['expenses']/4, financial_summary['expenses']/3, financial_summary['expenses']/2, financial_summary['expenses']/1.3, financial_summary['expenses']])
         }
+        
+        # Adicionar estatísticas da frota
+        metrics.update({
+            'fleet_active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
+            'fleet_maintenance': Vehicle.query.filter_by(status=VehicleStatus.manutencao).count(),
+            'fleet_inactive': Vehicle.query.filter_by(status=VehicleStatus.inativo).count(),
+            'fleet_reserved': Vehicle.query.filter_by(status=VehicleStatus.reservado).count(),
+            'fleet_total': Vehicle.query.count()
+        })
         
         return render_template(
             'dashboard.html',
@@ -3192,3 +3207,428 @@ def register_routes(app):
             flash(f'Erro ao criar dados de teste: {str(e)}', 'danger')
             
         return redirect(url_for('dashboard'))
+        
+    # Rotas para Controle de Frota
+    @app.route('/frota')
+    @login_required
+    def fleet():
+        """Lista de veículos da frota"""
+        page = request.args.get('page', 1, type=int)
+        per_page = int(get_system_setting('items_per_page', '20'))
+        
+        # Query base
+        query = Vehicle.query
+        
+        # Aplicar filtros
+        status_filter = request.args.get('status')
+        tipo_filter = request.args.get('tipo')
+        busca = request.args.get('busca')
+        
+        if status_filter:
+            query = query.filter(Vehicle.status == VehicleStatus[status_filter])
+            
+        if tipo_filter:
+            query = query.filter(Vehicle.type == VehicleType[tipo_filter])
+            
+        if busca:
+            query = query.filter(
+                or_(
+                    Vehicle.identifier.ilike(f'%{busca}%'),
+                    Vehicle.brand.ilike(f'%{busca}%'),
+                    Vehicle.model.ilike(f'%{busca}%'),
+                    Vehicle.license_plate.ilike(f'%{busca}%'),
+                    Vehicle.chassis.ilike(f'%{busca}%')
+                )
+            )
+        
+        # Ordenação
+        order_by = request.args.get('order_by', 'identifier')
+        order_dir = request.args.get('order_dir', 'asc')
+        
+        if order_by == 'identifier':
+            if order_dir == 'asc':
+                query = query.order_by(Vehicle.identifier)
+            else:
+                query = query.order_by(Vehicle.identifier.desc())
+        elif order_by == 'type':
+            if order_dir == 'asc':
+                query = query.order_by(Vehicle.type)
+            else:
+                query = query.order_by(Vehicle.type.desc())
+        elif order_by == 'status':
+            if order_dir == 'asc':
+                query = query.order_by(Vehicle.status)
+            else:
+                query = query.order_by(Vehicle.status.desc())
+        elif order_by == 'brand':
+            if order_dir == 'asc':
+                query = query.order_by(Vehicle.brand)
+            else:
+                query = query.order_by(Vehicle.brand.desc())
+        else:
+            query = query.order_by(Vehicle.identifier)
+        
+        # Paginação
+        vehicles = query.paginate(page=page, per_page=per_page)
+        
+        return render_template(
+            'fleet/index.html',
+            vehicles=vehicles,
+            status_filter=status_filter,
+            tipo_filter=tipo_filter,
+            busca=busca,
+            order_by=order_by,
+            order_dir=order_dir,
+            vehicle_statuses=VehicleStatus,
+            vehicle_types=VehicleType
+        )
+        
+    @app.route('/frota/novo', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def new_vehicle():
+        """Adicionar novo veículo à frota"""
+        form = VehicleForm()
+        
+        if form.validate_on_submit():
+            try:
+                # Tratar datas
+                purchase_date = None
+                if form.purchase_date.data:
+                    purchase_date = datetime.strptime(form.purchase_date.data, '%Y-%m-%d').date()
+                
+                last_maintenance_date = None
+                if form.last_maintenance_date.data:
+                    last_maintenance_date = datetime.strptime(form.last_maintenance_date.data, '%Y-%m-%d').date()
+                
+                next_maintenance_date = None
+                if form.next_maintenance_date.data:
+                    next_maintenance_date = datetime.strptime(form.next_maintenance_date.data, '%Y-%m-%d').date()
+                
+                # Processar imagem, se houver
+                image_filename = None
+                if form.image.data:
+                    image = form.image.data
+                    
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    image_filename = filename
+                
+                # Criar objeto de veículo
+                vehicle = Vehicle(
+                    identifier=form.identifier.data,
+                    type=VehicleType[form.type.data],
+                    brand=form.brand.data,
+                    model=form.model.data,
+                    year=form.year.data,
+                    license_plate=form.license_plate.data,
+                    color=form.color.data,
+                    chassis=form.chassis.data,
+                    purchase_date=purchase_date,
+                    purchase_value=form.purchase_value.data,
+                    current_value=form.current_value.data,
+                    mileage=form.mileage.data,
+                    last_maintenance_date=last_maintenance_date,
+                    next_maintenance_date=next_maintenance_date,
+                    responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
+                    status=VehicleStatus[form.status.data],
+                    image=image_filename,
+                    notes=form.notes.data
+                )
+                
+                db.session.add(vehicle)
+                db.session.commit()
+                
+                flash('Veículo adicionado com sucesso!', 'success')
+                log_action(
+                    'Cadastro de Veículo',
+                    'vehicle',
+                    vehicle.id,
+                    f"Veículo {vehicle.identifier} cadastrado"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao adicionar veículo: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao cadastrar veículo: {str(e)}")
+        
+        return render_template('fleet/new.html', form=form)
+        
+    @app.route('/frota/<int:id>')
+    @login_required
+    def view_vehicle(id):
+        """Visualizar detalhes de um veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        # Obter histórico de manutenção
+        maintenance_history = VehicleMaintenance.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleMaintenance.date.desc()).all()
+        
+        return render_template(
+            'fleet/view.html',
+            vehicle=vehicle,
+            maintenance_history=maintenance_history
+        )
+        
+    @app.route('/frota/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def edit_vehicle(id):
+        """Editar veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        form = VehicleForm(obj=vehicle)
+        
+        if request.method == 'GET':
+            # Converter datas para o formato correto para o formulário
+            if vehicle.purchase_date:
+                form.purchase_date.data = vehicle.purchase_date.strftime('%Y-%m-%d')
+            if vehicle.last_maintenance_date:
+                form.last_maintenance_date.data = vehicle.last_maintenance_date.strftime('%Y-%m-%d')
+            if vehicle.next_maintenance_date:
+                form.next_maintenance_date.data = vehicle.next_maintenance_date.strftime('%Y-%m-%d')
+                
+            # Lidar com dados do enum
+            form.type.data = vehicle.type.name
+            form.status.data = vehicle.status.name
+            
+            # Definir responsável
+            if vehicle.responsible_id is None:
+                form.responsible_id.data = 0
+        
+        if form.validate_on_submit():
+            try:
+                # Tratar datas
+                purchase_date = None
+                if form.purchase_date.data:
+                    purchase_date = datetime.strptime(form.purchase_date.data, '%Y-%m-%d').date()
+                
+                last_maintenance_date = None
+                if form.last_maintenance_date.data:
+                    last_maintenance_date = datetime.strptime(form.last_maintenance_date.data, '%Y-%m-%d').date()
+                
+                next_maintenance_date = None
+                if form.next_maintenance_date.data:
+                    next_maintenance_date = datetime.strptime(form.next_maintenance_date.data, '%Y-%m-%d').date()
+                
+                # Processar imagem, se houver
+                if form.image.data:
+                    # Remover imagem anterior se existir
+                    if vehicle.image:
+                        try:
+                            old_image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
+                            if os.path.exists(old_image_path):
+                                os.remove(old_image_path)
+                        except Exception as e:
+                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
+                    
+                    image = form.image.data
+                    
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    vehicle.image = filename
+                
+                # Atualizar campos do veículo
+                vehicle.identifier = form.identifier.data
+                vehicle.type = VehicleType[form.type.data]
+                vehicle.brand = form.brand.data
+                vehicle.model = form.model.data
+                vehicle.year = form.year.data
+                vehicle.license_plate = form.license_plate.data
+                vehicle.color = form.color.data
+                vehicle.chassis = form.chassis.data
+                vehicle.purchase_date = purchase_date
+                vehicle.purchase_value = form.purchase_value.data
+                vehicle.current_value = form.current_value.data
+                vehicle.mileage = form.mileage.data
+                vehicle.last_maintenance_date = last_maintenance_date
+                vehicle.next_maintenance_date = next_maintenance_date
+                vehicle.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
+                vehicle.status = VehicleStatus[form.status.data]
+                vehicle.notes = form.notes.data
+                
+                db.session.commit()
+                
+                flash('Veículo atualizado com sucesso!', 'success')
+                log_action(
+                    'Edição de Veículo',
+                    'vehicle',
+                    vehicle.id,
+                    f"Veículo {vehicle.identifier} atualizado"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao atualizar veículo: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao atualizar veículo {id}: {str(e)}")
+        
+        return render_template('fleet/edit.html', form=form, vehicle=vehicle)
+        
+    @app.route('/frota/<int:id>/excluir')
+    @login_required
+    @admin_required
+    def delete_vehicle(id):
+        """Excluir veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        try:
+            # Remover imagem se existir
+            if vehicle.image:
+                try:
+                    image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                except Exception as e:
+                    app.logger.warning(f"Erro ao remover imagem do veículo: {str(e)}")
+            
+            # Registrar informações antes de excluir
+            identifier = vehicle.identifier
+            
+            # Excluir o veículo
+            db.session.delete(vehicle)
+            db.session.commit()
+            
+            flash('Veículo excluído com sucesso!', 'success')
+            log_action(
+                'Exclusão de Veículo',
+                'vehicle',
+                id,
+                f"Veículo {identifier} excluído"
+            )
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao excluir veículo: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
+        
+        return redirect(url_for('fleet'))
+        
+    @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def new_vehicle_maintenance(id):
+        """Registrar nova manutenção para um veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        form = VehicleMaintenanceForm()
+        
+        # Pré-selecionar o veículo
+        form.vehicle_id.data = vehicle.id
+        
+        if form.validate_on_submit():
+            try:
+                # Converter a data
+                maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d').date()
+                
+                # Criar registro de manutenção
+                maintenance = VehicleMaintenance(
+                    vehicle_id=form.vehicle_id.data,
+                    date=maintenance_date,
+                    mileage=form.mileage.data,
+                    description=form.description.data,
+                    cost=form.cost.data,
+                    service_provider=form.service_provider.data,
+                    invoice_number=form.invoice_number.data,
+                    performed_by_id=form.performed_by_id.data if form.performed_by_id.data != 0 else None,
+                    created_by=current_user.id
+                )
+                
+                db.session.add(maintenance)
+                
+                # Atualizar dados do veículo
+                vehicle.last_maintenance_date = maintenance_date
+                
+                # Atualizar hodômetro do veículo se o valor informado é maior que o atual
+                if form.mileage.data and (vehicle.mileage is None or form.mileage.data > vehicle.mileage):
+                    vehicle.mileage = form.mileage.data
+                
+                db.session.commit()
+                
+                # Criar entrada financeira se houver custo
+                if form.cost.data:
+                    financial_entry = FinancialEntry(
+                        description=f"Manutenção do veículo {vehicle.identifier} - {form.description.data[:50]}",
+                        amount=form.cost.data,
+                        type=FinancialEntryType.saida,
+                        date=maintenance_date,
+                        created_by=current_user.id,
+                        entry_type='vehicle_maintenance',
+                        reference_id=maintenance.id
+                    )
+                    
+                    db.session.add(financial_entry)
+                    db.session.commit()
+                
+                flash('Manutenção registrada com sucesso!', 'success')
+                log_action(
+                    'Registro de Manutenção',
+                    'vehicle_maintenance',
+                    maintenance.id,
+                    f"Manutenção registrada para o veículo {vehicle.identifier}"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao registrar manutenção: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao registrar manutenção para veículo {id}: {str(e)}")
+        
+        return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle)
+        
+    @app.route('/frota/manutencoes')
+    @login_required
+    def vehicle_maintenance_history():
+        """Histórico de manutenções de todos os veículos"""
+        page = request.args.get('page', 1, type=int)
+        per_page = int(get_system_setting('items_per_page', '20'))
+        
+        # Query base
+        query = VehicleMaintenance.query
+        
+        # Aplicar filtros
+        vehicle_id = request.args.get('vehicle_id', type=int)
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        
+        if vehicle_id:
+            query = query.filter(VehicleMaintenance.vehicle_id == vehicle_id)
+            
+        if data_inicio:
+            try:
+                data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+                query = query.filter(VehicleMaintenance.date >= data_inicio)
+            except ValueError:
+                flash('Data inicial inválida.', 'warning')
+                
+        if data_fim:
+            try:
+                data_fim = datetime.strptime(data_fim, '%Y-%m-%d').date()
+                query = query.filter(VehicleMaintenance.date <= data_fim)
+            except ValueError:
+                flash('Data final inválida.', 'warning')
+        
+        # Ordenação
+        query = query.order_by(VehicleMaintenance.date.desc())
+        
+        # Paginação
+        maintenance_history = query.paginate(page=page, per_page=per_page)
+        
+        # Obter lista de veículos para o filtro
+        vehicles = Vehicle.query.order_by(Vehicle.identifier).all()
+        
+        return render_template(
+            'fleet/maintenance_history.html',
+            maintenance_history=maintenance_history,
+            vehicles=vehicles,
+            vehicle_id=vehicle_id,
+            data_inicio=data_inicio.strftime('%Y-%m-%d') if isinstance(data_inicio, date) else data_inicio,
+            data_fim=data_fim.strftime('%Y-%m-%d') if isinstance(data_fim, date) else data_fim
+        )
