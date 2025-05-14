@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}Controle de Frota{% endblock %}
+
+{% block styles %}
+<style>
+    .vehicle-card {
+        transition: transform 0.3s;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .vehicle-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    .vehicle-img-container {
+        height: 180px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #343a40;
+    }
+    .vehicle-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .vehicle-header {
+        background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+        padding: 15px;
+        color: white;
+    }
+    .vehicle-body {
+        padding: 15px;
+    }
+    .vehicle-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .status-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-manutencao {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .status-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    .status-reservado {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .filters-container {
+        background-color: #343a40;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    .filter-form .form-control {
+        background-color: #495057;
+        border: none;
+        color: white;
+    }
+    .filter-form .form-control::placeholder {
+        color: #adb5bd;
+    }
+    .type-icon {
+        font-size: 24px;
+        margin-right: 10px;
+    }
+    .page-link {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #adb5bd;
+    }
+    .page-link:hover {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: white;
+    }
+    .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    @media (max-width: 768px) {
+        .filters-container {
+            padding: 15px;
+        }
+        .vehicle-img-container {
+            height: 140px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="my-4">
+        <i class="fas fa-truck-monster mr-2"></i> Controle de Frota
+        {% if current_user.is_manager() %}
+        <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary float-right">
+            <i class="fas fa-plus-circle"></i> Novo Veículo
+        </a>
+        {% endif %}
+    </h1>
+
+    <!-- Filtros -->
+    <div class="filters-container">
+        <form method="GET" action="{{ url_for('fleet') }}" class="filter-form">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="busca" class="text-light">Pesquisar</label>
+                    <input type="text" class="form-control" id="busca" name="busca" 
+                           placeholder="ID, marca, modelo..." value="{{ busca or '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="text-light">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for status in vehicle_statuses %}
+                        <option value="{{ status.name }}" {% if status_filter == status.name %}selected{% endif %}>
+                            {{ status.value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="tipo" class="text-light">Tipo</label>
+                    <select class="form-control" id="tipo" name="tipo">
+                        <option value="">Todos</option>
+                        {% for tipo in vehicle_types %}
+                        <option value="{{ tipo.name }}" {% if tipo_filter == tipo.name %}selected{% endif %}>
+                            {{ tipo.value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="text-light">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary mr-2">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('fleet') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-sync"></i> Limpar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Veículos -->
+    {% if vehicles.items %}
+    <div class="row">
+        {% for vehicle in vehicles.items %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card vehicle-card bg-dark text-light">
+                <div class="vehicle-img-container">
+                    {% if vehicle.image %}
+                    <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" class="vehicle-img" alt="{{ vehicle.identifier }}">
+                    {% else %}
+                    <div class="text-center" style="width: 100%;">
+                        <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }}" style="font-size: 80px; color: #6c757d;"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="vehicle-status status-{{ vehicle.status.name }}">
+                        {{ vehicle.status.value }}
+                    </div>
+                </div>
+                <div class="vehicle-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }} type-icon"></i>
+                        {{ vehicle.identifier }}
+                    </h5>
+                </div>
+                <div class="vehicle-body">
+                    <p class="card-text">
+                        <strong>Marca/Modelo:</strong> {{ vehicle.brand or '-' }} {{ vehicle.model or '' }}<br>
+                        <strong>Tipo:</strong> {{ vehicle.type.value }}<br>
+                        <strong>Placa:</strong> {{ vehicle.license_plate or '-' }}<br>
+                        <strong>Resp.:</strong> {{ vehicle.responsible.name if vehicle.responsible else '-' }}
+                    </p>
+                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-primary btn-block">
+                        <i class="fas fa-eye"></i> Detalhes
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação -->
+    <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+            {% if vehicles.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('fleet', page=vehicles.prev_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in vehicles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == vehicles.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('fleet', page=page_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if vehicles.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('fleet', page=vehicles.next_num, status=status_filter, tipo=tipo_filter, busca=busca, order_by=order_by, order_dir=order_dir) }}">
+                    Próximo <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Próximo <i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Nenhum veículo encontrado.
+        {% if status_filter or tipo_filter or busca %}
+            <a href="{{ url_for('fleet') }}" class="alert-link">Limpar filtros</a>.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Atualizar automaticamente ao mudar filtros
+        $('#status, #tipo').change(function() {
+            $('.filter-form').submit();
+        });
+    });
+</script>
+{% endblock %}

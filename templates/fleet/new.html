@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% block title %}Adicionar Novo Veículo{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dark-forms.css') }}">
+<style>
+    .vehicle-form-container {
+        background-color: #343a40;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    .form-section {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .form-section-title {
+        color: #f8f9fa;
+        border-bottom: 1px solid #495057;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .required-field:after {
+        content: ' *';
+        color: #dc3545;
+    }
+    .img-preview {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-plus-circle mr-2"></i> Adicionar Novo Veículo</h1>
+        <a href="{{ url_for('fleet') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <div class="vehicle-form-container">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <!-- Informações Básicas -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-info-circle mr-2"></i> Informações Básicas
+                </h3>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="identifier" class="required-field">Identificador/Placa</label>
+                        {{ form.identifier(class="form-control" + (" is-invalid" if form.identifier.errors else ""), placeholder="Ex: CAM001 ou ABC1234") }}
+                        {% if form.identifier.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.identifier.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Número ou placa único que identifica este veículo</small>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="type" class="required-field">Tipo</label>
+                        {{ form.type(class="form-control" + (" is-invalid" if form.type.errors else "")) }}
+                        {% if form.type.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="status" class="required-field">Status</label>
+                        {{ form.status(class="form-control" + (" is-invalid" if form.status.errors else "")) }}
+                        {% if form.status.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.status.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="brand">Marca</label>
+                        {{ form.brand(class="form-control" + (" is-invalid" if form.brand.errors else ""), placeholder="Ex: Volvo") }}
+                        {% if form.brand.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.brand.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="model">Modelo</label>
+                        {{ form.model(class="form-control" + (" is-invalid" if form.model.errors else ""), placeholder="Ex: FH 540") }}
+                        {% if form.model.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.model.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="year">Ano</label>
+                        {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else ""), placeholder="Ex: 2023") }}
+                        {% if form.year.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.year.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="license_plate">Placa</label>
+                        {{ form.license_plate(class="form-control" + (" is-invalid" if form.license_plate.errors else ""), placeholder="Ex: ABC1D23") }}
+                        {% if form.license_plate.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.license_plate.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="color">Cor</label>
+                        {{ form.color(class="form-control" + (" is-invalid" if form.color.errors else ""), placeholder="Ex: Branco") }}
+                        {% if form.color.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.color.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="chassis">Chassis/Série</label>
+                        {{ form.chassis(class="form-control" + (" is-invalid" if form.chassis.errors else ""), placeholder="Ex: 9BWHE21J1X4001234") }}
+                        {% if form.chassis.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.chassis.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informações Financeiras e Adicionais -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-dollar-sign mr-2"></i> Informações Financeiras e Adicionais
+                </h3>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="purchase_date">Data de Aquisição</label>
+                        {{ form.purchase_date(class="form-control" + (" is-invalid" if form.purchase_date.errors else ""), type="date") }}
+                        {% if form.purchase_date.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.purchase_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="purchase_value">Valor de Compra (R$)</label>
+                        {{ form.purchase_value(class="form-control" + (" is-invalid" if form.purchase_value.errors else ""), placeholder="Ex: 150000.00") }}
+                        {% if form.purchase_value.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.purchase_value.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="current_value">Valor Atual (R$)</label>
+                        {{ form.current_value(class="form-control" + (" is-invalid" if form.current_value.errors else ""), placeholder="Ex: 120000.00") }}
+                        {% if form.current_value.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.current_value.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="mileage">Hodômetro (Km)</label>
+                        {{ form.mileage(class="form-control" + (" is-invalid" if form.mileage.errors else ""), placeholder="Ex: 25000") }}
+                        {% if form.mileage.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.mileage.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="last_maintenance_date">Última Manutenção</label>
+                        {{ form.last_maintenance_date(class="form-control" + (" is-invalid" if form.last_maintenance_date.errors else ""), type="date") }}
+                        {% if form.last_maintenance_date.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.last_maintenance_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="next_maintenance_date">Próxima Manutenção</label>
+                        {{ form.next_maintenance_date(class="form-control" + (" is-invalid" if form.next_maintenance_date.errors else ""), type="date") }}
+                        {% if form.next_maintenance_date.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.next_maintenance_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="responsible_id">Responsável</label>
+                        {{ form.responsible_id(class="form-control" + (" is-invalid" if form.responsible_id.errors else "")) }}
+                        {% if form.responsible_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.responsible_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Funcionário responsável pelo veículo</small>
+                    </div>
+                    <div class="col-md-8 form-group">
+                        <label for="image">Imagem do Veículo</label>
+                        {{ form.image(class="form-control-file" + (" is-invalid" if form.image.errors else ""), id="image-input") }}
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.image.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Formatos permitidos: jpg, jpeg, png</small>
+                        <img id="preview" class="img-preview" alt="Pré-visualização da imagem">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Observações -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-sticky-note mr-2"></i> Observações
+                </h3>
+                <div class="form-group">
+                    {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=5, placeholder="Informações adicionais sobre o veículo...") }}
+                    {% if form.notes.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.notes.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save mr-2"></i> Salvar Veículo
+                </button>
+                <a href="{{ url_for('fleet') }}" class="btn btn-outline-secondary btn-lg ml-2">
+                    <i class="fas fa-times mr-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Pré-visualização da imagem
+        $('#image-input').change(function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#preview').attr('src', e.target.result);
+                    $('#preview').css('display', 'block');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                $('#preview').css('display', 'none');
+            }
+        });
+        
+        // Formatação de valores monetários
+        $('#purchase_value, #current_value').on('input', function() {
+            let value = $(this).val().replace(/[^\d.]/g, '');
+            if (value) {
+                // Garantir que tenha apenas um ponto decimal
+                let parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+            }
+            $(this).val(value);
+        });
+    });
+</script>
+{% endblock %}

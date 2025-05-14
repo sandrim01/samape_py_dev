@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% block title %}Veículo: {{ vehicle.identifier }}{% endblock %}
+
+{% block styles %}
+<style>
+    .vehicle-container {
+        background-color: #343a40;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    .vehicle-image {
+        max-height: 300px;
+        width: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+        background-color: #212529;
+    }
+    .image-container {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+    }
+    .vehicle-details {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .detail-row {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #495057;
+        padding-bottom: 15px;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .detail-label {
+        font-weight: bold;
+        color: #adb5bd;
+    }
+    .detail-value {
+        color: #f8f9fa;
+    }
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+    .status-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-manutencao {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .status-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    .status-reservado {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .maintenance-card {
+        background-color: #212529;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-left: 4px solid #007bff;
+    }
+    .maintenance-date {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #f8f9fa;
+    }
+    .maintenance-details {
+        color: #adb5bd;
+        margin-top: 10px;
+    }
+    .maintenance-cost {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .action-btns {
+        margin-bottom: 20px;
+    }
+    .placeholder-icon {
+        font-size: 120px;
+        color: #6c757d;
+    }
+    .notes-container {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        white-space: pre-line;
+    }
+    .notes-header {
+        border-bottom: 1px solid #495057;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    @media (max-width: 768px) {
+        .vehicle-container {
+            padding: 15px;
+        }
+        .image-container {
+            height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho e botões de ação -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <h1>
+            <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }} mr-2"></i>
+            {{ vehicle.identifier }}
+        </h1>
+        <div class="action-btns">
+            <a href="{{ url_for('fleet') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            {% if current_user.is_manager() %}
+            <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-success">
+                <i class="fas fa-tools"></i> Nova Manutenção
+            </a>
+            {% endif %}
+            {% if current_user.is_admin() %}
+            <a href="{{ url_for('delete_vehicle', id=vehicle.id) }}" class="btn btn-danger" 
+               onclick="return confirm('Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.')">
+                <i class="fas fa-trash"></i> Excluir
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status do Veículo -->
+    <div class="status-badge status-{{ vehicle.status.name }}">
+        <i class="fas fa-circle mr-2"></i> {{ vehicle.status.value }}
+    </div>
+
+    <!-- Informações do Veículo -->
+    <div class="vehicle-container">
+        <div class="row">
+            <!-- Imagem do Veículo -->
+            <div class="col-lg-4 mb-4">
+                <div class="image-container">
+                    {% if vehicle.image %}
+                    <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" class="vehicle-image" alt="{{ vehicle.identifier }}">
+                    {% else %}
+                    <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }} placeholder-icon"></i>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Detalhes do Veículo -->
+            <div class="col-lg-8">
+                <div class="vehicle-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-row">
+                                <div class="detail-label">Identificador</div>
+                                <div class="detail-value">{{ vehicle.identifier }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Tipo</div>
+                                <div class="detail-value">{{ vehicle.type.value }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Marca / Modelo</div>
+                                <div class="detail-value">{{ vehicle.brand or '-' }} {{ vehicle.model or '' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Ano</div>
+                                <div class="detail-value">{{ vehicle.year or '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Placa</div>
+                                <div class="detail-value">{{ vehicle.license_plate or '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Cor</div>
+                                <div class="detail-value">{{ vehicle.color or '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Chassis</div>
+                                <div class="detail-value">{{ vehicle.chassis or '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-row">
+                                <div class="detail-label">Responsável</div>
+                                <div class="detail-value">{{ vehicle.responsible.name if vehicle.responsible else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Data de Aquisição</div>
+                                <div class="detail-value">{{ vehicle.purchase_date.strftime('%d/%m/%Y') if vehicle.purchase_date else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Valor de Compra</div>
+                                <div class="detail-value">{{ "R$ {:,.2f}".format(vehicle.purchase_value) if vehicle.purchase_value else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Valor Atual</div>
+                                <div class="detail-value">{{ "R$ {:,.2f}".format(vehicle.current_value) if vehicle.current_value else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Hodômetro</div>
+                                <div class="detail-value">{{ "{:,.0f} km".format(vehicle.mileage) if vehicle.mileage else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Última Manutenção</div>
+                                <div class="detail-value">{{ vehicle.last_maintenance_date.strftime('%d/%m/%Y') if vehicle.last_maintenance_date else '-' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Próxima Manutenção</div>
+                                <div class="detail-value">{{ vehicle.next_maintenance_date.strftime('%d/%m/%Y') if vehicle.next_maintenance_date else '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                {% if vehicle.notes %}
+                <div class="notes-container">
+                    <div class="notes-header">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note mr-2"></i> Observações</h5>
+                    </div>
+                    <div class="detail-value">{{ vehicle.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Manutenção -->
+    <h3 class="mt-4 mb-4">
+        <i class="fas fa-history mr-2"></i> Histórico de Manutenção
+        {% if maintenance_history %}
+        <span class="badge badge-primary">{{ maintenance_history|length }}</span>
+        {% endif %}
+    </h3>
+
+    {% if maintenance_history %}
+    <div class="row">
+        {% for maintenance in maintenance_history %}
+        <div class="col-md-6 col-lg-4">
+            <div class="maintenance-card">
+                <div class="maintenance-date">{{ maintenance.date.strftime('%d/%m/%Y') }}</div>
+                
+                {% if maintenance.mileage %}
+                <div class="maintenance-details">
+                    <i class="fas fa-tachometer-alt mr-2"></i> {{ "{:,.0f} km".format(maintenance.mileage) }}
+                </div>
+                {% endif %}
+                
+                <div class="maintenance-details">
+                    <strong>Descrição:</strong> {{ maintenance.description }}
+                </div>
+                
+                {% if maintenance.service_provider %}
+                <div class="maintenance-details">
+                    <i class="fas fa-store mr-2"></i> {{ maintenance.service_provider }}
+                </div>
+                {% endif %}
+                
+                {% if maintenance.performed_by %}
+                <div class="maintenance-details">
+                    <i class="fas fa-user-cog mr-2"></i> {{ maintenance.performed_by.name }}
+                </div>
+                {% endif %}
+                
+                {% if maintenance.invoice_number %}
+                <div class="maintenance-details">
+                    <i class="fas fa-file-invoice mr-2"></i> NF: {{ maintenance.invoice_number }}
+                </div>
+                {% endif %}
+                
+                {% if maintenance.cost %}
+                <div class="maintenance-cost mt-2">
+                    <i class="fas fa-dollar-sign mr-2"></i> {{ "R$ {:,.2f}".format(maintenance.cost) }}
+                </div>
+                {% endif %}
+                
+                <div class="maintenance-details text-muted mt-2">
+                    <small>Registrado por {{ maintenance.creator.name if maintenance.creator else 'Sistema' }} em {{ maintenance.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i> Nenhum registro de manutenção encontrado para este veículo.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
