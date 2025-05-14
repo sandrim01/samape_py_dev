@@ -299,6 +299,21 @@
     font-weight: 500;
   }
   
+  /* Melhorias para galeria de imagens */
+  .card .position-relative:hover > div {
+    opacity: 1 !important;
+  }
+  
+  .gallery-image {
+    transition: transform 0.3s ease;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .gallery-image:hover {
+    transform: scale(1.03);
+  }
+  
   /* Snack notifications */
   .snack-notification {
     position: fixed;

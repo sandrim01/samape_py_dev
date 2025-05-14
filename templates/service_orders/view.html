@@ -181,25 +181,48 @@
         
         <!-- Images -->
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-images me-1"></i> Imagens do Equipamento
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-images me-1"></i> Imagens do Equipamento</h6>
             </div>
             <div class="card-body">
                 {% if service_order.images %}
-                <div class="row">
+                <div class="row g-3">
+                    <div class="col-12 mb-2 d-lg-none">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Toque nas imagens para ampliá-las
+                        </div>
+                    </div>
+                    
                     {% for image in service_order.images %}
-                    <div class="col-4 mb-3">
-                        <div class="text-center">
-                            <a href="{{ url_for('view_service_order_image', image_id=image.id) }}" target="_blank" title="{{ image.description or 'Ver imagem em tamanho original' }}">
-                                <img src="{{ url_for('view_service_order_image', image_id=image.id) }}" alt="{{ image.description or 'Imagem ' ~ loop.index }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
-                            </a>
-                            {% if image.description %}
-                            <div class="mt-1">
-                                <small class="text-muted">{{ image.description }}</small>
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                <a href="{{ url_for('view_service_order_image', image_id=image.id) }}" 
+                                   data-fancybox="gallery" 
+                                   data-caption="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                   target="_blank">
+                                    <img src="{{ url_for('view_service_order_image', image_id=image.id) }}" 
+                                         alt="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                         class="card-img-top" 
+                                         style="height: 150px; object-fit: cover;"
+                                         onerror="this.onerror=null; this.src='/static/img/placeholder.svg';">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" 
+                                         style="background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease; border-radius: 4px;">
+                                        <i class="fas fa-search-plus text-white fa-2x"></i>
+                                    </div>
+                                </a>
                             </div>
-                            {% endif %}
-                            <div class="mt-1">
-                                <form action="{{ url_for('delete_service_order_image_route', image_id=image.id) }}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta imagem?');">
+                            <div class="card-body p-2">
+                                {% if image.description %}
+                                <p class="card-text small text-truncate">{{ image.description }}</p>
+                                {% else %}
+                                <p class="card-text small text-muted">Imagem {{ loop.index }}</p>
+                                {% endif %}
+                                
+                                <form action="{{ url_for('delete_service_order_image_route', image_id=image.id) }}" 
+                                      method="post" 
+                                      class="d-flex justify-content-end"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta imagem?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-danger">
                                         <i class="fas fa-trash-alt"></i>
@@ -211,7 +234,16 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-center">Não há imagens disponíveis para esta OS.</p>
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-images fa-3x text-muted"></i>
+                    </div>
+                    <p class="text-muted">Não há imagens disponíveis para esta OS.</p>
+                    
+                    <a href="{{ url_for('edit_service_order', id=service_order.id) }}" class="btn btn-primary mt-2">
+                        <i class="fas fa-upload me-1"></i> Adicionar Imagens
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
