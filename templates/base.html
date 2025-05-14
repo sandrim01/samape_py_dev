@@ -171,6 +171,11 @@
                                 <i class="fas fa-hard-hat"></i> EPIs e Ferramentas
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/frota' in request.path %}active{% endif %}" href="{{ url_for('fleet') }}">
+                                <i class="fas fa-truck-monster"></i> Controle de Frota
+                            </a>
+                        </li>
                         {% if current_user.role == UserRole.admin or current_user.role == UserRole.gerente %}
                         <li class="nav-item">
                             <a class="nav-link {% if '/funcionarios' in request.path %}active{% endif %}" href="{{ url_for('employees') }}">

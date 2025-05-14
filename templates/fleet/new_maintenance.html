@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% block title %}Nova Manutenção - {{ vehicle.identifier }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dark-forms.css') }}">
+<style>
+    .maintenance-form-container {
+        background-color: #343a40;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    .form-section {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .form-section-title {
+        color: #f8f9fa;
+        border-bottom: 1px solid #495057;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .required-field:after {
+        content: ' *';
+        color: #dc3545;
+    }
+    .vehicle-info {
+        background-color: #212529;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-left: 4px solid #007bff;
+    }
+    .vehicle-icon {
+        font-size: 24px;
+        margin-right: 10px;
+    }
+    .vehicle-details {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .vehicle-detail-item {
+        margin-right: 20px;
+        margin-bottom: 10px;
+    }
+    .vehicle-detail-label {
+        color: #adb5bd;
+        font-size: 0.9rem;
+    }
+    .vehicle-detail-value {
+        font-weight: bold;
+        color: #f8f9fa;
+    }
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .status-ativo {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-manutencao {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .status-inativo {
+        background-color: #dc3545;
+        color: white;
+    }
+    .status-reservado {
+        background-color: #17a2b8;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tools mr-2"></i> Nova Manutenção</h1>
+        <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+    
+    <!-- Informações resumidas do veículo -->
+    <div class="vehicle-info">
+        <h4>
+            <i class="fas fa-{{ 'truck' if vehicle.type.name == 'caminhao' else 'car' if vehicle.type.name == 'carro' else 'shuttle-van' if vehicle.type.name == 'van' else 'bus' if vehicle.type.name == 'onibus' else 'truck-monster' if vehicle.type.name == 'maquinario' else 'car-side' }} vehicle-icon"></i>
+            {{ vehicle.identifier }}
+            <span class="status-badge status-{{ vehicle.status.name }} ml-2">{{ vehicle.status.value }}</span>
+        </h4>
+        <div class="vehicle-details">
+            <div class="vehicle-detail-item">
+                <div class="vehicle-detail-label">Marca/Modelo</div>
+                <div class="vehicle-detail-value">{{ vehicle.brand or '-' }} {{ vehicle.model or '' }}</div>
+            </div>
+            <div class="vehicle-detail-item">
+                <div class="vehicle-detail-label">Tipo</div>
+                <div class="vehicle-detail-value">{{ vehicle.type.value }}</div>
+            </div>
+            <div class="vehicle-detail-item">
+                <div class="vehicle-detail-label">Placa</div>
+                <div class="vehicle-detail-value">{{ vehicle.license_plate or '-' }}</div>
+            </div>
+            <div class="vehicle-detail-item">
+                <div class="vehicle-detail-label">Hodômetro</div>
+                <div class="vehicle-detail-value">{{ "{:,.0f} km".format(vehicle.mileage) if vehicle.mileage else '-' }}</div>
+            </div>
+            <div class="vehicle-detail-item">
+                <div class="vehicle-detail-label">Última Manutenção</div>
+                <div class="vehicle-detail-value">{{ vehicle.last_maintenance_date.strftime('%d/%m/%Y') if vehicle.last_maintenance_date else '-' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de manutenção -->
+    <div class="maintenance-form-container">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <!-- Formulário de Manutenção -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="fas fa-wrench mr-2"></i> Dados da Manutenção
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="date" class="required-field">Data</label>
+                        {{ form.date(class="form-control" + (" is-invalid" if form.date.errors else ""), type="date") }}
+                        {% if form.date.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="mileage">Hodômetro (Km)</label>
+                        {{ form.mileage(class="form-control" + (" is-invalid" if form.mileage.errors else ""), placeholder="Ex: 25000") }}
+                        {% if form.mileage.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.mileage.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if vehicle.mileage %}
+                        <small class="form-text text-muted">Atual: {{ "{:,.0f} km".format(vehicle.mileage) }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12 form-group">
+                        <label for="description" class="required-field">Descrição do Serviço</label>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3, placeholder="Descreva detalhadamente o serviço realizado...") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="cost">Custo (R$)</label>
+                        {{ form.cost(class="form-control" + (" is-invalid" if form.cost.errors else ""), placeholder="Ex: 1500.00") }}
+                        {% if form.cost.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.cost.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Será gerada uma entrada financeira com este valor</small>
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="service_provider">Prestador do Serviço</label>
+                        {{ form.service_provider(class="form-control" + (" is-invalid" if form.service_provider.errors else ""), placeholder="Ex: Oficina Mecânica XYZ") }}
+                        {% if form.service_provider.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.service_provider.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="invoice_number">Número da Nota Fiscal</label>
+                        {{ form.invoice_number(class="form-control" + (" is-invalid" if form.invoice_number.errors else ""), placeholder="Ex: NF-e 123456") }}
+                        {% if form.invoice_number.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.invoice_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="performed_by_id">Executado por</label>
+                        {{ form.performed_by_id(class="form-control" + (" is-invalid" if form.performed_by_id.errors else "")) }}
+                        {% if form.performed_by_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.performed_by_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Pessoa que realizou/acompanhou o serviço</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-save mr-2"></i> Registrar Manutenção
+                </button>
+                <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-outline-secondary btn-lg ml-2">
+                    <i class="fas fa-times mr-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Formatar campos de valor e hodômetro
+        $('#cost').on('input', function() {
+            let value = $(this).val().replace(/[^\d.]/g, '');
+            if (value) {
+                // Garantir que tenha apenas um ponto decimal
+                let parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+            }
+            $(this).val(value);
+        });
+        
+        $('#mileage').on('input', function() {
+            let value = $(this).val().replace(/[^\d]/g, '');
+            $(this).val(value);
+        });
+        
+        // Data padrão atual
+        if (!$('#date').val()) {
+            let today = new Date();
+            let dd = String(today.getDate()).padStart(2, '0');
+            let mm = String(today.getMonth() + 1).padStart(2, '0'); // Janeiro é 0!
+            let yyyy = today.getFullYear();
+            
+            today = yyyy + '-' + mm + '-' + dd;
+            $('#date').val(today);
+        }
+    });
+</script>
+{% endblock %}
