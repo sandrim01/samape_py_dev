@@ -557,7 +557,7 @@
         });
         
         // Interceptar o envio dos formulários de movimentação de estoque
-        $('form[action="{{ url_for('add_stock_movement') }}"]').on('submit', function(e) {
+        $('form[action="/estoque/movimentacao"]').on('submit', function(e) {
             const direction = $(this).find('#direction').val() || 
                             $(this).find('input[name="direction"]:checked').val();
             const quantity = parseInt($(this).find('#quantity').val() || $(this).find('#mobile_quantity').val());
