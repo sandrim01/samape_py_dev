@@ -3573,6 +3573,7 @@ def register_routes(app):
                 maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d').date()
                 
                 # Criar registro de manutenção
+                # Garantir que estamos usando as colunas corretas do banco de dados
                 maintenance = VehicleMaintenance(
                     vehicle_id=form.vehicle_id.data,
                     date=maintenance_date,
@@ -3581,7 +3582,7 @@ def register_routes(app):
                     cost=form.cost.data,
                     workshop=form.service_provider.data,  # Usando a coluna real: workshop em vez de property: service_provider
                     invoice_number=form.invoice_number.data,
-                    created_by=current_user.id  # Definindo o criador diretamente
+                    created_by=form.performed_by_id.data if form.performed_by_id.data and form.performed_by_id.data != 0 else current_user.id
                 )
                 
                 db.session.add(maintenance)
