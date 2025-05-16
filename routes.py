@@ -45,7 +45,7 @@ def register_routes(app):
     import os
     import uuid
     from werkzeug.utils import secure_filename
-    from flask import send_from_directory
+    from flask import send_from_directory, Response
     
     # Rota para servir imagens de veículos diretamente do banco de dados
     @app.route('/api/vehicle-image/<int:vehicle_id>')
