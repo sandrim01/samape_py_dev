@@ -3079,11 +3079,12 @@ def register_routes(app):
             item_image = item.image
             
             # 2. Excluir movimentações primeiro
-            db.session.execute(f"DELETE FROM stock_movement WHERE stock_item_id = {id}")
+            from sqlalchemy import text
+            db.session.execute(text("DELETE FROM stock_movement WHERE stock_item_id = :id"), {"id": id})
             db.session.commit()
             
             # 3. Excluir o item
-            db.session.execute(f"DELETE FROM stock_item WHERE id = {id}")
+            db.session.execute(text("DELETE FROM stock_item WHERE id = :id"), {"id": id})
             db.session.commit()
             
             # 4. Remover imagem se existir
