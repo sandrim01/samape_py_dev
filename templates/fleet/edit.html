@@ -183,15 +183,9 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.last_maintenance_date.label(class="form-label") }}
-                                        {{ form.last_maintenance_date(class="form-control") }}
-                                        {% if form.last_maintenance_date.errors %}
-                                        <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.last_maintenance_date.errors %}
-                                            <span>{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
+                                        <label class="form-label">Última Manutenção</label>
+                                        <input type="text" class="form-control" value="Ver histórico" disabled>
+                                        <small class="text-muted">Consulte o histórico de manutenções</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
