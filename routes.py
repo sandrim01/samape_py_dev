@@ -3751,10 +3751,10 @@ def register_routes(app):
     @app.route('/excluir-veiculo/<int:id>', methods=['POST'])
     @login_required
     def excluir_veiculo_direct(id):
-        """Rota para excluir veículo - apenas para administradores e gerentes"""
-        # Verificar se o usuário é administrador ou gerente
-        if current_user.role not in ['admin', 'gerente']:
-            flash('Acesso negado. Apenas administradores e gerentes podem excluir veículos.', 'danger')
+        """Rota para excluir veículo - apenas para administradores"""
+        # Verificar se o usuário é administrador 
+        if current_user.role != 'admin':
+            flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
             return redirect(url_for('fleet'))
             
         app.logger.info(f"Tentando excluir veículo ID: {id}, usuário: {current_user.username}")
