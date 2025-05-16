@@ -208,7 +208,7 @@ def register_routes(app):
             'fleet_active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
             'fleet_maintenance': Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count(),
             'fleet_inactive': Vehicle.query.filter_by(status=VehicleStatus.inativo).count(),
-            # 'fleet_reserved' removido - não existe no banco de dados
+            'fleet_reserved': 0,  # Valor padrão para manter compatibilidade com o template
             'fleet_total': Vehicle.query.count()
         })
         
@@ -3352,7 +3352,7 @@ def register_routes(app):
                 
                 # Criar objeto de veículo
                 vehicle = Vehicle(
-                    # type removido - campo não existe no banco de dados
+                    type=VehicleType[form.type.data],
                     plate=form.plate.data,
                     brand=form.brand.data,
                     model=form.model.data,

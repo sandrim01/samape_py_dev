@@ -375,7 +375,7 @@ class FuelType(enum.Enum):
 class Vehicle(db.Model):
     """Modelo para veículos da frota"""
     id = db.Column(db.Integer, primary_key=True)
-    # type = db.Column(Enum(VehicleType), nullable=False)  # Campo removido - não existe na tabela
+    type = db.Column(Enum(VehicleType), default=VehicleType.carro, nullable=False)
     brand = db.Column(db.String(100))
     model = db.Column(db.String(100))
     year = db.Column(db.Integer)
