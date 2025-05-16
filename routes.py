@@ -3594,7 +3594,8 @@ def register_routes(app):
                 if form.mileage.data and (vehicle.current_km is None or form.mileage.data > vehicle.current_km):
                     vehicle.current_km = form.mileage.data
                 
-                db.session.commit()
+                # Usar flush para obter o ID da manutenção sem confirmar a transação
+                db.session.flush()
                 
                 # Criar entrada financeira se houver custo
                 if form.cost.data:
@@ -3609,7 +3610,9 @@ def register_routes(app):
                     )
                     
                     db.session.add(financial_entry)
-                    db.session.commit()
+                
+                # Confirmar toda a transação de uma vez
+                db.session.commit()
                 
                 flash('Manutenção registrada com sucesso!', 'success')
                 log_action(
