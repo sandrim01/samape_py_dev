@@ -2361,6 +2361,10 @@ def register_routes(app):
         part = Part.query.get(sale.part_id)
         if part:
             part.stock_quantity += sale.quantity
+            
+            # Atualizar o status do item de acordo com a nova quantidade
+            if hasattr(part, 'update_status'):
+                part.update_status()
         
         # Remover entrada financeira associada, sempre
         # Primeiro tenta buscar pela ordem de serviço, se tiver
