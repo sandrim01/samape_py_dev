@@ -427,9 +427,9 @@
                                             <span class="badge badge-pill badge-light">
                                                 {{ vehicle.year if vehicle.year else 'Ano N/D' }}
                                             </span>
-                                            {% if vehicle.license_plate %}
+                                            {% if vehicle.plate %}
                                                 <span class="badge badge-pill badge-primary mt-1 d-inline-block">
-                                                    {{ vehicle.license_plate }}
+                                                    {{ vehicle.plate }}
                                                 </span>
                                             {% endif %}
                                         </div>
@@ -439,8 +439,8 @@
                                 <td>
                                     <div class="vehicle-details">
                                         <div>
-                                            <small class="text-muted">Identificador:</small>
-                                            <span class="badge badge-pill badge-secondary">{{ vehicle.identifier }}</span>
+                                            <small class="text-muted">Placa:</small>
+                                            <span class="badge badge-pill badge-secondary">{{ vehicle.plate }}</span>
                                         </div>
                                         {% if vehicle.fuel_type %}
                                         <div class="mt-1">
