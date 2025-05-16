@@ -18,9 +18,12 @@
                     <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning mr-2">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </a>
-                    <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-primary">
-                        <i class="fas fa-tools mr-1"></i> Registrar Manutenção
+                    <a href="#" class="btn btn-success mr-2" data-toggle="modal" data-target="#refuelingModal">
+                        <i class="fas fa-gas-pump mr-1"></i> Registrar Abastecimento
                     </a>
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteVehicleModal">
+                        <i class="fas fa-trash mr-1"></i> Excluir Veículo
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -203,4 +206,122 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Registrar Abastecimento -->
+<div class="modal fade" id="refuelingModal" tabindex="-1" aria-labelledby="refuelingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="refuelingModalLabel">Registrar Abastecimento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ url_for('register_refueling', id=vehicle.id) }}" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="refuelingDate">Data do Abastecimento</label>
+                                <input type="date" class="form-control" id="refuelingDate" name="date" value="{{ today_date }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="odometer">Hodômetro (Km)</label>
+                                <input type="number" class="form-control" id="odometer" name="odometer" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fuelType">Tipo de Combustível</label>
+                                <select class="form-control" id="fuelType" name="fuel_type" required>
+                                    <option value="gasolina">Gasolina</option>
+                                    <option value="diesel">Diesel</option>
+                                    <option value="etanol">Etanol</option>
+                                    <option value="flex">Flex (Misto)</option>
+                                    <option value="gnv">GNV</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="liters">Quantidade (Litros)</label>
+                                <input type="number" class="form-control" id="liters" name="liters" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="pricePerLiter">Preço por Litro (R$)</label>
+                                <input type="number" class="form-control" id="pricePerLiter" name="price_per_liter" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="totalCost">Valor Total (R$)</label>
+                                <input type="number" class="form-control" id="totalCost" name="total_cost" step="0.01" min="0.01" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gasStation">Posto de Combustível</label>
+                                <input type="text" class="form-control" id="gasStation" name="gas_station">
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="fullTank" name="full_tank" value="1">
+                                <label class="form-check-label" for="fullTank">Tanque Completo</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="receiptImage">Comprovante (Opcional)</label>
+                                <input type="file" class="form-control-file" id="receiptImage" name="receipt_image">
+                            </div>
+                            <div class="form-group">
+                                <label for="notes">Observações</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Registrar Abastecimento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Excluir Veículo -->
+<div class="modal fade" id="deleteVehicleModal" tabindex="-1" aria-labelledby="deleteVehicleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteVehicleModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o veículo <strong>{{ vehicle.identifier }}</strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Esta ação é irreversível. Todos os dados relacionados a este veículo, incluindo histórico de manutenções e abastecimentos, serão removidos.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('delete_vehicle', id=vehicle.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Calcular valor total automaticamente
+        $('#liters, #pricePerLiter').on('input', function() {
+            const liters = parseFloat($('#liters').val()) || 0;
+            const pricePerLiter = parseFloat($('#pricePerLiter').val()) || 0;
+            const total = liters * pricePerLiter;
+            $('#totalCost').val(total.toFixed(2));
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

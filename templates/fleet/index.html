@@ -23,26 +23,6 @@
                         <a href="{{ url_for('new_vehicle') }}" class="btn btn-primary">
                             <i class="fas fa-plus-circle mr-1"></i> Novo Veículo
                         </a>
-                        <a href="{{ url_for('vehicle_maintenance_history') }}" class="btn btn-info">
-                            <i class="fas fa-tools mr-1"></i> Manutenções
-                        </a>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown">
-                                <i class="fas fa-cog mr-1"></i> Opções
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item" href="/frota/relatorios">
-                                    <i class="fas fa-chart-line mr-2"></i> Relatórios
-                                </a>
-                                <a class="dropdown-item" href="/frota/config">
-                                    <i class="fas fa-sliders-h mr-2"></i> Configurações
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="/frota/exportar">
-                                    <i class="fas fa-file-export mr-2"></i> Exportar Dados
-                                </a>
-                            </div>
-                        </div>
                     </div>
                     {% endif %}
                 </div>

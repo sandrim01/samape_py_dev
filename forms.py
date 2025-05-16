@@ -367,6 +367,28 @@ class VehicleMaintenanceForm(FlaskForm):
         self.performed_by_id.choices = [(0, 'Não especificado')] + [
             (u.id, u.name) for u in User.query.filter_by(active=True).order_by(User.name).all()
         ]
+        
+class RefuelingForm(FlaskForm):
+    """Formulário para registro de abastecimentos de veículos"""
+    date = StringField('Data *', validators=[DataRequired()])
+    odometer = IntegerField('Hodômetro (Km) *', validators=[DataRequired(), NumberRange(min=0)])
+    fuel_type = SelectField('Tipo de Combustível *', choices=[
+        ('gasolina', 'Gasolina'),
+        ('diesel', 'Diesel'),
+        ('etanol', 'Etanol'),
+        ('flex', 'Flex (Misto)'),
+        ('gnv', 'GNV')
+    ], validators=[DataRequired()])
+    liters = DecimalField('Quantidade (Litros) *', validators=[DataRequired(), NumberRange(min=0.01)], places=2)
+    price_per_liter = DecimalField('Preço por Litro (R$) *', validators=[DataRequired(), NumberRange(min=0.01)], places=2)
+    total_cost = DecimalField('Valor Total (R$) *', validators=[DataRequired(), NumberRange(min=0.01)], places=2)
+    gas_station = StringField('Posto de Combustível', validators=[Optional(), Length(max=100)])
+    full_tank = BooleanField('Tanque Completo', default=True)
+    receipt_image = FileField('Comprovante', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Apenas imagens ou PDF são permitidos!')
+    ])
+    notes = TextAreaField('Observações', validators=[Optional(), Length(max=500)])
     
 class StockItemForm(FlaskForm):
     """Formulário para cadastro e edição de itens de estoque"""
