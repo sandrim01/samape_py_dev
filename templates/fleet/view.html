@@ -18,7 +18,7 @@
                     <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning mr-2">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </a>
-                    <a href="#" class="btn btn-success mr-2" data-toggle="modal" data-target="#refuelingModal">
+                    <a href="{{ url_for('register_refueling', id=vehicle.id) }}" class="btn btn-success mr-2">
                         <i class="fas fa-gas-pump mr-1"></i> Registrar Abastecimento
                     </a>
                     <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteVehicleModal">
