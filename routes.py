@@ -3453,7 +3453,7 @@ def register_routes(app):
                     image_filename=image_filename,
                     image_data=image_data,
                     image_content_type=image_content_type,
-                    image_file_size=image_file_size,
+                    image_file_size=len(image_data) if image_data else None,
                     notes=form.notes.data
                 )
                 
@@ -3559,6 +3559,7 @@ def register_routes(app):
                     vehicle.image_data = image_data
                     vehicle.image_content_type = image_content_type
                     vehicle.image_filename = image_filename
+                    vehicle.image_file_size = len(image_data) if image_data else None
                     # Também armazenar nome do arquivo no campo legado para compatibilidade
                     vehicle.image = image_filename
                 
