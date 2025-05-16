@@ -3723,89 +3723,55 @@ def register_routes(app):
         
     @app.route('/frota/veiculos/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
-    # Removida restrição de acesso para permitir que todos os usuários possam excluir veículos
     def delete_fleet_vehicle(id):
         """Rota para excluir um veículo da frota"""
-        # Adicionando log para debug
+        # Nova implementação simplificada
         app.logger.info(f"Tentando excluir veículo ID: {id} via método {request.method}")
-        
-        if request.method == 'GET':
-            # Redirecionamento para evitar exclusões acidentais por GET
-            flash('Por favor, utilize o botão de exclusão na página do veículo', 'warning')
-            return redirect(url_for('view_vehicle', id=id))
         
         try:
             vehicle = Vehicle.query.get_or_404(id)
-            
-            # Registrar informações para log
             vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
-            app.logger.info(f"Veículo encontrado: {vehicle_info}")
             
-            # Excluir manutenções relacionadas ao veículo
-            maintenance_records = VehicleMaintenance.query.filter_by(vehicle_id=id).all()
-            app.logger.info(f"Registros de manutenção encontrados: {len(maintenance_records)}")
-            for record in maintenance_records:
-                db.session.delete(record)
-                app.logger.info(f"Excluído registro de manutenção ID: {record.id}")
-                
-            # Excluir abastecimentos relacionados ao veículo
-            refueling_records = Refueling.query.filter_by(vehicle_id=id).all()
-            app.logger.info(f"Registros de abastecimento encontrados: {len(refueling_records)}")
-            for record in refueling_records:
-                db.session.delete(record)
-                app.logger.info(f"Excluído registro de abastecimento ID: {record.id}")
-            
-            # Excluir registros financeiros relacionados ao veículo
-            vehicle_maintenance_entries = FinancialEntry.query.filter_by(
-                entry_type='vehicle_maintenance',
-            ).filter(
-                FinancialEntry.description.like(f"%{vehicle.plate}%")
-            ).all()
-            
-            app.logger.info(f"Entradas financeiras de manutenção encontradas: {len(vehicle_maintenance_entries)}")
-            for entry in vehicle_maintenance_entries:
-                db.session.delete(entry)
-                app.logger.info(f"Excluída entrada financeira: {entry}")
-            
-            # Excluir registros financeiros relacionados aos abastecimentos
-            refueling_entries = FinancialEntry.query.filter_by(
-                entry_type='refueling',
-            ).filter(
-                FinancialEntry.description.like(f"%{vehicle.plate}%")
-            ).all()
-            
-            app.logger.info(f"Entradas financeiras de abastecimento encontradas: {len(refueling_entries)}")
-            for entry in refueling_entries:
-                db.session.delete(entry)
-                app.logger.info(f"Excluída entrada financeira: {entry}")
-            
-            # Excluir o veículo (as relações com cascade devem excluir automaticamente os registros dependentes)
+            # Excluir o veículo diretamente
+            # O SQLAlchemy cuidará das relações por meio do cascade
             db.session.delete(vehicle)
-            app.logger.info(f"Veículo marcado para exclusão")
-            
-            # Confirmar transação
             db.session.commit()
-            app.logger.info(f"Transação finalizada com sucesso - veículo excluído")
             
+            app.logger.info(f"Veículo {vehicle_info} excluído com sucesso")
             flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
-            try:
-                log_action(
-                    'Exclusão de Veículo',
-                    'vehicle',
-                    id,
-                    f"Veículo {vehicle_info} excluído do sistema"
-                )
-            except Exception as log_error:
-                app.logger.error(f"Erro ao registrar log de exclusão: {str(log_error)}")
             
             return redirect(url_for('fleet'))
             
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
-            app.logger.exception(e)  # Log do traceback completo
             flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
             return redirect(url_for('fleet'))
+            
+    # Nova rota para excluir veículo de forma direta
+    @app.route('/excluir-veiculo/<int:id>', methods=['GET', 'POST'])
+    @login_required
+    def excluir_veiculo_direct(id):
+        """Rota alternativa para excluir um veículo da frota"""
+        app.logger.info(f"NOVA ROTA - Tentando excluir veículo ID: {id}")
+        
+        try:
+            vehicle = Vehicle.query.get_or_404(id)
+            vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
+            
+            # Excluir o veículo diretamente
+            db.session.delete(vehicle)
+            db.session.commit()
+            
+            app.logger.info(f"NOVA ROTA - Veículo {vehicle_info} excluído com sucesso")
+            flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"NOVA ROTA - Erro ao excluir veículo {id}: {str(e)}")
+            flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
+            
+        return redirect(url_for('fleet'))
     
     @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
     @login_required

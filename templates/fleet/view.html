@@ -358,9 +358,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <form id="deleteVehicleForm" action="{{ url_for('delete_fleet_vehicle', id=vehicle.id) }}" method="post">
-                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-                </form>
+                <a href="{{ url_for('excluir_veiculo_direct', id=vehicle.id) }}" class="btn btn-danger">
+                    Confirmar Exclusão
+                </a>
             </div>
         </div>
     </div>
