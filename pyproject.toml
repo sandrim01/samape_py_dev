@@ -17,4 +17,5 @@ dependencies = [
     "weasyprint>=65.1",
     "markupsafe>=3.0.2",
     "sqlalchemy>=2.0.40",
+    "pillow>=11.2.1",
 ]
