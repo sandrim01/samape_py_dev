@@ -363,6 +363,79 @@
             }
         </style>
 
+        <!-- Últimas Movimentações da Frota -->
+        {% if latest_records and latest_records|length > 0 %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history text-info mr-2"></i>Últimas Movimentações
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-light rounded-circle" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="bg-light text-dark">Data</th>
+                                <th class="bg-light text-dark">Veículo</th>
+                                <th class="bg-light text-dark">Tipo</th>
+                                <th class="bg-light text-dark">Descrição</th>
+                                <th class="bg-light text-dark text-right">Custo</th>
+                                <th class="bg-light text-dark text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in latest_records %}
+                            <tr>
+                                <td>{{ record.date.strftime('%d/%m/%Y') if record.date }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_vehicle', id=record.vehicle.id) }}" class="text-primary">
+                                        {{ record.vehicle.plate }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if record.record_type == 'maintenance' %}
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-tools mr-1"></i> Manutenção
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-gas-pump mr-1"></i> Abastecimento
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.description }}</td>
+                                <td class="text-right">R$ {{ "%.2f"|format(record.cost|float) }}</td>
+                                <td class="text-center">
+                                    {% if record.record_type == 'maintenance' %}
+                                    <a href="{{ url_for('vehicle_maintenance_history', vehicle_id=record.vehicle.id) }}" 
+                                       class="btn btn-sm btn-outline-info rounded-circle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('vehicle_maintenance_history', vehicle_id=record.vehicle.id) }}" 
+                                       class="btn btn-sm btn-outline-success rounded-circle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Lista de Veículos - Design Moderno -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom py-3">
