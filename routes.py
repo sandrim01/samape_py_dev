@@ -3352,7 +3352,7 @@ def register_routes(app):
                 
                 # Criar objeto de veículo
                 vehicle = Vehicle(
-                    type=VehicleType[form.type.data],
+                    # Não adicionar campo type - não existe no banco de dados
                     plate=form.plate.data,
                     brand=form.brand.data,
                     model=form.model.data,
