@@ -45,6 +45,22 @@ def register_routes(app):
     import os
     import uuid
     from werkzeug.utils import secure_filename
+    from flask import send_from_directory
+    
+    # Rota para servir imagens de veículos diretamente do banco de dados
+    @app.route('/api/vehicle-image/<int:vehicle_id>')
+    def vehicle_image_from_db(vehicle_id):
+        """Serve uma imagem de veículo diretamente do banco de dados"""
+        vehicle = Vehicle.query.get_or_404(vehicle_id)
+        
+        if not vehicle.image_data:
+            # Se não houver imagem, retornar uma imagem padrão
+            return send_from_directory(os.path.join(app.static_folder, 'img'), 'no-image.png')
+        
+        return Response(
+            vehicle.image_data,
+            mimetype=vehicle.image_content_type or 'image/jpeg'
+        )
     
     # Error handlers
     @app.errorhandler(404)
