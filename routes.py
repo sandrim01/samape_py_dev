@@ -3415,28 +3415,20 @@ def register_routes(app):
                 image_filename = None
                 image_data = None
                 image_content_type = None
-                image_file_size = 0
                 
                 if form.image.data:
+                    # Usar a função utilitária para processar a imagem com limite de 500KB
+                    from utils import process_vehicle_image
                     image = form.image.data
+                    image_data, image_content_type = process_vehicle_image(image, max_size_kb=500)
                     
-                    # Verificar tamanho da imagem (limite 500KB = 512000 bytes)
-                    image.seek(0, os.SEEK_END)
-                    file_size = image.tell()
-                    image.seek(0)
-                    
-                    if file_size > 512000:  # 500KB em bytes
-                        flash('A imagem é muito grande. O tamanho máximo permitido é 500KB.', 'danger')
-                        return render_template('fleet/new_vehicle.html', form=form)
+                    if not image_data:
+                        flash('Erro ao processar a imagem. Verifique se é um formato válido (JPG, JPEG, PNG).', 'danger')
+                        return render_template('fleet/new.html', form=form)
                     
                     # Gerar nome de arquivo único
-                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
-                    
-                    # Ler dados da imagem para o banco de dados
-                    image_data = image.read()
-                    image_content_type = image.content_type
-                    image_file_size = file_size
-                    image_filename = filename
+                    extension = '.jpg' if image_content_type == 'image/jpeg' else '.png'
+                    image_filename = secure_filename(f"vehicle_{uuid.uuid4().hex}{extension}")
                 
                 # Criar objeto de veículo
                 vehicle = Vehicle(
@@ -3550,23 +3542,23 @@ def register_routes(app):
                 
                 # Processar imagem, se houver
                 if form.image.data:
-                    # Remover imagem anterior se existir
-                    if vehicle.image:
-                        try:
-                            old_image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
-                            if os.path.exists(old_image_path):
-                                os.remove(old_image_path)
-                        except Exception as e:
-                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
-                    
+                    # Usar a função utilitária para processar a imagem com limite de 500KB
+                    from utils import process_vehicle_image
                     image = form.image.data
+                    image_data, image_content_type = process_vehicle_image(image, max_size_kb=500)
                     
-                    # Gerar nome de arquivo único
-                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
-                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
-                    os.makedirs(upload_folder, exist_ok=True)
-                    image.save(os.path.join(upload_folder, filename))
-                    vehicle.image = filename
+                    if not image_data:
+                        flash('Erro ao processar a imagem. Verifique se é um formato válido (JPG, JPEG, PNG).', 'danger')
+                        return render_template('fleet/edit.html', form=form, vehicle=vehicle)
+                    
+                    # Gerar nome de arquivo único para referência
+                    extension = '.jpg' if image_content_type == 'image/jpeg' else '.png'
+                    image_filename = secure_filename(f"vehicle_{uuid.uuid4().hex}{extension}")
+                    
+                    # Armazenar imagem no objeto veículo
+                    vehicle.image_data = image_data
+                    vehicle.image_content_type = image_content_type
+                    vehicle.image_filename = image_filename
                 
                 # Atualizar campos do veículo
                 # type removido - campo não existe no banco de dados
