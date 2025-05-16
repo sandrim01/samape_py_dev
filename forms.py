@@ -5,6 +5,34 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, V
 from werkzeug.datastructures import FileStorage
 import re
 from datetime import datetime
+
+class FileSizeLimit(object):
+    """
+    Valida se o tamanho de um arquivo não excede o limite especificado em KB.
+    """
+    def __init__(self, max_size_kb):
+        self.max_size_kb = max_size_kb
+        self.message = f'O arquivo não pode exceder {max_size_kb}KB.'
+        
+    def __call__(self, form, field):
+        if field.data is None:
+            return
+            
+        # Para campos de upload múltiplo
+        if isinstance(field.data, list):
+            for file in field.data:
+                if isinstance(file, FileStorage) and file.filename:
+                    file_size_kb = len(file.read()) / 1024
+                    file.seek(0)  # Resetar posição do arquivo após leitura
+                    if file_size_kb > self.max_size_kb:
+                        raise ValidationError(f'O arquivo "{file.filename}" tem {int(file_size_kb)}KB, excedendo o limite de {self.max_size_kb}KB.')
+                        
+        # Para campos de arquivo único
+        elif isinstance(field.data, FileStorage) and field.data.filename:
+            file_size_kb = len(field.data.read()) / 1024
+            field.data.seek(0)  # Resetar posição do arquivo após leitura
+            if file_size_kb > self.max_size_kb:
+                raise ValidationError(f'O arquivo tem {int(file_size_kb)}KB, excedendo o limite de {self.max_size_kb}KB.')
 from models import User, Client, ServiceOrderStatus, UserRole, FinancialEntryType, Supplier, Part, OrderStatus, StockItemType, StockItemStatus, StockItem, ServiceOrder, VehicleType, VehicleStatus, Vehicle, FuelType, MaintenanceType
 
 class DeleteImageForm(FlaskForm):
@@ -141,7 +169,8 @@ class ServiceOrderForm(FlaskForm):
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
     images = FileField('Imagens do Equipamento (máx. 500KB por imagem)', validators=[
         Optional(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], 'Apenas imagens são permitidas!')
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], 'Apenas imagens são permitidas!'),
+        FileSizeLimit(500)  # Limite de 500KB por arquivo
     ], render_kw={"multiple": True})
     image_descriptions = TextAreaField('Descrições das Imagens (separadas por ponto e vírgula)', validators=[Optional()])
 
