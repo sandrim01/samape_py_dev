@@ -18,7 +18,7 @@
                     <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning mr-2">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </a>
-                    <a href="{{ url_for('register_refueling', id=vehicle.id) }}" class="btn btn-success mr-2">
+                    <a href="#" class="btn btn-success mr-2" data-toggle="modal" data-target="#refuelingModal">
                         <i class="fas fa-gas-pump mr-1"></i> Registrar Abastecimento
                     </a>
                     <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteVehicleModal">
@@ -135,9 +135,9 @@
                         <h3 class="card-title">Imagem do Veículo</h3>
                     </div>
                     <div class="card-body text-center">
-                        {% if vehicle.image_data %}
-                        <img src="{{ url_for('vehicle_image_from_db', vehicle_id=vehicle.id) }}" 
-                             class="img-fluid rounded mb-3" alt="{{ vehicle.brand }} {{ vehicle.model }}">
+                        {% if vehicle.image %}
+                        <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" 
+                             class="img-fluid rounded mb-3" alt="{{ vehicle.identifier }}">
                         {% else %}
                         <div class="no-image-placeholder">
                             <i class="fas fa-truck fa-5x text-muted mb-3"></i>

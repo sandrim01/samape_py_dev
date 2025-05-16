@@ -129,9 +129,6 @@ class ServiceOrderImage(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     description = db.Column(db.String(200))
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-    image_data = db.Column(db.LargeBinary)  # Para armazenar a imagem no banco de dados
-    content_type = db.Column(db.String(100))  # Tipo de conteúdo da imagem (e.g., image/jpeg)
-    file_size = db.Column(db.Integer)  # Tamanho do arquivo em bytes
     
     def __repr__(self):
         return f'<ServiceOrderImage {self.filename}>'
@@ -395,13 +392,7 @@ class Vehicle(db.Model):
     next_maintenance_km = db.Column(db.Integer)  # Km para próxima manutenção
     responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     status = db.Column(Enum(VehicleStatus), default=VehicleStatus.ativo, nullable=False)
-    # Campo original para manter compatibilidade com código existente
-    image = db.Column(db.String(255))  # Nome do arquivo da imagem (sistema antigo)
-    # Novos campos para armazenamento de imagem no banco de dados
-    image_filename = db.Column(db.String(255))  # Nome do arquivo da imagem
-    image_data = db.Column(db.LargeBinary)  # Dados da imagem armazenados no banco
-    image_content_type = db.Column(db.String(100))  # Tipo de conteúdo da imagem (e.g., image/jpeg)
-    image_file_size = db.Column(db.Integer)  # Tamanho do arquivo em bytes
+    image = db.Column(db.String(255))  # Caminho da imagem
     notes = db.Column(db.Text)  # Observações
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

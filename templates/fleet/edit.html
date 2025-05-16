@@ -244,14 +244,14 @@
                                 {% endif %}
                                 <small class="form-text text-muted">Imagens suportadas: JPG, JPEG, PNG</small>
                                 
-                                {% if vehicle.image_data %}
+                                {% if vehicle.image %}
                                 <div class="mt-2">
                                     <div class="custom-control custom-checkbox">
                                         {{ form.delete_image(class="custom-control-input") }}
                                         {{ form.delete_image.label(class="custom-control-label") }}
                                     </div>
                                     <div class="mt-2">
-                                        <img src="{{ url_for('vehicle_image_from_db', vehicle_id=vehicle.id) }}" 
+                                        <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" 
                                              class="img-thumbnail" alt="Imagem atual" style="max-height: 100px;">
                                     </div>
                                 </div>

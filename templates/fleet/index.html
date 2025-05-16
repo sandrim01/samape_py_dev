@@ -477,8 +477,8 @@
                                             'success-light' if vehicle.status.name == 'ativo' else 
                                             'warning-light' if vehicle.status.name == 'em_manutencao' else 
                                             'danger-light' }} rounded mr-3">
-                                            {% if vehicle.image_data %}
-                                                <img src="{{ url_for('vehicle_image_from_db', vehicle_id=vehicle.id) }}" 
+                                            {% if vehicle.image %}
+                                                <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.image) }}" 
                                                      alt="{{ vehicle.brand }} {{ vehicle.model }}" 
                                                      class="vehicle-thumbnail">
                                             {% else %}

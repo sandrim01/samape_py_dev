@@ -3,7 +3,7 @@ import re
 import json
 from datetime import datetime
 from functools import wraps
-from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort, Response
+from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from wtforms.validators import Optional
 
-from app import db, app
+from app import db
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
@@ -45,22 +45,6 @@ def register_routes(app):
     import os
     import uuid
     from werkzeug.utils import secure_filename
-    from flask import send_from_directory, Response
-    
-    # Rota para servir imagens de veículos diretamente do banco de dados
-    @app.route('/api/vehicle-image/<int:vehicle_id>')
-    def vehicle_image_from_db(vehicle_id):
-        """Serve uma imagem de veículo diretamente do banco de dados"""
-        vehicle = Vehicle.query.get_or_404(vehicle_id)
-        
-        if not vehicle.image_data:
-            # Se não houver imagem, retornar uma imagem padrão
-            return send_from_directory(os.path.join(app.static_folder, 'img'), 'no-image.png')
-        
-        return Response(
-            vehicle.image_data,
-            mimetype=vehicle.image_content_type or 'image/jpeg'
-        )
     
     # Error handlers
     @app.errorhandler(404)
@@ -3413,22 +3397,15 @@ def register_routes(app):
                 
                 # Processar imagem, se houver
                 image_filename = None
-                image_data = None
-                image_content_type = None
-                
                 if form.image.data:
-                    # Usar a função utilitária para processar a imagem com limite de 500KB
-                    from utils import process_vehicle_image
                     image = form.image.data
-                    image_data, image_content_type = process_vehicle_image(image, max_size_kb=500)
-                    
-                    if not image_data:
-                        flash('Erro ao processar a imagem. Verifique se é um formato válido (JPG, JPEG, PNG).', 'danger')
-                        return render_template('fleet/new.html', form=form)
                     
                     # Gerar nome de arquivo único
-                    extension = '.jpg' if image_content_type == 'image/jpeg' else '.png'
-                    image_filename = secure_filename(f"vehicle_{uuid.uuid4().hex}{extension}")
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    image_filename = filename
                 
                 # Criar objeto de veículo
                 vehicle = Vehicle(
@@ -3450,10 +3427,7 @@ def register_routes(app):
                     next_maintenance_km=form.next_maintenance_km.data,
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     status=VehicleStatus[form.status.data],
-                    image_filename=image_filename,
-                    image_data=image_data,
-                    image_content_type=image_content_type,
-                    image_file_size=len(image_data) if image_data else None,
+                    image=image_filename,
                     notes=form.notes.data
                 )
                 
@@ -3542,26 +3516,23 @@ def register_routes(app):
                 
                 # Processar imagem, se houver
                 if form.image.data:
-                    # Usar a função utilitária para processar a imagem com limite de 500KB
-                    from utils import process_vehicle_image
+                    # Remover imagem anterior se existir
+                    if vehicle.image:
+                        try:
+                            old_image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
+                            if os.path.exists(old_image_path):
+                                os.remove(old_image_path)
+                        except Exception as e:
+                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
+                    
                     image = form.image.data
-                    image_data, image_content_type = process_vehicle_image(image, max_size_kb=500)
                     
-                    if not image_data:
-                        flash('Erro ao processar a imagem. Verifique se é um formato válido (JPG, JPEG, PNG).', 'danger')
-                        return render_template('fleet/edit.html', form=form, vehicle=vehicle)
-                    
-                    # Gerar nome de arquivo único para referência
-                    extension = '.jpg' if image_content_type == 'image/jpeg' else '.png'
-                    image_filename = secure_filename(f"vehicle_{uuid.uuid4().hex}{extension}")
-                    
-                    # Armazenar imagem no objeto veículo
-                    vehicle.image_data = image_data
-                    vehicle.image_content_type = image_content_type
-                    vehicle.image_filename = image_filename
-                    vehicle.image_file_size = len(image_data) if image_data else None
-                    # Também armazenar nome do arquivo no campo legado para compatibilidade
-                    vehicle.image = image_filename
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    vehicle.image = filename
                 
                 # Atualizar campos do veículo
                 # type removido - campo não existe no banco de dados
@@ -3619,47 +3590,11 @@ def register_routes(app):
         
     @app.route('/frota/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
+    @role_required(['admin', 'gerente'])
     def delete_vehicle(id):
-        """Excluir veículo diretamente"""
-        vehicle = Vehicle.query.get_or_404(id)
-        
-        if request.method == 'POST':
-            try:
-                # Verificar se há manutenções registradas
-                maintenance_count = VehicleMaintenance.query.filter_by(vehicle_id=id).count()
-                # Verificar se há abastecimentos registrados
-                refueling_count = Refueling.query.filter_by(vehicle_id=id).count()
-                
-                # Excluir todos os registros relacionados
-                if maintenance_count > 0:
-                    VehicleMaintenance.query.filter_by(vehicle_id=id).delete()
-                
-                if refueling_count > 0:
-                    Refueling.query.filter_by(vehicle_id=id).delete()
-                
-                # Registrar exclusão no log
-                log_action(
-                    'Exclusão de Veículo',
-                    'vehicle',
-                    vehicle.id,
-                    f"Veículo placa {vehicle.plate} excluído"
-                )
-                
-                # Excluir o veículo
-                vehicle_plate = vehicle.plate
-                db.session.delete(vehicle)
-                db.session.commit()
-                
-                flash(f'Veículo {vehicle_plate} excluído com sucesso!', 'success')
-                return redirect(url_for('fleet'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao excluir veículo: {str(e)}', 'danger')
-                app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
-                return redirect(url_for('view_vehicle', id=id))
-        
-        # Exibir página de confirmação
-        return render_template('fleet/delete_confirm.html', vehicle=vehicle)
+        """Excluir veículo - redirecionar para a versão correta"""
+        # Redirecionar para a nova rota de exclusão de veículos
+        return redirect(url_for('delete_fleet_vehicle', id=id))
         
     @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
     @login_required

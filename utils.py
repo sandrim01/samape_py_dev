@@ -1,77 +1,12 @@
 import re
 import os
 import uuid
-import io
 from functools import wraps
 from datetime import datetime, timedelta
 from flask import request, abort, session, redirect, url_for, flash, current_app
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage, FinancialEntry
-from PIL import Image
-
-def process_vehicle_image(image_file, max_size_kb=500):
-    """
-    Processa a imagem de um veículo para armazenamento no banco de dados
-    
-    Args:
-        image_file: Objeto FileStorage (arquivo enviado)
-        max_size_kb: Tamanho máximo permitido em KB
-        
-    Returns:
-        Tupla com (dados_binários, tipo_conteúdo) ou (None, None) em caso de erro
-    """
-    if not image_file or not hasattr(image_file, 'filename') or not image_file.filename:
-        return None, None
-        
-    try:
-        # Ler dados da imagem
-        image_data = image_file.read()
-        content_type = image_file.content_type or 'image/jpeg'
-        
-        # Verificar tamanho
-        file_size = len(image_data)
-        max_size_bytes = max_size_kb * 1024
-        
-        if file_size > max_size_bytes:
-            # Se for maior que o limite, redimensionar
-            img = Image.open(io.BytesIO(image_data))
-            
-            # Calcular fator de redução necessário (baseado na área da imagem)
-            reduction_factor = (max_size_bytes / file_size) ** 0.5
-            new_width = int(img.width * reduction_factor)
-            new_height = int(img.height * reduction_factor)
-            
-            # Redimensionar
-            img = img.resize((new_width, new_height), Image.LANCZOS)
-            
-            # Salvar em um buffer com qualidade reduzida
-            output = io.BytesIO()
-            format_name = 'JPEG' if content_type == 'image/jpeg' else 'PNG'
-            quality = 85  # Qualidade ligeiramente reduzida para JPEG
-            
-            if format_name == 'JPEG':
-                img.save(output, format=format_name, quality=quality)
-            else:
-                img.save(output, format=format_name, optimize=True)
-                
-            # Obter os dados processados
-            image_data = output.getvalue()
-            
-            # Verificar novamente o tamanho
-            if len(image_data) > max_size_bytes:
-                # Se ainda for grande, tentar com uma qualidade mais baixa
-                output = io.BytesIO()
-                if format_name == 'JPEG':
-                    img.save(output, format=format_name, quality=70)
-                else:
-                    img.save(output, format=format_name, optimize=True, compress_level=9)
-                image_data = output.getvalue()
-        
-        return image_data, content_type
-    except Exception as e:
-        print(f"Erro ao processar imagem: {str(e)}")
-        return None, None
 
 def identify_and_format_document(document):
     """Identifica se é CPF ou CNPJ e formata adequadamente"""
