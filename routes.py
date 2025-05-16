@@ -3556,13 +3556,12 @@ def register_routes(app):
                 maintenance = VehicleMaintenance(
                     vehicle_id=form.vehicle_id.data,
                     date=maintenance_date,
-                    mileage=form.mileage.data,
+                    odometer=form.mileage.data,  # Usando a coluna real: odometer em vez de property: mileage
                     description=form.description.data,
                     cost=form.cost.data,
-                    service_provider=form.service_provider.data,
+                    workshop=form.service_provider.data,  # Usando a coluna real: workshop em vez de property: service_provider
                     invoice_number=form.invoice_number.data,
-                    performed_by_id=form.performed_by_id.data if form.performed_by_id.data != 0 else None,
-                    created_by=current_user.id
+                    created_by=current_user.id  # Definindo o criador diretamente
                 )
                 
                 db.session.add(maintenance)
