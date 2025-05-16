@@ -3670,7 +3670,7 @@ def register_routes(app):
         
     @app.route('/frota/veiculos/<int:id>/excluir', methods=['POST'])
     @login_required
-    @role_required(['admin', 'gerente'])
+    # Removida restrição de acesso para permitir que todos os usuários possam excluir veículos
     def delete_fleet_vehicle(id):
         """Rota para excluir um veículo da frota"""
         vehicle = Vehicle.query.get_or_404(id)
