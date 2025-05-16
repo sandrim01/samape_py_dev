@@ -3722,7 +3722,7 @@ def register_routes(app):
                 
                 # Criar entrada financeira para o abastecimento
                 financial_entry = FinancialEntry(
-                    description=f"Abastecimento do veículo {vehicle.identifier} - {refueling.liters:.2f}L de {refueling.fuel_type.value}",
+                    description=f"Abastecimento do veículo {vehicle.plate} - {refueling.liters:.2f}L de {refueling.fuel_type.value}",
                     amount=refueling.total_cost,
                     type=FinancialEntryType.saida,
                     date=refueling_date,
@@ -3739,7 +3739,7 @@ def register_routes(app):
                     'Registro de Abastecimento',
                     'vehicle_refueling',
                     refueling.id,
-                    f"Abastecimento registrado para o veículo {vehicle.identifier}"
+                    f"Abastecimento registrado para o veículo {vehicle.plate}"
                 )
                 
                 return redirect(url_for('view_vehicle', id=vehicle.id))
