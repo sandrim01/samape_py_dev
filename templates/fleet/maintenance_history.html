@@ -114,60 +114,120 @@
             </div>
         </div>
         
-        <!-- Histórico de Manutenção -->
+        <!-- Abas para alternar entre Manutenção e Abastecimento -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Registros de Manutenção</h3>
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if not request.args.get('view') or request.args.get('view') == 'maintenance' }}" href="{{ url_for('vehicle_maintenance_history', view='maintenance') }}">
+                            <i class="fas fa-tools mr-1"></i> Manutenções
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.args.get('view') == 'refueling' }}" href="{{ url_for('vehicle_maintenance_history', view='refueling') }}">
+                            <i class="fas fa-gas-pump mr-1"></i> Abastecimentos
+                        </a>
+                    </li>
+                </ul>
+                
                 {% if current_user.role.value in ['admin', 'gerente'] %}
-                <div class="card-tools">
+                <div class="card-tools mt-2">
                     <a href="{{ url_for('fleet') }}" class="btn btn-sm btn-primary">
                         <i class="fas fa-truck mr-1"></i> Selecione um Veículo
                     </a>
                 </div>
                 {% endif %}
             </div>
+            
             <div class="card-body p-0">
-                {% if maintenance_history.items %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th style="width: 10%">Data</th>
-                                <th style="width: 30%">Descrição</th>
-                                <th style="width: 10%">Hodômetro</th>
-                                <th style="width: 10%">Custo</th>
-                                <th style="width: 15%">Prestador</th>
-                                <th style="width: 15%">Realizado por</th>
-                                <th style="width: 10%">NF/Recibo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for record in maintenance_history.items %}
-                            <tr>
-                                <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
-                                <td>{{ record.description }}</td>
-                                <td>{{ record.mileage if record.mileage is not none else '-' }}</td>
-                                <td>{{ "R$ {:.2f}".format(record.cost) if record.cost else '-' }}</td>
-                                <td>{{ record.service_provider or 'Serviço Interno' }}</td>
-                                <td>{{ record.performed_by.name if record.performed_by else 'Serviço Externo' }}</td>
-                                <td>{{ record.invoice_number or '-' }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                {% if not request.args.get('view') or request.args.get('view') == 'maintenance' %}
+                    <!-- Tabela de Manutenções -->
+                    {% if maintenance_history.items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%">Data</th>
+                                    <th style="width: 10%">Veículo</th>
+                                    <th style="width: 30%">Descrição</th>
+                                    <th style="width: 10%">Hodômetro</th>
+                                    <th style="width: 10%">Custo</th>
+                                    <th style="width: 15%">Oficina</th>
+                                    <th style="width: 15%">Realizado por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in maintenance_history.items %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ record.vehicle.plate }}</td>
+                                    <td>{{ record.description }}</td>
+                                    <td>{{ record.odometer if record.odometer is not none else '-' }}</td>
+                                    <td>{{ "R$ {:.2f}".format(record.cost) if record.cost else '-' }}</td>
+                                    <td>{{ record.workshop or 'Serviço Interno' }}</td>
+                                    <td>{{ record.creator.name if record.creator else 'Serviço Externo' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-tools fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum registro de manutenção encontrado.</p>
+                    </div>
+                    {% endif %}
                 {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-tools fa-4x text-muted mb-3"></i>
-                    <p class="text-muted">Nenhum registro de manutenção encontrado.</p>
-                </div>
+                    <!-- Tabela de Abastecimentos -->
+                    {% if refuelings and refuelings.items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%">Data</th>
+                                    <th style="width: 15%">Veículo</th>
+                                    <th style="width: 10%">Hodômetro</th>
+                                    <th style="width: 10%">Combustível</th>
+                                    <th style="width: 10%">Litros</th>
+                                    <th style="width: 10%">Preço/L</th>
+                                    <th style="width: 10%">Total</th>
+                                    <th style="width: 15%">Posto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in refuelings.items %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ record.vehicle.plate }}</td>
+                                    <td>{{ record.odometer if record.odometer is not none else '-' }}</td>
+                                    <td>{{ record.fuel_type.value }}</td>
+                                    <td>{{ "{:.2f}".format(record.liters) }} L</td>
+                                    <td>R$ {{ "{:.2f}".format(record.price_per_liter) }}</td>
+                                    <td>R$ {{ "{:.2f}".format(record.total_cost) }}</td>
+                                    <td>{{ record.gas_station or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-gas-pump fa-4x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum registro de abastecimento encontrado.</p>
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
+            
             <div class="card-footer">
                 <div class="row">
                     <div class="col-sm-12 col-md-5">
                         <div class="dataTables_info" role="status">
-                            Total de {{ maintenance_records|length }} registros
+                            {% if not request.args.get('view') or request.args.get('view') == 'maintenance' %}
+                                Total de {{ maintenance_history.total if maintenance_history else 0 }} registros de manutenção
+                            {% else %}
+                                Total de {{ refuelings.total if refuelings else 0 }} registros de abastecimento
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-sm-12 col-md-7">

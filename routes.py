@@ -3735,7 +3735,7 @@ def register_routes(app):
                     amount=total_cost,
                     description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate})",
                     type=FinancialEntryType.saida,
-                    payment_method="Não especificado",
+                    # Removido payment_method que não existe no modelo
                     category="Combustível",
                     notes=f"Abastecimento de {liters:.2f} litros em {gas_station or 'posto não informado'}",
                     created_by=current_user.id,
@@ -3769,49 +3769,95 @@ def register_routes(app):
     @app.route('/frota/manutencoes')
     @login_required
     def vehicle_maintenance_history():
-        """Histórico de manutenções de todos os veículos"""
+        """Histórico de manutenções e abastecimentos de todos os veículos"""
         page = request.args.get('page', 1, type=int)
         per_page = int(get_system_setting('items_per_page', '20'))
+        view_type = request.args.get('view', 'maintenance')  # 'maintenance' ou 'refueling'
         
-        # Query base
-        query = VehicleMaintenance.query
+        # Obter lista de veículos para o filtro
+        vehicles = Vehicle.query.order_by(Vehicle.plate).all()
         
         # Aplicar filtros
         vehicle_id = request.args.get('vehicle_id', type=int)
         data_inicio = request.args.get('data_inicio')
         data_fim = request.args.get('data_fim')
         
-        if vehicle_id:
-            query = query.filter(VehicleMaintenance.vehicle_id == vehicle_id)
-            
+        # Converter datas se fornecidas
+        inicio_date = None
+        fim_date = None
+        
         if data_inicio:
             try:
-                data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d').date()
-                query = query.filter(VehicleMaintenance.date >= data_inicio)
+                inicio_date = datetime.strptime(data_inicio, '%Y-%m-%d').date()
             except ValueError:
                 flash('Data inicial inválida.', 'warning')
                 
         if data_fim:
             try:
-                data_fim = datetime.strptime(data_fim, '%Y-%m-%d').date()
-                query = query.filter(VehicleMaintenance.date <= data_fim)
+                fim_date = datetime.strptime(data_fim, '%Y-%m-%d').date()
             except ValueError:
                 flash('Data final inválida.', 'warning')
         
-        # Ordenação
-        query = query.order_by(VehicleMaintenance.date.desc())
+        # Variáveis para os resultados
+        maintenance_history = None
+        refuelings = None
         
-        # Paginação
-        maintenance_history = query.paginate(page=page, per_page=per_page)
+        # Dependendo do tipo de visualização, obtemos manutenções ou abastecimentos
+        if view_type != 'refueling':  # Padrão: manutenções
+            # Query para manutenções
+            query = VehicleMaintenance.query
+            
+            if vehicle_id:
+                query = query.filter(VehicleMaintenance.vehicle_id == vehicle_id)
+                
+            if inicio_date:
+                query = query.filter(VehicleMaintenance.date >= inicio_date)
+                
+            if fim_date:
+                query = query.filter(VehicleMaintenance.date <= fim_date)
+            
+            # Ordenação por data (coluna real, não propriedade)
+            query = query.order_by(VehicleMaintenance.date.desc())
+            
+            # Paginação
+            maintenance_history = query.paginate(page=page, per_page=per_page)
+            
+        else:  # 'refueling'
+            # Query para abastecimentos
+            query = Refueling.query
+            
+            if vehicle_id:
+                query = query.filter(Refueling.vehicle_id == vehicle_id)
+                
+            if inicio_date:
+                query = query.filter(Refueling.date >= inicio_date)
+                
+            if fim_date:
+                query = query.filter(Refueling.date <= fim_date)
+            
+            # Ordenação
+            query = query.order_by(Refueling.date.desc())
+            
+            # Paginação
+            refuelings = query.paginate(page=page, per_page=per_page)
         
-        # Obter lista de veículos para o filtro
-        vehicles = Vehicle.query.order_by(Vehicle.plate).all()
+        # Formatação das datas para o template
+        data_inicio_str = data_inicio
+        data_fim_str = data_fim
+        
+        if isinstance(inicio_date, date):
+            data_inicio_str = inicio_date.strftime('%Y-%m-%d')
+            
+        if isinstance(fim_date, date):
+            data_fim_str = fim_date.strftime('%Y-%m-%d')
         
         return render_template(
             'fleet/maintenance_history.html',
             maintenance_history=maintenance_history,
+            refuelings=refuelings,
             vehicles=vehicles,
             vehicle_id=vehicle_id,
-            data_inicio=data_inicio.strftime('%Y-%m-%d') if isinstance(data_inicio, date) else data_inicio,
-            data_fim=data_fim.strftime('%Y-%m-%d') if isinstance(data_fim, date) else data_fim
+            data_inicio=data_inicio_str,
+            data_fim=data_fim_str,
+            view_type=view_type
         )
