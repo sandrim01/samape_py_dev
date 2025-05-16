@@ -3397,14 +3397,29 @@ def register_routes(app):
                 
                 # Processar imagem, se houver
                 image_filename = None
+                image_data = None
+                image_content_type = None
+                image_file_size = 0
+                
                 if form.image.data:
                     image = form.image.data
                     
+                    # Verificar tamanho da imagem (limite 500KB = 512000 bytes)
+                    image.seek(0, os.SEEK_END)
+                    file_size = image.tell()
+                    image.seek(0)
+                    
+                    if file_size > 512000:  # 500KB em bytes
+                        flash('A imagem é muito grande. O tamanho máximo permitido é 500KB.', 'danger')
+                        return render_template('fleet/new_vehicle.html', form=form)
+                    
                     # Gerar nome de arquivo único
                     filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
-                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
-                    os.makedirs(upload_folder, exist_ok=True)
-                    image.save(os.path.join(upload_folder, filename))
+                    
+                    # Ler dados da imagem para o banco de dados
+                    image_data = image.read()
+                    image_content_type = image.content_type
+                    image_file_size = file_size
                     image_filename = filename
                 
                 # Criar objeto de veículo
@@ -3427,7 +3442,10 @@ def register_routes(app):
                     next_maintenance_km=form.next_maintenance_km.data,
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     status=VehicleStatus[form.status.data],
-                    image=image_filename,
+                    image_filename=image_filename,
+                    image_data=image_data,
+                    image_content_type=image_content_type,
+                    image_file_size=image_file_size,
                     notes=form.notes.data
                 )
                 
