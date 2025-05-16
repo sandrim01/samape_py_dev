@@ -101,11 +101,44 @@
             </div>
             
             <div class="mb-3">
-                <label for="images" class="form-label">Imagens do Equipamento</label>
-                {{ form.images(class="form-control", id="images") }}
+                <label for="images" class="form-label">Imagens do Equipamento (máx. 500KB por imagem)</label>
+                {{ form.images(class="form-control", id="images", onchange="checkFileSize()") }}
                 <small class="form-text text-muted">
-                    Você pode selecionar múltiplas imagens. Formatos aceitos: jpg, jpeg, png, gif
+                    Você pode selecionar múltiplas imagens. Formatos aceitos: jpg, jpeg, png, gif, webp, bmp.
+                    Cada imagem deve ter no máximo 500KB.
                 </small>
+                <div id="fileSize" class="mt-2"></div>
+                
+                <script>
+                function checkFileSize() {
+                    const fileInput = document.getElementById('images');
+                    const fileSize = document.getElementById('fileSize');
+                    fileSize.innerHTML = '';
+                    
+                    if (fileInput.files.length > 0) {
+                        const maxSize = 500 * 1024; // 500KB em bytes
+                        
+                        for (let i = 0; i < fileInput.files.length; i++) {
+                            const file = fileInput.files[i];
+                            const size = file.size;
+                            const sizeKB = Math.round(size / 1024);
+                            
+                            const div = document.createElement('div');
+                            div.className = 'mb-1';
+                            
+                            if (size > maxSize) {
+                                div.className += ' text-danger';
+                                div.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${file.name} (${sizeKB}KB) - Excede o limite de 500KB`;
+                            } else {
+                                div.className += ' text-success';
+                                div.innerHTML = `<i class="fas fa-check-circle"></i> ${file.name} (${sizeKB}KB)`;
+                            }
+                            
+                            fileSize.appendChild(div);
+                        }
+                    }
+                }
+                </script>
                 {% if form.images.errors %}
                     <div class="invalid-feedback d-block">
                         {% for error in form.images.errors %}
