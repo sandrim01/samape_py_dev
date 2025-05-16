@@ -1,0 +1,112 @@
+ProgrammingError
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column vehicle.image_filename does not exist
+LINE 2: ...responsible_id, vehicle.status AS vehicle_status, vehicle.im...
+                                                             ^
+
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT vehicle.id AS vehicle_id, vehicle.brand AS vehicle_brand, vehicle.model AS vehicle_model, vehicle.year AS vehicle_year, vehicle.plate AS vehicle_plate, vehicle.color AS vehicle_color, vehicle.chassis AS vehicle_chassis, vehicle.renavam AS vehicle_renavam, vehicle.fuel_type AS vehicle_fuel_type, vehicle.acquisition_date AS vehicle_acquisition_date, vehicle.insurance_policy AS vehicle_insurance_policy, vehicle.insurance_expiry AS vehicle_insurance_expiry, vehicle.current_km AS vehicle_current_km, vehicle.next_maintenance_date AS vehicle_next_maintenance_date, vehicle.next_maintenance_km AS vehicle_next_maintenance_km, vehicle.responsible_id AS vehicle_responsible_id, vehicle.status AS vehicle_status, vehicle.image_filename AS vehicle_image_filename, vehicle.image_data AS vehicle_image_data, vehicle.image_content_type AS vehicle_image_content_type, vehicle.image_file_size AS vehicle_image_file_size, vehicle.notes AS vehicle_notes, vehicle.created_at AS vehicle_created_at, vehicle.updated_at AS vehicle_updated_at 
+FROM vehicle 
+WHERE vehicle.status = %(status_1)s) AS anon_1]
+[parameters: {'status_1': 'ativo'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+Traceback (most recent call last)
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute(
+                    ^
+                        cursor, str_statement, effective_parameters, context
+                    )
+ 
+            if self._has_events or self.engine._has_events:
+                self.dispatch.after_cursor_execute(
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The above exception was the direct cause of the following exception:
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1536, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/werkzeug/middleware/proxy_fix.py", line 183, in __call__
+return self.app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1514, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/app/routes.py", line 224, in dashboard
+'fleet_active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 3147, in count
+self._legacy_from_self(col).enable_eagerloads(False).scalar()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2836, in scalar
+ret = self.one()
+      ^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2809, in one
+return self._iter().one()  # type: ignore
+       ^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                              
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+return self._execute_internal(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+result: Result[Any] = compile_state_cls.orm_execute_statement(
+                      
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+result = conn.execute(
+         
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+return meth(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+return connection._execute_clauseelement(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+ret = self._execute_context(
+      
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+return self._exec_single_context(
+       
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+self._handle_dbapi_exception(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/opt/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column vehicle.image_filename does not exist
+LINE 2: ...responsible_id, vehicle.status AS vehicle_status, vehicle.im...
+^
+
+[SQL: SELECT count(*) AS count_1
+FROM (SELECT vehicle.id AS vehicle_id, vehicle.brand AS vehicle_brand, vehicle.model AS vehicle_model, vehicle.year AS vehicle_year, vehicle.plate AS vehicle_plate, vehicle.color AS vehicle_color, vehicle.chassis AS vehicle_chassis, vehicle.renavam AS vehicle_renavam, vehicle.fuel_type AS vehicle_fuel_type, vehicle.acquisition_date AS vehicle_acquisition_date, vehicle.insurance_policy AS vehicle_insurance_policy, vehicle.insurance_expiry AS vehicle_insurance_expiry, vehicle.current_km AS vehicle_current_km, vehicle.next_maintenance_date AS vehicle_next_maintenance_date, vehicle.next_maintenance_km AS vehicle_next_maintenance_km, vehicle.responsible_id AS vehicle_responsible_id, vehicle.status AS vehicle_status, vehicle.image_filename AS vehicle_image_filename, vehicle.image_data AS vehicle_image_data, vehicle.image_content_type AS vehicle_image_content_type, vehicle.image_file_size AS vehicle_image_file_size, vehicle.notes AS vehicle_notes, vehicle.created_at AS vehicle_created_at, vehicle.updated_at AS vehicle_updated_at
+FROM vehicle
+WHERE vehicle.status = %(status_1)s) AS anon_1]
+[parameters: {'status_1': 'ativo'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
