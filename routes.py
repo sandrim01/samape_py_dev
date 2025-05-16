@@ -3417,6 +3417,9 @@ def register_routes(app):
         # Obter histórico de manutenção
         maintenance_history = VehicleMaintenance.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleMaintenance.date.desc()).all()
         
+        # Obter histórico de abastecimento
+        refueling_history = Refueling.query.filter_by(vehicle_id=vehicle.id).order_by(Refueling.date.desc()).all()
+        
         # Data atual para o modal de abastecimento
         now_date = datetime.now().strftime('%Y-%m-%d')
         
@@ -3424,6 +3427,7 @@ def register_routes(app):
             'fleet/view.html',
             vehicle=vehicle,
             maintenance_history=maintenance_history,
+            refueling_history=refueling_history,
             now_date=now_date
         )
         

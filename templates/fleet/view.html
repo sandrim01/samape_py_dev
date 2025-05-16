@@ -150,54 +150,112 @@
             </div>
         </div>
         
-        <!-- Histórico de Manutenção -->
+        <!-- Histórico de Manutenção e Abastecimento -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Histórico de Manutenção</h3>
+                        <ul class="nav nav-tabs card-header-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="maintenance-tab" data-toggle="tab" href="#maintenance" role="tab" aria-controls="maintenance" aria-selected="true">
+                                    <i class="fas fa-tools mr-1"></i> Manutenções
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="refueling-tab" data-toggle="tab" href="#refueling" role="tab" aria-controls="refueling" aria-selected="false">
+                                    <i class="fas fa-gas-pump mr-1"></i> Abastecimentos
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                     <div class="card-body p-0">
-                        {% if maintenance_history %}
-                        <div class="table-responsive">
-                            <table class="table table-striped mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Hodômetro</th>
-                                        <th>Custo</th>
-                                        <th>Prestador</th>
-                                        <th>Realizado por</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for maint in maintenance_history %}
-                                    <tr>
-                                        <td>{{ maint.date.strftime('%d/%m/%Y') }}</td>
-                                        <td>{{ maint.description }}</td>
-                                        <td>{{ maint.odometer if maint.odometer is not none else '-' }}</td>
-                                        <td>{{ "R$ {:.2f}".format(maint.cost) if maint.cost else '-' }}</td>
-                                        <td>{{ maint.workshop or '-' }}</td>
-                                        <td>{{ maint.creator.name if maint.creator else 'Serviço Externo' }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="tab-content">
+                            <!-- Aba de Histórico de Manutenção -->
+                            <div class="tab-pane fade show active" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+                                {% if maintenance_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Descrição</th>
+                                                <th>Hodômetro</th>
+                                                <th>Custo</th>
+                                                <th>Prestador</th>
+                                                <th>Realizado por</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for maint in maintenance_history %}
+                                            <tr>
+                                                <td>{{ maint.date.strftime('%d/%m/%Y') }}</td>
+                                                <td>{{ maint.description }}</td>
+                                                <td>{{ maint.odometer if maint.odometer is not none else '-' }}</td>
+                                                <td>{{ "R$ {:.2f}".format(maint.cost) if maint.cost else '-' }}</td>
+                                                <td>{{ maint.workshop or '-' }}</td>
+                                                <td>{{ maint.creator.name if maint.creator else 'Serviço Externo' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-tools fa-2x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhum registro de manutenção encontrado.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Aba de Histórico de Abastecimento -->
+                            <div class="tab-pane fade" id="refueling" role="tabpanel" aria-labelledby="refueling-tab">
+                                {% if refueling_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Hodômetro</th>
+                                                <th>Combustível</th>
+                                                <th>Litros</th>
+                                                <th>Preço/L</th>
+                                                <th>Total</th>
+                                                <th>Posto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for refuel in refueling_history %}
+                                            <tr>
+                                                <td>{{ refuel.date.strftime('%d/%m/%Y') }}</td>
+                                                <td>{{ refuel.odometer if refuel.odometer is not none else '-' }}</td>
+                                                <td>{{ refuel.fuel_type.value }}</td>
+                                                <td>{{ "{:.2f}".format(refuel.liters) }} L</td>
+                                                <td>R$ {{ "{:.2f}".format(refuel.price_per_liter) }}</td>
+                                                <td>R$ {{ "{:.2f}".format(refuel.total_cost) }}</td>
+                                                <td>{{ refuel.gas_station or '-' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-gas-pump fa-2x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhum registro de abastecimento encontrado.</p>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-tools fa-2x text-muted mb-3"></i>
-                            <p class="text-muted">Nenhum registro de manutenção encontrado.</p>
-                        </div>
-                        {% endif %}
                     </div>
                     <div class="card-footer">
                         <div class="text-right">
                             {% if current_user.role.value in ['admin', 'gerente'] %}
-                            <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-primary">
-                                <i class="fas fa-plus mr-1"></i> Nova Manutenção
+                            <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" class="btn btn-primary mr-2">
+                                <i class="fas fa-tools mr-1"></i> Nova Manutenção
                             </a>
+                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#refuelingModal">
+                                <i class="fas fa-gas-pump mr-1"></i> Novo Abastecimento
+                            </button>
                             {% endif %}
                         </div>
                     </div>
