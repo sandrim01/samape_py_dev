@@ -3555,7 +3555,7 @@ def register_routes(app):
         
     @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
     @login_required
-    @manager_required
+    # Removida restrição @manager_required para permitir acesso a todos os usuários logados
     def new_vehicle_maintenance(id):
         """Registrar nova manutenção para um veículo"""
         vehicle = Vehicle.query.get_or_404(id)
