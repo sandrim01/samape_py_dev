@@ -516,6 +516,16 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
                 </div>
+                <form id="hiddenOutflowForm" method="POST" action="/estoque/movimentacao">
+                    <!-- Campos ocultos que serão preenchidos via JavaScript -->
+                    {{ movement_form.hidden_tag() }}
+                    {{ movement_form.stock_item_id }}
+                    <input type="hidden" name="direction" id="hidden_direction" value="saida">
+                    <input type="hidden" name="quantity" id="hidden_quantity" value="0">
+                    <input type="hidden" name="description" id="hidden_description" value="">
+                    <input type="hidden" name="reference" id="hidden_reference" value="">
+                    <input type="hidden" name="service_order_id" id="hidden_service_order_id" value="0">
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -528,92 +538,125 @@
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
-        // Variáveis para armazenar dados do formulário de saída
-        let stockMovementForm = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Referencias para formulários e campos importantes
+        const quantityInputs = document.querySelectorAll('#quantity, #mobile_quantity');
+        const directionInputs = document.querySelectorAll('#direction, input[name="direction"]');
+        const stockForms = document.querySelectorAll('form[action="/estoque/movimentacao"]');
+        const confirmBtn = document.getElementById('confirmOutflowBtn');
+        const quantityDisplay = document.getElementById('outflowQuantity');
+        const hiddenForm = document.getElementById('hiddenOutflowForm');
+        const hiddenQuantity = document.getElementById('hidden_quantity');
+        const hiddenDescription = document.getElementById('hidden_description');
+        const hiddenReference = document.getElementById('hidden_reference');
+        const hiddenServiceOrderId = document.getElementById('hidden_service_order_id');
+        const currentStock = {{ item.quantity }};
         
-        // Script para validação de quantidade
-        $('#quantity, #mobile_quantity').on('input', function() {
-            const direction = $(this).closest('form').find('#direction').val() || 
-                             $(this).closest('form').find('input[name="direction"]:checked').val();
-            const quantity = parseInt($(this).val());
-            const currentStock = {{ item.quantity }};
-            
-            if (direction === 'saida' && quantity > currentStock) {
-                $(this).addClass('is-invalid');
-                if (!$(this).next('.invalid-feedback').length) {
-                    $(this).after('<div class="invalid-feedback">Quantidade maior que o disponível em estoque.</div>');
+        // Criação do modal com Bootstrap JS
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmOutflowModal'));
+        
+        // Validação de quantidade ao digitar
+        quantityInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const form = this.closest('form');
+                const direction = form.querySelector('#direction')?.value || 
+                                form.querySelector('input[name="direction"]:checked')?.value;
+                const quantity = parseInt(this.value) || 0;
+                
+                if (direction === 'saida' && quantity > currentStock) {
+                    this.classList.add('is-invalid');
+                    
+                    // Adiciona mensagem de erro se não existir
+                    if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        feedback.textContent = 'Quantidade maior que o disponível em estoque.';
+                        this.insertAdjacentElement('afterend', feedback);
+                    }
+                } else {
+                    this.classList.remove('is-invalid');
+                    
+                    // Remove mensagem de erro se existir
+                    if (this.nextElementSibling && this.nextElementSibling.classList.contains('invalid-feedback')) {
+                        this.nextElementSibling.remove();
+                    }
                 }
-            } else {
-                $(this).removeClass('is-invalid');
-                $(this).next('.invalid-feedback').remove();
-            }
+            });
         });
         
-        $('#direction, input[name="direction"]').change(function() {
-            // Revalida a quantidade quando muda a direção
-            $('#quantity').trigger('input');
-            $('#mobile_quantity').trigger('input');
+        // Revalidar quando mudar a direção
+        directionInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                quantityInputs.forEach(qInput => qInput.dispatchEvent(new Event('input')));
+            });
         });
         
-        // Interceptar o envio dos formulários de movimentação de estoque
-        $('form[action="/estoque/movimentacao"]').on('submit', function(e) {
-            const direction = $(this).find('#direction').val() || 
-                            $(this).find('input[name="direction"]:checked').val();
-            const quantity = parseInt($(this).find('#quantity').val() || $(this).find('#mobile_quantity').val());
+        // Interceptar envio dos formulários
+        stockForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const direction = this.querySelector('#direction')?.value || 
+                                this.querySelector('input[name="direction"]:checked')?.value;
+                const quantity = parseInt(this.querySelector('#quantity')?.value || 
+                                        this.querySelector('#mobile_quantity')?.value) || 0;
+                
+                // Se for saída, mostrar modal de confirmação
+                if (direction === 'saida') {
+                    e.preventDefault();
+                    
+                    // Atualizar texto do modal
+                    quantityDisplay.textContent = quantity;
+                    
+                    // Copiar dados do formulário para o formulário oculto
+                    hiddenQuantity.value = quantity;
+                    hiddenDescription.value = this.querySelector('[name="description"]').value;
+                    hiddenReference.value = this.querySelector('[name="reference"]').value;
+                    
+                    const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
+                    hiddenServiceOrderId.value = serviceOrderId;
+                    
+                    // Exibir modal
+                    confirmModal.show();
+                }
+                // Para entrada, o form é enviado normalmente
+            });
+        });
+        
+        // Botão de confirmação no modal
+        confirmBtn.addEventListener('click', function() {
+            // Envia o formulário oculto
+            hiddenForm.submit();
             
-            // Se for uma saída de estoque, mostrar o modal de confirmação
-            if (direction === 'saida') {
-                e.preventDefault(); // Impedir envio do formulário
-                
-                // Atualizar texto do modal
-                $('#outflowQuantity').text(quantity);
-                
-                // Armazenar o formulário para envio posterior
-                stockMovementForm = this;
-                
-                // Mostrar modal de confirmação
-                $('#confirmOutflowModal').modal('show');
-                return false;
-            }
-            // Para entrada, o formulário é enviado normalmente
-        });
-        
-        // Quando o botão de confirmação no modal for clicado
-        $('#confirmOutflowBtn').on('click', function() {
-            if (stockMovementForm) {
-                // Fechar o modal
-                $('#confirmOutflowModal').modal('hide');
-                
-                // Enviar o formulário
-                stockMovementForm.submit();
-            }
+            // Fecha o modal
+            confirmModal.hide();
         });
         
         // Filtro de histórico de movimentos no mobile
-        $('.mobile-tabs .mobile-tab').click(function() {
-            // Atualiza estilo das tabs
-            $('.mobile-tabs .mobile-tab').removeClass('active');
-            $(this).addClass('active');
-            
-            const filter = $(this).data('filter');
-            
-            if (filter === 'all') {
-                // Mostra todos os cards
-                $('.interactive-card').show();
-            } else {
-                // Filtra cards baseado no tipo
-                $('.interactive-card').each(function() {
-                    if ($(this).data('type') === filter) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            }
+        const mobileTabs = document.querySelectorAll('.mobile-tabs .mobile-tab');
+        mobileTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Atualiza estilo das tabs
+                mobileTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                const cards = document.querySelectorAll('.interactive-card');
+                
+                if (filter === 'all') {
+                    // Mostra todos os cards
+                    cards.forEach(card => card.style.display = 'block');
+                } else {
+                    // Filtra cards baseado no tipo
+                    cards.forEach(card => {
+                        if (card.dataset.type === filter) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                }
             
             // Mostra mensagem se nenhum movimento encontrado
-            const visibleCards = $('.interactive-card:visible').length;
+            const visibleCards = document.querySelectorAll('.interactive-card[style*="block"]').length;
             if (visibleCards === 0) {
                 if ($('.no-results-message').length === 0) {
                     const noResults = $('<div class="text-center py-4 no-results-message">' +
