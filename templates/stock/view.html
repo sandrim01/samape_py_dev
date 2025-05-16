@@ -553,6 +553,41 @@
         $('#direction, input[name="direction"]').change(function() {
             // Revalida a quantidade quando muda a direção
             $('#quantity').trigger('input');
+            $('#mobile_quantity').trigger('input');
+        });
+        
+        // Interceptar o envio dos formulários de movimentação de estoque
+        $('form[action="{{ url_for('add_stock_movement') }}"]').on('submit', function(e) {
+            const direction = $(this).find('#direction').val() || 
+                            $(this).find('input[name="direction"]:checked').val();
+            const quantity = parseInt($(this).find('#quantity').val() || $(this).find('#mobile_quantity').val());
+            
+            // Se for uma saída de estoque, mostrar o modal de confirmação
+            if (direction === 'saida') {
+                e.preventDefault(); // Impedir envio do formulário
+                
+                // Atualizar texto do modal
+                $('#outflowQuantity').text(quantity);
+                
+                // Armazenar o formulário para envio posterior
+                stockMovementForm = this;
+                
+                // Mostrar modal de confirmação
+                $('#confirmOutflowModal').modal('show');
+                return false;
+            }
+            // Para entrada, o formulário é enviado normalmente
+        });
+        
+        // Quando o botão de confirmação no modal for clicado
+        $('#confirmOutflowBtn').on('click', function() {
+            if (stockMovementForm) {
+                // Fechar o modal
+                $('#confirmOutflowModal').modal('hide');
+                
+                // Enviar o formulário
+                stockMovementForm.submit();
+            }
         });
         
         // Filtro de histórico de movimentos no mobile
