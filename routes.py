@@ -3724,28 +3724,19 @@ def register_routes(app):
     @app.route('/frota/veiculos/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
     def delete_fleet_vehicle(id):
-        """Rota para excluir um veículo da frota"""
-        # Nova implementação simplificada
-        app.logger.info(f"Tentando excluir veículo ID: {id} via método {request.method}")
-        
-        try:
-            vehicle = Vehicle.query.get_or_404(id)
-            vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
-            
-            # Excluir o veículo diretamente
-            # O SQLAlchemy cuidará das relações por meio do cascade
-            db.session.delete(vehicle)
-            db.session.commit()
-            
-            app.logger.info(f"Veículo {vehicle_info} excluído com sucesso")
-            flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
-            
+        """Rota para excluir um veículo da frota (método legado)"""
+        # Verificar se o usuário é administrador
+        if current_user.role != 'admin':
+            flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
             return redirect(url_for('fleet'))
             
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
-            flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
+        app.logger.info(f"Tentando excluir veículo ID: {id} via método legado {request.method}")
+        
+        # Redirecionar para o novo método de exclusão
+        if request.method == 'POST':
+            return redirect(url_for('excluir_veiculo_direct', id=id))
+        else:
+            # Para solicitações GET, apenas redirecionar para a página de frota
             return redirect(url_for('fleet'))
             
     @app.route('/excluir-veiculo/<int:id>', methods=['POST'])
