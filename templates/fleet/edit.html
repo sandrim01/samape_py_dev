@@ -166,28 +166,16 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.purchase_value.label(class="form-label") }}
-                                        {{ form.purchase_value(class="form-control") }}
-                                        {% if form.purchase_value.errors %}
-                                        <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.purchase_value.errors %}
-                                            <span>{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
+                                        <label class="form-label">Valor de Aquisição</label>
+                                        <input type="text" class="form-control" value="Não definido" disabled>
+                                        <small class="text-muted">Edite no detalhamento do veículo</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.current_value.label(class="form-label") }}
-                                        {{ form.current_value(class="form-control") }}
-                                        {% if form.current_value.errors %}
-                                        <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.current_value.errors %}
-                                            <span>{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
+                                        <label class="form-label">Valor Atual</label>
+                                        <input type="text" class="form-control" value="Não definido" disabled>
+                                        <small class="text-muted">Edite no detalhamento do veículo</small>
                                     </div>
                                 </div>
                             </div>

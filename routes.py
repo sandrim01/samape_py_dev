@@ -3626,9 +3626,10 @@ def register_routes(app):
             
             # Excluir registros financeiros relacionados às manutenções
             for maintenance in maintenance_records:
-                financial_entries = FinancialEntry.query.filter_by(
-                    entry_type='vehicle_maintenance', 
-                    reference_id=maintenance.id
+                # Buscar entradas financeiras relacionadas à manutenção
+                description = f"Manutenção - {vehicle.brand} {vehicle.model} ({vehicle.plate})"
+                financial_entries = FinancialEntry.query.filter(
+                    FinancialEntry.description.like(f"%{description}%")
                 ).all()
                 
                 for entry in financial_entries:
@@ -3636,9 +3637,10 @@ def register_routes(app):
             
             # Excluir registros financeiros relacionados aos abastecimentos
             for refueling in refueling_records:
-                financial_entries = FinancialEntry.query.filter_by(
-                    entry_type='vehicle_refueling', 
-                    reference_id=refueling.id
+                # Buscar entradas financeiras relacionadas aos abastecimentos
+                description = f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate})"
+                financial_entries = FinancialEntry.query.filter(
+                    FinancialEntry.description.like(f"%{description}%")
                 ).all()
                 
                 for entry in financial_entries:
@@ -3666,7 +3668,7 @@ def register_routes(app):
     
     @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
     @login_required
-    @role_required(['admin', 'gerente'])
+    @manager_required
     def register_refueling(id):
         """Rota para registrar abastecimento de veículo"""
         vehicle = Vehicle.query.get_or_404(id)
@@ -3682,66 +3684,72 @@ def register_routes(app):
             try:
                 # Processar dados do formulário
                 date_str = request.form.get('date')
-                refueling_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else datetime.now()
+                odometer = request.form.get('odometer')
+                fuel_type = request.form.get('fuel_type')
+                liters = request.form.get('liters')
+                price_per_liter = request.form.get('price_per_liter')
+                total_cost = request.form.get('total_cost')
+                gas_station = request.form.get('gas_station')
+                full_tank = 'full_tank' in request.form
                 
-                # Criar registro de abastecimento
+                # Validar campos obrigatórios
+                if not all([date_str, odometer, fuel_type, liters, price_per_liter, total_cost]):
+                    flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
+                    return render_template('fleet/refueling.html', 
+                                          vehicle=vehicle, 
+                                          today=date_str or datetime.now().strftime('%Y-%m-%d'))
+                
+                try:
+                    # Converter valores
+                    refueling_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    odometer = int(odometer)
+                    liters = float(liters)
+                    price_per_liter = float(price_per_liter)
+                    total_cost = float(total_cost)
+                except ValueError as e:
+                    flash(f'Erro ao converter valores: {str(e)}', 'danger')
+                    return render_template('fleet/refueling.html', 
+                                          vehicle=vehicle, 
+                                          today=date_str or datetime.now().strftime('%Y-%m-%d'))
+                
+                # Criar o registro de abastecimento
                 refueling = Refueling(
                     vehicle_id=vehicle.id,
                     date=refueling_date,
-                    odometer=request.form.get('odometer', type=int),
-                    fuel_type=request.form.get('fuel_type', 'gasolina'),
-                    liters=request.form.get('liters', type=float),
-                    price_per_liter=request.form.get('price_per_liter', type=float),
-                    total_cost=request.form.get('total_cost', type=float),
-                    full_tank=bool(request.form.get('full_tank')),
-                    gas_station=request.form.get('gas_station'),
-                    notes=request.form.get('notes'),
-                    created_by=current_user.id,
-                    driver_id=current_user.id  # Por padrão, quem registra é o motorista
+                    odometer=odometer,
+                    fuel_type=fuel_type,
+                    liters=liters,
+                    price_per_liter=price_per_liter,
+                    total_cost=total_cost,
+                    gas_station=gas_station,
+                    full_tank=full_tank,
+                    created_by=current_user.id
                 )
                 
-                # Processar imagem do comprovante
-                receipt_image = request.files.get('receipt_image')
-                if receipt_image and receipt_image.filename:
-                    # Salvar imagem e atualizar o caminho no objeto
-                    filename = secure_filename(receipt_image.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-                    new_filename = f"refueling_{vehicle.id}_{timestamp}_{filename}"
-                    
-                    # Criar diretório se não existir
-                    receipt_path = os.path.join(app.root_path, 'static/uploads/receipts')
-                    if not os.path.exists(receipt_path):
-                        os.makedirs(receipt_path)
-                    
-                    # Salvar arquivo
-                    image_path = os.path.join(receipt_path, new_filename)
-                    receipt_image.save(image_path)
-                    
-                    # Atualizar caminho no objeto
-                    refueling.receipt_image = f"uploads/receipts/{new_filename}"
+                # Atualizar a quilometragem atual do veículo
+                if odometer > (vehicle.current_km or 0):
+                    vehicle.current_km = odometer
                 
-                # Atualizar hodômetro do veículo se for maior que o atual
-                if refueling.odometer and (vehicle.current_km is None or refueling.odometer > vehicle.current_km):
-                    vehicle.current_km = refueling.odometer
-                
-                db.session.add(refueling)
-                db.session.commit()
-                
-                # Criar entrada financeira para o abastecimento
+                # Criar lançamento financeiro com mais detalhes
                 financial_entry = FinancialEntry(
-                    description=f"Abastecimento do veículo {vehicle.plate} - {refueling.liters:.2f}L de {refueling.fuel_type.value}",
-                    amount=refueling.total_cost,
-                    type=FinancialEntryType.saida,
                     date=refueling_date,
+                    amount=total_cost,
+                    description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate})",
+                    type=FinancialEntryType.saida,
+                    payment_method="Não especificado",
+                    category="Combustível",
+                    notes=f"Abastecimento de {liters:.2f} litros em {gas_station or 'posto não informado'}",
                     created_by=current_user.id,
                     entry_type='vehicle_refueling',
                     reference_id=refueling.id
                 )
                 
+                # Salvar no banco de dados
+                db.session.add(refueling)
                 db.session.add(financial_entry)
                 db.session.commit()
                 
-                flash('Abastecimento registrado com sucesso!', 'success')
+                # Registrar ação no log
                 log_action(
                     'Registro de Abastecimento',
                     'vehicle_refueling',
@@ -3749,8 +3757,8 @@ def register_routes(app):
                     f"Abastecimento registrado para o veículo {vehicle.plate}"
                 )
                 
+                flash(f'Abastecimento registrado com sucesso! Custo total: R$ {total_cost:.2f}', 'success')
                 return redirect(url_for('view_vehicle', id=vehicle.id))
-                
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao registrar abastecimento: {str(e)}', 'danger')
