@@ -129,9 +129,20 @@ class ServiceOrderImage(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     description = db.Column(db.String(200))
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    # Campos adicionados para armazenar a imagem diretamente no banco de dados
+    image_data = db.Column(db.LargeBinary)  # Dados binários da imagem
+    mimetype = db.Column(db.String(100))    # Tipo MIME da imagem (ex: image/jpeg)
+    file_size = db.Column(db.Integer)       # Tamanho do arquivo em bytes
     
     def __repr__(self):
         return f'<ServiceOrderImage {self.filename}>'
+        
+    @property
+    def size_in_kb(self):
+        """Retorna o tamanho da imagem em KB"""
+        if self.file_size:
+            return self.file_size / 1024
+        return 0
 
 class FinancialEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
