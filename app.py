@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 from datetime import timedelta
 
 from flask import Flask
@@ -13,7 +14,14 @@ from jinja_filters import nl2br, format_document, format_currency, status_color,
 
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Create SQLAlchemy base class
 class Base(DeclarativeBase):
@@ -82,8 +90,13 @@ app.jinja_env.filters['status_color'] = status_color
 app.jinja_env.filters['abs'] = absolute_value
 
 # Import and register routes
-from routes import register_routes
-register_routes(app)
+try:
+    logger.info("Importando e registrando rotas...")
+    from routes import register_routes
+    register_routes(app)
+    logger.info("Rotas registradas com sucesso!")
+except Exception as e:
+    logger.error(f"Erro ao registrar rotas: {e}", exc_info=True)
 
 # Create initial admin user if needed
 with app.app_context():
