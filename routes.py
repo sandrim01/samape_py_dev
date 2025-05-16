@@ -3753,20 +3753,22 @@ def register_routes(app):
                 if odometer > (vehicle.current_km or 0):
                     vehicle.current_km = odometer
                 
-                # Criar lançamento financeiro com mais detalhes
+                # Primeiro, salvar o registro de abastecimento para obter um ID válido
+                db.session.add(refueling)
+                db.session.flush()  # Isso gera um ID sem confirmar a transação
+                
+                # Agora criar lançamento financeiro com o ID correto do abastecimento
                 financial_entry = FinancialEntry(
                     date=refueling_date,
                     amount=total_cost,
                     description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate}) - Combustível",
                     type=FinancialEntryType.saida,
-                    # Removidos campos inválidos (payment_method e category)
                     created_by=current_user.id,
                     entry_type='vehicle_refueling',
-                    reference_id=refueling.id
+                    reference_id=refueling.id  # Agora o ID é válido
                 )
                 
-                # Salvar no banco de dados
-                db.session.add(refueling)
+                # Adicionar e confirmar a transação
                 db.session.add(financial_entry)
                 db.session.commit()
                 
