@@ -3374,7 +3374,8 @@ def register_routes(app):
                     color=form.color.data,
                     chassis=form.chassis.data,
                     renavam=form.renavam.data,
-                    fuel_type=FuelType[form.fuel_type.data] if form.fuel_type.data else None,
+                    fuel_type=FuelType.flex if not form.fuel_type.data else 
+                       FuelType[form.fuel_type.data] if form.fuel_type.data in [fuel_type.name for fuel_type in FuelType] else FuelType.flex,
                     acquisition_date=acquisition_date,
                     insurance_policy=form.insurance_policy.data,
                     insurance_expiry=insurance_expiry,
