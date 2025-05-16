@@ -2296,6 +2296,10 @@ def register_routes(app):
             # Atualizar o estoque da peça
             part.stock_quantity -= form.quantity.data
             
+            # Atualizar o status do item de acordo com a nova quantidade
+            if hasattr(part, 'update_status'):
+                part.update_status()
+            
             # Adicionar entrada financeira sempre, independentemente de estar associada a uma OS
             description = f"Venda de peça: {part.name} (x{sale.quantity})"
             if sale.client_id:
