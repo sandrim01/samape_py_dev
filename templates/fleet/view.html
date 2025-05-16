@@ -176,10 +176,10 @@
                                     <tr>
                                         <td>{{ maint.date.strftime('%d/%m/%Y') }}</td>
                                         <td>{{ maint.description }}</td>
-                                        <td>{{ maint.mileage if maint.mileage is not none else '-' }}</td>
+                                        <td>{{ maint.odometer if maint.odometer is not none else '-' }}</td>
                                         <td>{{ "R$ {:.2f}".format(maint.cost) if maint.cost else '-' }}</td>
-                                        <td>{{ maint.service_provider or '-' }}</td>
-                                        <td>{{ maint.performed_by.name if maint.performed_by else 'Serviço Externo' }}</td>
+                                        <td>{{ maint.workshop or '-' }}</td>
+                                        <td>{{ maint.creator.name if maint.creator else 'Serviço Externo' }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

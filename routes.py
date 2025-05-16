@@ -3712,11 +3712,19 @@ def register_routes(app):
                                           today=date_str or datetime.now().strftime('%Y-%m-%d'))
                 
                 # Criar o registro de abastecimento
+                # Determinar o tipo de combustível correto
+                try:
+                    # Converter o tipo de combustível para o enum correto
+                    fuel_type_enum = FuelType[fuel_type] if fuel_type in [ft.name for ft in FuelType] else FuelType.flex
+                except (KeyError, ValueError):
+                    # Fallback para o tipo padrão se houver erro
+                    fuel_type_enum = FuelType.flex
+                
                 refueling = Refueling(
                     vehicle_id=vehicle.id,
                     date=refueling_date,
                     odometer=odometer,
-                    fuel_type=fuel_type,
+                    fuel_type=fuel_type_enum,  # Usando o enum correto
                     liters=liters,
                     price_per_liter=price_per_liter,
                     total_cost=total_cost,
@@ -3733,11 +3741,9 @@ def register_routes(app):
                 financial_entry = FinancialEntry(
                     date=refueling_date,
                     amount=total_cost,
-                    description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate})",
+                    description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate}) - Combustível",
                     type=FinancialEntryType.saida,
-                    # Removido payment_method que não existe no modelo
-                    category="Combustível",
-                    notes=f"Abastecimento de {liters:.2f} litros em {gas_station or 'posto não informado'}",
+                    # Removidos campos inválidos (payment_method e category)
                     created_by=current_user.id,
                     entry_type='vehicle_refueling',
                     reference_id=refueling.id
