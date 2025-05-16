@@ -3496,7 +3496,22 @@ def register_routes(app):
                 vehicle.chassis = form.chassis.data
                 vehicle.renavam = form.renavam.data
                 vehicle.acquisition_date = acquisition_date
-                vehicle.fuel_type = FuelType[form.fuel_type.data] if form.fuel_type.data else None
+                # Tratar o tipo de combustível corretamente
+                try:
+                    if form.fuel_type.data:
+                        # Verificar se o valor está entre os valores válidos do enum
+                        valid_fuel_types = [fuel_type.name for fuel_type in FuelType]
+                        if form.fuel_type.data in valid_fuel_types:
+                            vehicle.fuel_type = FuelType[form.fuel_type.data]
+                        else:
+                            # Valor padrão se não for um tipo válido
+                            vehicle.fuel_type = FuelType.flex
+                    else:
+                        vehicle.fuel_type = FuelType.flex
+                except Exception as e:
+                    # Em caso de erro, use um valor padrão
+                    app.logger.error(f"Erro ao definir tipo de combustível: {str(e)}")
+                    vehicle.fuel_type = FuelType.flex
                 vehicle.insurance_policy = form.insurance_policy.data
                 vehicle.insurance_expiry = insurance_expiry
                 vehicle.current_km = form.current_km.data
