@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Abastecimento{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Registrar Abastecimento</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header bg-gradient-primary">
+                <h3 class="card-title">Veículo: {{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.plate }})</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <!-- Não utilizamos o form Flask-WTF, então não precisamos do hidden_tag -->
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="date">Data *</label>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="odometer">Hodômetro (Km) *</label>
+                                <input type="number" class="form-control" id="odometer" name="odometer" min="0" 
+                                       value="{{ vehicle.current_km or 0 }}" required>
+                                <small class="text-muted">Km atual do veículo</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="fuel_type">Tipo de Combustível *</label>
+                                <select class="form-control" id="fuel_type" name="fuel_type" required>
+                                    <option value="gasolina" {% if vehicle.fuel_type.name == 'gasolina' %}selected{% endif %}>Gasolina</option>
+                                    <option value="etanol" {% if vehicle.fuel_type.name == 'etanol' %}selected{% endif %}>Etanol</option>
+                                    <option value="diesel" {% if vehicle.fuel_type.name == 'diesel' %}selected{% endif %}>Diesel</option>
+                                    <option value="flex" {% if vehicle.fuel_type.name == 'flex' %}selected{% endif %}>Flex (Misto)</option>
+                                    <option value="gnv" {% if vehicle.fuel_type.name == 'gnv' %}selected{% endif %}>GNV</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="liters">Quantidade (Litros) *</label>
+                                <input type="number" class="form-control" id="liters" name="liters" 
+                                       min="0.01" step="0.01" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="price_per_liter">Preço por Litro (R$) *</label>
+                                <input type="number" class="form-control" id="price_per_liter" name="price_per_liter" 
+                                       min="0.01" step="0.01" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="total_cost">Valor Total (R$) *</label>
+                                <input type="number" class="form-control" id="total_cost" name="total_cost" 
+                                       min="0.01" step="0.01" required>
+                                <small class="text-muted">Valor total do abastecimento</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="gas_station">Posto de Combustível</label>
+                                <input type="text" class="form-control" id="gas_station" name="gas_station" 
+                                       maxlength="100">
+                            </div>
+                            
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="full_tank" name="full_tank">
+                                <label class="form-check-label" for="full_tank">Tanque Completo</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right mt-3">
+                        <button type="button" class="btn btn-secondary" onclick="window.history.back();">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar Abastecimento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calcula automaticamente o valor total quando quantidade ou preço por litro são alterados
+    document.addEventListener('DOMContentLoaded', function() {
+        const litersInput = document.getElementById('liters');
+        const pricePerLiterInput = document.getElementById('price_per_liter');
+        const totalCostInput = document.getElementById('total_cost');
+        
+        function calculateTotal() {
+            const liters = parseFloat(litersInput.value) || 0;
+            const pricePerLiter = parseFloat(pricePerLiterInput.value) || 0;
+            const total = liters * pricePerLiter;
+            totalCostInput.value = total.toFixed(2);
+        }
+        
+        litersInput.addEventListener('input', calculateTotal);
+        pricePerLiterInput.addEventListener('input', calculateTotal);
+    });
+</script>
+{% endblock %}

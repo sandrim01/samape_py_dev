@@ -3664,12 +3664,19 @@ def register_routes(app):
             app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
             return redirect(url_for('view_vehicle', id=id))
     
-    @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['POST'])
+    @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
     @login_required
     @role_required(['admin', 'gerente'])
     def register_refueling(id):
         """Rota para registrar abastecimento de veículo"""
         vehicle = Vehicle.query.get_or_404(id)
+        
+        # Estamos usando o formulário diretamente no template ao invés do objeto forms.RefuelingForm
+        
+        if request.method == 'GET':
+            # Pré-preencher o formulário com valores padrão
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            return render_template('fleet/refueling.html', vehicle=vehicle, today=current_date)
         
         if request.method == 'POST':
             try:
