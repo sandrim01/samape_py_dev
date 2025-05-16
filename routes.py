@@ -3312,38 +3312,44 @@ def register_routes(app):
             # Obter as últimas movimentações (manutenções e abastecimentos)
             app.logger.info("Buscando últimas movimentações (manutenções e abastecimentos)")
             
-            # Consulta para manutenções
-            maintenance_records = db.session.query(
-                VehicleMaintenance.id.label('record_id'),
-                VehicleMaintenance.vehicle_id,
-                VehicleMaintenance.date,
-                VehicleMaintenance.description,
-                VehicleMaintenance.cost,
-                VehicleMaintenance.created_at,
-                db.literal('maintenance').label('record_type')
-            ).order_by(VehicleMaintenance.created_at.desc()).limit(5).all()
-            
-            # Consulta para abastecimentos
-            refueling_records = db.session.query(
-                Refueling.id.label('record_id'),
-                Refueling.vehicle_id,
-                Refueling.date,
-                db.literal('Abastecimento').label('description'),
-                Refueling.total_cost.label('cost'),
-                Refueling.created_at,
-                db.literal('refueling').label('record_type')
-            ).order_by(Refueling.created_at.desc()).limit(5).all()
-            
-            # Combinar resultados e ordenar por data de criação
-            latest_records = sorted(
-                maintenance_records + refueling_records,
-                key=lambda x: x.created_at,
-                reverse=True
-            )[:10]  # Limitar a 10 registros
-            
-            # Obter informações dos veículos associados
-            for record in latest_records:
-                record.vehicle = Vehicle.query.get(record.vehicle_id)
+            try:
+                # Consulta para manutenções
+                maintenance_records = db.session.query(
+                    VehicleMaintenance.id.label('record_id'),
+                    VehicleMaintenance.vehicle_id,
+                    VehicleMaintenance.date,
+                    VehicleMaintenance.description,
+                    VehicleMaintenance.cost,
+                    VehicleMaintenance.created_at,
+                    db.literal('maintenance').label('record_type')
+                ).order_by(VehicleMaintenance.created_at.desc()).limit(5).all()
+                
+                # Consulta para abastecimentos
+                refueling_records = db.session.query(
+                    Refueling.id.label('record_id'),
+                    Refueling.vehicle_id,
+                    Refueling.date,
+                    db.literal('Abastecimento').label('description'),
+                    Refueling.total_cost.label('cost'),
+                    Refueling.created_at,
+                    db.literal('refueling').label('record_type')
+                ).order_by(Refueling.created_at.desc()).limit(5).all()
+                
+                # Combinar resultados e ordenar por data de criação
+                latest_records = sorted(
+                    maintenance_records + refueling_records,
+                    key=lambda x: x.created_at,
+                    reverse=True
+                )[:10]  # Limitar a 10 registros
+                
+                # Obter informações dos veículos associados
+                for record in latest_records:
+                    vehicle = Vehicle.query.get(record.vehicle_id)
+                    if vehicle:
+                        setattr(record, 'vehicle', vehicle)
+            except Exception as e:
+                app.logger.error(f"Erro ao buscar movimentações recentes: {str(e)}")
+                latest_records = []
             
             app.logger.info(f"Renderizando template com {vehicles.total} veículos e {len(latest_records)} movimentações recentes")
             
