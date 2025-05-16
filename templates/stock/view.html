@@ -501,29 +501,56 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Confirmação de Saída de Estoque -->
+<div class="modal fade" id="confirmOutflowModal" tabindex="-1" role="dialog" aria-labelledby="confirmOutflowModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmOutflowModalLabel">Confirmar Saída de Estoque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja registrar a saída de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
+                <p>Esta ação irá deduzir a quantidade informada do estoque atual.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmOutflowBtn" class="btn btn-primary">Confirmar Saída</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     $(document).ready(function() {
+        // Variáveis para armazenar dados do formulário de saída
+        let stockMovementForm = null;
+        
         // Script para validação de quantidade
-        $('#quantity').on('input', function() {
-            const direction = $('#direction').val();
+        $('#quantity, #mobile_quantity').on('input', function() {
+            const direction = $(this).closest('form').find('#direction').val() || 
+                             $(this).closest('form').find('input[name="direction"]:checked').val();
             const quantity = parseInt($(this).val());
             const currentStock = {{ item.quantity }};
             
             if (direction === 'saida' && quantity > currentStock) {
                 $(this).addClass('is-invalid');
-                if (!$('#quantity-feedback').length) {
-                    $(this).after('<div id="quantity-feedback" class="invalid-feedback">Quantidade maior que o disponível em estoque.</div>');
+                if (!$(this).next('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">Quantidade maior que o disponível em estoque.</div>');
                 }
             } else {
                 $(this).removeClass('is-invalid');
-                $('#quantity-feedback').remove();
+                $(this).next('.invalid-feedback').remove();
             }
         });
         
-        $('#direction').change(function() {
+        $('#direction, input[name="direction"]').change(function() {
             // Revalida a quantidade quando muda a direção
             $('#quantity').trigger('input');
         });
