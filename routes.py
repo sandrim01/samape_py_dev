@@ -3734,7 +3734,7 @@ def register_routes(app):
     
     @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
     @login_required
-    @manager_required
+    # Removida a restrição @manager_required para permitir que todos os usuários registrem abastecimentos
     def register_refueling(id):
         """Rota para registrar abastecimento de veículo"""
         vehicle = Vehicle.query.get_or_404(id)
