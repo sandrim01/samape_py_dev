@@ -3,7 +3,7 @@ import re
 import json
 from datetime import datetime
 from functools import wraps
-from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort
+from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort, Response
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from wtforms.validators import Optional
 
-from app import db
+from app import db, app
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
@@ -3608,11 +3608,47 @@ def register_routes(app):
         
     @app.route('/frota/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
-    @role_required(['admin', 'gerente'])
     def delete_vehicle(id):
-        """Excluir veículo - redirecionar para a versão correta"""
-        # Redirecionar para a nova rota de exclusão de veículos
-        return redirect(url_for('delete_fleet_vehicle', id=id))
+        """Excluir veículo diretamente"""
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        if request.method == 'POST':
+            try:
+                # Verificar se há manutenções registradas
+                maintenance_count = VehicleMaintenance.query.filter_by(vehicle_id=id).count()
+                # Verificar se há abastecimentos registrados
+                refueling_count = Refueling.query.filter_by(vehicle_id=id).count()
+                
+                # Excluir todos os registros relacionados
+                if maintenance_count > 0:
+                    VehicleMaintenance.query.filter_by(vehicle_id=id).delete()
+                
+                if refueling_count > 0:
+                    Refueling.query.filter_by(vehicle_id=id).delete()
+                
+                # Registrar exclusão no log
+                log_action(
+                    'Exclusão de Veículo',
+                    'vehicle',
+                    vehicle.id,
+                    f"Veículo placa {vehicle.plate} excluído"
+                )
+                
+                # Excluir o veículo
+                vehicle_plate = vehicle.plate
+                db.session.delete(vehicle)
+                db.session.commit()
+                
+                flash(f'Veículo {vehicle_plate} excluído com sucesso!', 'success')
+                return redirect(url_for('fleet'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao excluir veículo: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
+                return redirect(url_for('view_vehicle', id=id))
+        
+        # Exibir página de confirmação
+        return render_template('fleet/delete_confirm.html', vehicle=vehicle)
         
     @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
     @login_required

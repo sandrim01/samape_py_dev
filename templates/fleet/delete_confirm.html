@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Confirmar Exclusão de Veículo{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Confirmar Exclusão</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('fleet') }}">Frota</a></li>
+                    <li class="breadcrumb-item active">Confirmar Exclusão</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Você tem certeza?
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <h5><i class="icon fas fa-exclamation-triangle"></i> Atenção!</h5>
+                            Você está prestes a excluir o veículo <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong> (Placa: <strong>{{ vehicle.plate }}</strong>).
+                            <br><br>
+                            Esta ação irá remover permanentemente:
+                            <ul>
+                                <li>Todos os registros de manutenção</li>
+                                <li>Todos os registros de abastecimento</li>
+                                <li>Todos os dados do veículo</li>
+                            </ul>
+                            <p>Esta ação <strong>não pode ser desfeita</strong>.</p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <form method="POST" action="{{ url_for('delete_vehicle', id=vehicle.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <a href="{{ url_for('view_vehicle', id=vehicle.id) }}" class="btn btn-secondary mr-2">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Confirmar Exclusão
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
