@@ -3078,6 +3078,18 @@ def register_routes(app):
             # Excluir movimentações relacionadas
             StockMovement.query.filter_by(stock_item_id=id).delete()
             
+            # Verificar se há itens de pedido relacionados (corrigido)
+            try:
+                # Tentativa de verificar relação, mas ignorar erros de coluna inexistente
+                order_items = OrderItem.query.filter_by(stock_item_id=id).all()
+                if order_items:
+                    for item_order in order_items:
+                        item_order.stock_item_id = None
+                        db.session.add(item_order)
+            except Exception as e:
+                app.logger.warning(f"Erro ao verificar itens de pedido relacionados: {str(e)}")
+                # Continuar com a exclusão mesmo se houver erro na verificação
+            
             # Excluir o item
             db.session.delete(item)
             db.session.commit()
