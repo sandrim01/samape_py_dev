@@ -3416,10 +3416,14 @@ def register_routes(app):
         # Obter histórico de manutenção
         maintenance_history = VehicleMaintenance.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleMaintenance.date.desc()).all()
         
+        # Data atual para o modal de abastecimento
+        now_date = datetime.now().strftime('%Y-%m-%d')
+        
         return render_template(
             'fleet/view.html',
             vehicle=vehicle,
-            maintenance_history=maintenance_history
+            maintenance_history=maintenance_history,
+            now_date=now_date
         )
         
     @app.route('/frota/<int:id>/editar', methods=['GET', 'POST'])
