@@ -358,9 +358,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <a href="{{ url_for('excluir_veiculo_direct', id=vehicle.id) }}" class="btn btn-danger">
+                <button type="button" onclick="location.href='{{ url_for('excluir_veiculo_direct', id=vehicle.id) }}'" class="btn btn-danger">
                     Confirmar Exclusão
-                </a>
+                </button>
             </div>
         </div>
     </div>

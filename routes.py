@@ -3748,29 +3748,39 @@ def register_routes(app):
             flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
             return redirect(url_for('fleet'))
             
-    # Nova rota para excluir veículo de forma direta
-    @app.route('/excluir-veiculo/<int:id>', methods=['GET', 'POST'])
+    # Nova rota absolutamente simples apenas com o id na URL
+    @app.route('/excluir-veiculo/<int:id>')
     @login_required
     def excluir_veiculo_direct(id):
-        """Rota alternativa para excluir um veículo da frota"""
-        app.logger.info(f"NOVA ROTA - Tentando excluir veículo ID: {id}")
+        """Rota super simples para excluir veículo"""
+        print(f"EXCLUINDO VEÍCULO ID {id}")
+        app.logger.info(f"EXCLUINDO VEÍCULO ID {id}")
         
         try:
-            vehicle = Vehicle.query.get_or_404(id)
+            # Buscar o veículo
+            vehicle = Vehicle.query.get(id)
+            
+            if not vehicle:
+                flash(f'Veículo ID {id} não encontrado!', 'warning')
+                return redirect(url_for('fleet'))
+                
             vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
             
             # Excluir o veículo diretamente
             db.session.delete(vehicle)
             db.session.commit()
             
-            app.logger.info(f"NOVA ROTA - Veículo {vehicle_info} excluído com sucesso")
+            # Mensagem de sucesso
             flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
             
         except Exception as e:
+            # Em caso de erro, fazer rollback e mostrar mensagem
             db.session.rollback()
-            app.logger.error(f"NOVA ROTA - Erro ao excluir veículo {id}: {str(e)}")
+            print(f"ERRO AO EXCLUIR VEÍCULO: {str(e)}")
+            app.logger.error(f"ERRO AO EXCLUIR VEÍCULO: {str(e)}")
             flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
             
+        # Redirecionar para a lista de veículos
         return redirect(url_for('fleet'))
     
     @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
