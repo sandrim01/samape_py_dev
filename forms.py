@@ -138,9 +138,9 @@ class ServiceOrderForm(FlaskForm):
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
     invoice_amount = DecimalField('Valor Total da Nota (R$)', validators=[Optional()], places=2)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
-    images = FileField('Imagens do Equipamento', validators=[
+    images = FileField('Imagens do Equipamento (máx. 500KB por imagem)', validators=[
         Optional(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Apenas imagens são permitidas!')
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], 'Apenas imagens são permitidas!')
     ], render_kw={"multiple": True})
     image_descriptions = TextAreaField('Descrições das Imagens (separadas por ponto e vírgula)', validators=[Optional()])
 

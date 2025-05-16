@@ -103,10 +103,11 @@
             </div>
             
             <div class="mb-3">
-                <label for="images" class="form-label">Imagens do Equipamento</label>
+                <label for="images" class="form-label">Imagens do Equipamento (máx. 500KB por imagem)</label>
                 {{ form.images(class="form-control", id="images") }}
                 <small class="form-text text-muted">
-                    Você pode selecionar múltiplas imagens. Formatos aceitos: jpg, jpeg, png, gif
+                    Você pode selecionar múltiplas imagens. Formatos aceitos: jpg, jpeg, png, gif, webp, bmp.
+                    Cada imagem deve ter no máximo 500KB.
                 </small>
                 {% if form.images.errors %}
                     <div class="invalid-feedback d-block">
