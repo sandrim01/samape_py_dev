@@ -3525,44 +3525,13 @@ def register_routes(app):
         
         return render_template('fleet/edit.html', form=form, vehicle=vehicle)
         
-    @app.route('/frota/<int:id>/excluir')
+    @app.route('/frota/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
-    @admin_required
+    @role_required(['admin', 'gerente'])
     def delete_vehicle(id):
-        """Excluir veículo"""
-        vehicle = Vehicle.query.get_or_404(id)
-        
-        try:
-            # Remover imagem se existir
-            if vehicle.image:
-                try:
-                    image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
-                except Exception as e:
-                    app.logger.warning(f"Erro ao remover imagem do veículo: {str(e)}")
-            
-            # Registrar informações antes de excluir
-            plate = vehicle.plate
-            
-            # Excluir o veículo
-            db.session.delete(vehicle)
-            db.session.commit()
-            
-            flash('Veículo excluído com sucesso!', 'success')
-            log_action(
-                'Exclusão de Veículo',
-                'vehicle',
-                id,
-                f"Veículo placa {plate} excluído"
-            )
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao excluir veículo: {str(e)}', 'danger')
-            app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
-        
-        return redirect(url_for('fleet'))
+        """Excluir veículo - redirecionar para a versão correta"""
+        # Redirecionar para a nova rota de exclusão de veículos
+        return redirect(url_for('delete_fleet_vehicle', id=id))
         
     @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
     @login_required

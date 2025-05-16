@@ -362,8 +362,8 @@ class VehicleMaintenanceForm(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(VehicleMaintenanceForm, self).__init__(*args, **kwargs)
-        self.vehicle_id.choices = [(v.id, f"{v.identifier} - {v.brand} {v.model}") 
-                                 for v in Vehicle.query.order_by(Vehicle.identifier).all()]
+        self.vehicle_id.choices = [(v.id, f"{v.plate} - {v.brand} {v.model}") 
+                                 for v in Vehicle.query.order_by(Vehicle.plate).all()]
         self.performed_by_id.choices = [(0, 'Não especificado')] + [
             (u.id, u.name) for u in User.query.filter_by(active=True).order_by(User.name).all()
         ]
