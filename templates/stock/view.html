@@ -658,15 +658,17 @@
             // Mostra mensagem se nenhum movimento encontrado
             const visibleCards = document.querySelectorAll('.interactive-card[style*="block"]').length;
             if (visibleCards === 0) {
-                if ($('.no-results-message').length === 0) {
-                    const noResults = $('<div class="text-center py-4 no-results-message">' +
+                if (!document.querySelector('.no-results-message')) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'text-center py-4 no-results-message';
+                    noResults.innerHTML = 
                         '<div class="mb-3"><i class="fas fa-search fa-3x text-muted"></i></div>' +
-                        '<p class="text-muted">Nenhum movimento encontrado com o filtro selecionado.</p>' +
-                        '</div>');
-                    $('.d-lg-none').append(noResults);
+                        '<p class="text-muted">Nenhum movimento encontrado com o filtro selecionado.</p>';
+                    document.querySelector('.d-lg-none').appendChild(noResults);
                 }
             } else {
-                $('.no-results-message').remove();
+                const noResultsMsg = document.querySelector('.no-results-message');
+                if (noResultsMsg) noResultsMsg.remove();
             }
         });
         
