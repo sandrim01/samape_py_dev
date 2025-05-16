@@ -395,6 +395,9 @@ class Vehicle(db.Model):
     next_maintenance_km = db.Column(db.Integer)  # Km para próxima manutenção
     responsible_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     status = db.Column(Enum(VehicleStatus), default=VehicleStatus.ativo, nullable=False)
+    # Campo original para manter compatibilidade com código existente
+    image = db.Column(db.String(255))  # Nome do arquivo da imagem (sistema antigo)
+    # Novos campos para armazenamento de imagem no banco de dados
     image_filename = db.Column(db.String(255))  # Nome do arquivo da imagem
     image_data = db.Column(db.LargeBinary)  # Dados da imagem armazenados no banco
     image_content_type = db.Column(db.String(100))  # Tipo de conteúdo da imagem (e.g., image/jpeg)

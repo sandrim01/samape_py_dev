@@ -3559,6 +3559,8 @@ def register_routes(app):
                     vehicle.image_data = image_data
                     vehicle.image_content_type = image_content_type
                     vehicle.image_filename = image_filename
+                    # Também armazenar nome do arquivo no campo legado para compatibilidade
+                    vehicle.image = image_filename
                 
                 # Atualizar campos do veículo
                 # type removido - campo não existe no banco de dados

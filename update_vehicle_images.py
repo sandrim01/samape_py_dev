@@ -21,12 +21,15 @@ try:
     result = connection.execute(text(
         "SELECT column_name FROM information_schema.columns "
         "WHERE table_name = 'vehicle' AND column_name IN "
-        "('image_data', 'image_filename', 'image_content_type', 'image_file_size')"
+        "('image', 'image_data', 'image_filename', 'image_content_type', 'image_file_size')"
     ))
     existing_columns = [row[0] for row in result]
     
     # Adicionar as colunas necessárias se não existirem
     alterations = []
+    
+    if 'image' not in existing_columns:
+        alterations.append("ADD COLUMN image VARCHAR(255)")
     
     if 'image_data' not in existing_columns:
         alterations.append("ADD COLUMN image_data BYTEA")
