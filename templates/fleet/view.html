@@ -358,13 +358,31 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <form action="{{ url_for('delete_fleet_vehicle', id=vehicle.id) }}" method="post">
+                <form id="deleteVehicleForm" action="{{ url_for('delete_fleet_vehicle', id=vehicle.id) }}" method="post">
                     <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Script para garantir que o formulário seja enviado corretamente -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Certifica-se de que o formulário existe na página
+    const deleteForm = document.getElementById('deleteVehicleForm');
+    if (deleteForm) {
+        console.log('Formulário de exclusão inicializado');
+        
+        // Adiciona evento de submissão ao formulário
+        deleteForm.addEventListener('submit', function(e) {
+            console.log('Formulário de exclusão enviado');
+            // Remove outros listeners que possam interferir
+            e.stopPropagation();
+        });
+    }
+});
+</script>
 
 {% block scripts %}
 <script>
