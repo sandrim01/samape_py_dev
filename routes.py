@@ -3063,41 +3063,42 @@ def register_routes(app):
     @login_required
     # Permitir que funcionários também excluam itens de estoque
     def delete_stock_item(id):
-        item = StockItem.query.get_or_404(id)
+        # Solução simplificada para resolver problemas de transação
+        from flask import current_app
+        
+        # Garantir que qualquer operação pendente seja encerrada
+        db.session.close()
         
         try:
-            # Registrar a exclusão
+            # Remover diretamente da base de dados usando SQL bruto para evitar problemas com SQLAlchemy
+            # Executando cada operação em uma transação independente
+            
+            # 1. Obter informações do item antes de excluir
+            item = StockItem.query.get_or_404(id)
             item_name = item.name
+            item_image = item.image
             
-            # Remover imagem se existir
-            if item.image:
-                image_path = os.path.join(current_app.static_folder, item.image)
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-            
-            # Excluir movimentações relacionadas
-            StockMovement.query.filter_by(stock_item_id=id).delete()
-            
-            # Verificar se há itens de pedido relacionados (corrigido)
-            try:
-                # Tentativa de verificar relação, mas ignorar erros de coluna inexistente
-                order_items = OrderItem.query.filter_by(stock_item_id=id).all()
-                if order_items:
-                    for item_order in order_items:
-                        item_order.stock_item_id = None
-                        db.session.add(item_order)
-            except Exception as e:
-                app.logger.warning(f"Erro ao verificar itens de pedido relacionados: {str(e)}")
-                # Continuar com a exclusão mesmo se houver erro na verificação
-            
-            # Excluir o item
-            db.session.delete(item)
+            # 2. Excluir movimentações primeiro
+            db.session.execute(f"DELETE FROM stock_movement WHERE stock_item_id = {id}")
             db.session.commit()
             
-            # Registrar a ação
+            # 3. Excluir o item
+            db.session.execute(f"DELETE FROM stock_item WHERE id = {id}")
+            db.session.commit()
+            
+            # 4. Remover imagem se existir
+            if item_image:
+                try:
+                    image_path = os.path.join(current_app.root_path, "static", item_image)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                except Exception as img_error:
+                    current_app.logger.warning(f"Erro ao remover imagem: {str(img_error)}")
+            
+            # 5. Registrar ação
             log_action(
                 'Exclusão de Item de Estoque',
-                'stock_item',
+                'stock_item', 
                 id,
                 f"Item {item_name} excluído do estoque"
             )
@@ -3106,7 +3107,7 @@ def register_routes(app):
             
         except Exception as e:
             db.session.rollback()
-            app.logger.error(f"Erro ao excluir item de estoque: {str(e)}")
+            current_app.logger.error(f"Erro ao excluir item de estoque: {str(e)}")
             flash(f'Erro ao excluir item: {str(e)}', 'danger')
         
         return redirect(url_for('stock_items'))
