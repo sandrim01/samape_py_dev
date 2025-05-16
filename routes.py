@@ -3061,7 +3061,7 @@ def register_routes(app):
         
     @app.route('/estoque/<int:id>/excluir', methods=['POST'])
     @login_required
-    @role_required(['admin', 'gerente'])
+    # Permitir que funcionários também excluam itens de estoque
     def delete_stock_item(id):
         item = StockItem.query.get_or_404(id)
         
