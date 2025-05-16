@@ -21,7 +21,7 @@ try:
     result = connection.execute(text(
         "SELECT column_name FROM information_schema.columns "
         "WHERE table_name = 'vehicle' AND column_name IN "
-        "('image_data', 'image_filename', 'image_content_type')"
+        "('image_data', 'image_filename', 'image_content_type', 'image_file_size')"
     ))
     existing_columns = [row[0] for row in result]
     
@@ -36,6 +36,9 @@ try:
     
     if 'image_content_type' not in existing_columns:
         alterations.append("ADD COLUMN image_content_type VARCHAR(100)")
+        
+    if 'image_file_size' not in existing_columns:
+        alterations.append("ADD COLUMN image_file_size INTEGER")
     
     # Executar as alterações
     if alterations:
