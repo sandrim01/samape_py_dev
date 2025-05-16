@@ -3748,39 +3748,41 @@ def register_routes(app):
             flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
             return redirect(url_for('fleet'))
             
-    # Nova rota absolutamente simples apenas com o id na URL
-    @app.route('/excluir-veiculo/<int:id>')
+    @app.route('/excluir-veiculo/<int:id>', methods=['POST'])
     @login_required
     def excluir_veiculo_direct(id):
-        """Rota super simples para excluir veículo"""
-        print(f"EXCLUINDO VEÍCULO ID {id}")
-        app.logger.info(f"EXCLUINDO VEÍCULO ID {id}")
+        """Rota para excluir veículo - apenas para administradores e gerentes"""
+        # Verificar se o usuário é administrador ou gerente
+        if current_user.role not in ['admin', 'gerente']:
+            flash('Acesso negado. Apenas administradores e gerentes podem excluir veículos.', 'danger')
+            return redirect(url_for('fleet'))
+            
+        app.logger.info(f"Tentando excluir veículo ID: {id}, usuário: {current_user.username}")
         
         try:
             # Buscar o veículo
-            vehicle = Vehicle.query.get(id)
-            
-            if not vehicle:
-                flash(f'Veículo ID {id} não encontrado!', 'warning')
-                return redirect(url_for('fleet'))
-                
+            vehicle = Vehicle.query.get_or_404(id)
             vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
             
-            # Excluir o veículo diretamente
+            # Excluir registros relacionados primeiro
+            # Manutenções
+            VehicleMaintenance.query.filter_by(vehicle_id=id).delete()
+            # Abastecimentos
+            Refueling.query.filter_by(vehicle_id=id).delete()
+            
+            # Excluir o veículo
             db.session.delete(vehicle)
             db.session.commit()
             
-            # Mensagem de sucesso
+            # Log da ação
+            app.logger.info(f"Veículo {vehicle_info} excluído com sucesso por {current_user.username}")
             flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
             
         except Exception as e:
-            # Em caso de erro, fazer rollback e mostrar mensagem
             db.session.rollback()
-            print(f"ERRO AO EXCLUIR VEÍCULO: {str(e)}")
-            app.logger.error(f"ERRO AO EXCLUIR VEÍCULO: {str(e)}")
+            app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
             flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
             
-        # Redirecionar para a lista de veículos
         return redirect(url_for('fleet'))
     
     @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
