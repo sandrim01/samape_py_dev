@@ -1,9 +1,13 @@
 import os
 import re
 import json
+import io
 from datetime import datetime
 from functools import wraps
-from flask import render_template, redirect, url_for, flash, request, jsonify, session, abort
+from flask import (
+    render_template, redirect, url_for, flash, request, jsonify, session, abort,
+    current_app, send_file, Response
+)
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, desc, or_
@@ -1125,16 +1129,23 @@ def register_routes(app):
     @app.route('/imagem_os/<int:image_id>')
     @login_required
     def view_service_order_image(image_id):
-        """Rota para visualizar uma imagem de ordem de serviço"""
+        """Rota para visualizar uma imagem de ordem de serviço diretamente do banco de dados"""
         image = ServiceOrderImage.query.get_or_404(image_id)
         
-        # Verificar se o arquivo existe
-        file_path = os.path.join(current_app.static_folder, image.filename)
-        if not os.path.exists(file_path):
-            # Se o arquivo não existir, exibir uma imagem padrão
+        # Verificar se temos dados da imagem no banco
+        if not image.image_data:
+            # Se não há dados da imagem, retornar uma imagem padrão
             return redirect(url_for('static', filename='img/image-not-found.svg'))
-            
-        return redirect(url_for('static', filename=image.filename))
+        
+        # Criar um objeto BytesIO a partir dos dados binários
+        image_binary = io.BytesIO(image.image_data)
+        
+        # Enviar o arquivo como resposta com o tipo MIME apropriado
+        return send_file(
+            image_binary,
+            mimetype=image.mimetype or 'image/jpeg',
+            download_name=image.filename
+        )
     
     # Employee routes
     @app.route('/funcionarios')

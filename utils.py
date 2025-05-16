@@ -286,7 +286,7 @@ def get_default_system_settings():
     
 def save_service_order_images(service_order, images, descriptions=None):
     """
-    Salva as imagens enviadas para uma ordem de serviço
+    Salva as imagens enviadas para uma ordem de serviço diretamente no banco de dados
     
     Args:
         service_order: Objeto ServiceOrder para o qual as imagens serão salvas
@@ -296,9 +296,8 @@ def save_service_order_images(service_order, images, descriptions=None):
     Returns:
         Lista de objetos ServiceOrderImage criados
     """
-    # Criar diretório para imagens se não existir
-    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'service_orders', str(service_order.id))
-    os.makedirs(upload_folder, exist_ok=True)
+    # Limite de tamanho: 500KB (em bytes)
+    MAX_FILE_SIZE = 500 * 1024
     
     # Preparar descrições se fornecidas
     desc_list = []
@@ -310,22 +309,39 @@ def save_service_order_images(service_order, images, descriptions=None):
     # Processar cada imagem
     for i, image in enumerate(images):
         if image and hasattr(image, 'filename') and image.filename:
-            # Gerar nome de arquivo único
-            extension = os.path.splitext(image.filename)[1] or '.jpg'
+            # Ler o conteúdo da imagem
+            image_data = image.read()
+            file_size = len(image_data)
+            
+            # Verificar o tamanho do arquivo
+            if file_size > MAX_FILE_SIZE:
+                flash(f'Imagem "{image.filename}" excede o limite de 500KB e não foi salva', 'warning')
+                continue
+            
+            # Obter informações do arquivo
+            extension = os.path.splitext(image.filename)[1].lower() or '.jpg'
             unique_filename = f"{uuid.uuid4()}{extension}"
             
-            # Caminho completo para salvar
-            filepath = os.path.join(upload_folder, unique_filename)
-            
-            # Salvar arquivo
-            image.save(filepath)
+            # Determinar o tipo MIME com base na extensão
+            mime_types = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.bmp': 'image/bmp',
+                '.webp': 'image/webp'
+            }
+            mimetype = mime_types.get(extension, 'application/octet-stream')
             
             # Criar entrada no banco de dados
             description = desc_list[i] if i < len(desc_list) else None
             image_record = ServiceOrderImage(
                 service_order_id=service_order.id,
-                filename=f"uploads/service_orders/{service_order.id}/{unique_filename}",
-                description=description
+                filename=unique_filename,  # Só armazenamos o nome do arquivo para referência
+                description=description,
+                image_data=image_data,     # Armazenar dados binários
+                mimetype=mimetype,         # Tipo de conteúdo
+                file_size=file_size        # Tamanho em bytes
             )
             
             db.session.add(image_record)
@@ -338,7 +354,7 @@ def save_service_order_images(service_order, images, descriptions=None):
 
 def delete_service_order_image(image_id):
     """
-    Remove uma imagem de ordem de serviço do sistema de arquivos e do banco de dados
+    Remove uma imagem de ordem de serviço do banco de dados
     
     Args:
         image_id: ID da imagem a ser removida
@@ -347,7 +363,6 @@ def delete_service_order_image(image_id):
         Tupla (sucesso, mensagem)
     """
     from models import ServiceOrderImage
-    from flask import current_app
     
     # Buscar imagem no banco de dados
     image = ServiceOrderImage.query.get(image_id)
@@ -355,13 +370,6 @@ def delete_service_order_image(image_id):
         return False, "Imagem não encontrada"
     
     try:
-        # Obter o caminho físico do arquivo
-        file_path = os.path.join(current_app.static_folder, image.filename)
-        
-        # Remover arquivo do sistema de arquivos se existir
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
         # Remover registro do banco de dados
         db.session.delete(image)
         db.session.commit()
