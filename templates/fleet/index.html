@@ -553,11 +553,49 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <a href="/frota/{{ vehicle.id }}/manutencao/nova" 
-                                           class="btn btn-sm btn-outline-info rounded-circle"
+                                        <a href="{{ url_for('vehicle_new_refueling', id=vehicle.id) }}" 
+                                           class="btn btn-sm btn-outline-success rounded-circle mr-1"
+                                           data-toggle="tooltip" title="Registrar abastecimento">
+                                            <i class="fas fa-gas-pump"></i>
+                                        </a>
+                                        
+                                        <a href="{{ url_for('new_vehicle_maintenance', id=vehicle.id) }}" 
+                                           class="btn btn-sm btn-outline-info rounded-circle mr-1"
                                            data-toggle="tooltip" title="Registrar manutenção">
                                             <i class="fas fa-tools"></i>
                                         </a>
+                                        
+                                        <button type="button"
+                                           class="btn btn-sm btn-outline-danger rounded-circle"
+                                           data-toggle="modal" 
+                                           data-target="#deleteVehicleModal{{ vehicle.id }}"
+                                           title="Excluir veículo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        
+                                        <!-- Modal de confirmação para exclusão -->
+                                        <div class="modal fade" id="deleteVehicleModal{{ vehicle.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title">Confirmar Exclusão</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Tem certeza que deseja excluir o veículo <strong>{{ vehicle.plate }}</strong>?</p>
+                                                        <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Esta ação é irreversível.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                        <form action="{{ url_for('delete_fleet_vehicle', id=vehicle.id) }}" method="post">
+                                                            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </td>
