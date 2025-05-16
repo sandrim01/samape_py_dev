@@ -110,16 +110,11 @@
                             
                             <div class="row">
                                 <div class="col-md-6">
+                                    <!-- Já temos o campo plate no topo do formulário, este campo é duplicado e pode ser removido -->
                                     <div class="form-group">
-                                        {{ form.license_plate.label(class="form-label") }}
-                                        {{ form.license_plate(class="form-control") }}
-                                        {% if form.license_plate.errors %}
-                                        <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.license_plate.errors %}
-                                            <span>{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
+                                        <label class="form-label">Renavam</label>
+                                        <input type="text" class="form-control" value="Não cadastrado" readonly>
+                                        <small class="text-muted">Use o formulário de detalhes para atualizar</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -142,11 +137,11 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.purchase_date.label(class="form-label") }}
-                                        {{ form.purchase_date(class="form-control") }}
-                                        {% if form.purchase_date.errors %}
+                                        {{ form.acquisition_date.label(class="form-label") }}
+                                        {{ form.acquisition_date(class="form-control") }}
+                                        {% if form.acquisition_date.errors %}
                                         <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.purchase_date.errors %}
+                                            {% for error in form.acquisition_date.errors %}
                                             <span>{{ error }}</span>
                                             {% endfor %}
                                         </div>
@@ -155,11 +150,11 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        {{ form.mileage.label(class="form-label") }}
-                                        {{ form.mileage(class="form-control") }}
-                                        {% if form.mileage.errors %}
+                                        {{ form.current_km.label(class="form-label") }}
+                                        {{ form.current_km(class="form-control") }}
+                                        {% if form.current_km.errors %}
                                         <div class="invalid-feedback" style="display:block">
-                                            {% for error in form.mileage.errors %}
+                                            {% for error in form.current_km.errors %}
                                             <span>{{ error }}</span>
                                             {% endfor %}
                                         </div>
