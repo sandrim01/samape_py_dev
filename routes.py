@@ -3617,7 +3617,7 @@ def register_routes(app):
         
         try:
             # Registrar informações para log
-            vehicle_info = f"{vehicle.identifier} ({vehicle.brand} {vehicle.model})"
+            vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
             
             # Recuperar registros relacionados para excluir manualmente se necessário
             maintenance_records = VehicleMaintenance.query.filter_by(vehicle_id=id).all()
