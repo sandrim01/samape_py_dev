@@ -3622,83 +3622,86 @@ def register_routes(app):
         today = datetime.now().strftime('%Y-%m-%d')
         
         # Adicionar log para debug
-        app.logger.info(f"Método: {request.method}")
+        app.logger.info(f"Nova manutenção - método: {request.method}")
         
         if request.method == 'POST':
             app.logger.info(f"Form data: {request.form}")
             app.logger.info(f"Form errors: {form.errors}")
-            app.logger.info(f"Form valid: {form.validate()}")
+            app.logger.info(f"Form válido: {form.validate()}")
         
         if form.validate_on_submit():
             app.logger.info("Formulário válido, iniciando processamento")
             try:
-                # Converter a data
-                app.logger.info(f"Convertendo data: {form.date.data}")
-                try:
-                    if isinstance(form.date.data, str):
-                        maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d')
-                    else:
-                        maintenance_date = form.date.data
-                    app.logger.info(f"Data convertida: {maintenance_date}")
-                except Exception as err:
-                    app.logger.error(f"Erro ao converter data: {err}")
-                    raise
+                # Garantir que a data seja um objeto datetime
+                maintenance_date = datetime.now()
+                if form.date.data:
+                    try:
+                        if isinstance(form.date.data, str):
+                            maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d')
+                        else:
+                            maintenance_date = form.date.data
+                        app.logger.info(f"Data de manutenção: {maintenance_date}")
+                    except Exception as err:
+                        app.logger.error(f"Erro ao converter data: {err}, usando data atual")
                 
                 # Garantir que performed_by_id seja um inteiro ou None
-                performed_by = None
-                if form.performed_by_id.data:
+                performed_by = current_user.id
+                if form.performed_by_id.data and form.performed_by_id.data != "0":
                     try:
                         performed_by = int(form.performed_by_id.data)
-                        app.logger.info(f"Responsável: {performed_by}")
                     except (ValueError, TypeError):
-                        performed_by = current_user.id
-                        app.logger.warning(f"Erro ao converter performed_by_id, usando current_user.id: {current_user.id}")
-                else:
-                    performed_by = current_user.id
-                    app.logger.info(f"Usando current_user.id como responsável: {current_user.id}")
+                        pass
+                app.logger.info(f"Responsável pela manutenção: {performed_by}")
                 
-                # Criar registro de manutenção
-                maintenance = VehicleMaintenance(
-                    vehicle_id=vehicle.id,
-                    date=maintenance_date,
-                    odometer=form.mileage.data,
-                    description=form.description.data,
-                    cost=form.cost.data,
-                    workshop=form.service_provider.data,
-                    invoice_number=form.invoice_number.data,
-                    created_by=performed_by
-                )
+                # Extrair e validar campos do formulário
+                description = form.description.data or "Manutenção não especificada"
+                mileage = form.mileage.data or 0
+                cost = form.cost.data or 0.0
+                workshop = form.service_provider.data or ""
+                invoice_number = form.invoice_number.data or ""
                 
-                app.logger.info(f"Manutenção criada: {maintenance}")
+                app.logger.info(f"Dados do formulário processados: descrição='{description}', km={mileage}, custo={cost}")
+                
+                # Criar objeto de manutenção
+                maintenance = VehicleMaintenance()
+                maintenance.vehicle_id = vehicle.id
+                maintenance.date = maintenance_date
+                maintenance.odometer = mileage
+                maintenance.description = description
+                maintenance.cost = cost
+                maintenance.workshop = workshop
+                maintenance.invoice_number = invoice_number
+                maintenance.created_by = performed_by
+                
+                app.logger.info(f"Objeto manutenção pronto para inserção: {maintenance}")
                 db.session.add(maintenance)
                 
                 # Atualizar hodômetro do veículo se o valor informado é maior que o atual
-                if form.mileage.data and (vehicle.current_km is None or form.mileage.data > vehicle.current_km):
-                    vehicle.current_km = form.mileage.data
-                    app.logger.info(f"Atualizando hodômetro do veículo para: {form.mileage.data}")
+                if mileage > 0 and (vehicle.current_km is None or mileage > vehicle.current_km):
+                    vehicle.current_km = mileage
+                    app.logger.info(f"Atualizando hodômetro do veículo para: {mileage}")
                 
                 # Usar flush para obter o ID da manutenção sem confirmar a transação
                 db.session.flush()
                 app.logger.info(f"Manutenção ID após flush: {maintenance.id}")
                 
                 # Criar entrada financeira se houver custo
-                if form.cost.data:
-                    financial_entry = FinancialEntry(
-                        description=f"Manutenção do veículo placa {vehicle.plate} - {form.description.data[:50]}",
-                        amount=form.cost.data,
-                        type=FinancialEntryType.saida,
-                        date=maintenance_date,
-                        created_by=current_user.id,
-                        entry_type='vehicle_maintenance',
-                        reference_id=maintenance.id
-                    )
+                if cost > 0:
+                    financial_entry = FinancialEntry()
+                    financial_entry.description = f"Manutenção do veículo placa {vehicle.plate} - {description[:50]}"
+                    financial_entry.amount = cost
+                    financial_entry.type = FinancialEntryType.saida
+                    financial_entry.date = maintenance_date
+                    financial_entry.created_by = current_user.id
+                    financial_entry.entry_type = 'vehicle_maintenance'
+                    financial_entry.reference_id = maintenance.id
                     
                     db.session.add(financial_entry)
                     app.logger.info(f"Entrada financeira criada: {financial_entry}")
                 
                 # Confirmar toda a transação de uma vez
                 db.session.commit()
-                app.logger.info("Transação confirmada com sucesso")
+                app.logger.info("Transação confirmada com sucesso!")
                 
                 flash('Manutenção registrada com sucesso!', 'success')
                 log_action(
@@ -3713,7 +3716,7 @@ def register_routes(app):
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Erro ao registrar manutenção: {str(e)}")
-                app.logger.exception(e)  # Logga o traceback completo
+                app.logger.exception(e)  # Log do traceback completo
                 flash(f'Erro ao registrar manutenção: {str(e)}', 'danger')
         
         return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle, today=today)
