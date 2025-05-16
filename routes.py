@@ -3726,7 +3726,7 @@ def register_routes(app):
     def delete_fleet_vehicle(id):
         """Rota para excluir um veículo da frota (método legado)"""
         # Verificar se o usuário é administrador
-        if current_user.role != 'admin':
+        if current_user.role.value != 'admin':
             flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
             return redirect(url_for('fleet'))
             
@@ -3744,7 +3744,7 @@ def register_routes(app):
     def excluir_veiculo_direct(id):
         """Rota para excluir veículo - apenas para administradores"""
         # Verificar se o usuário é administrador 
-        if current_user.role != 'admin':
+        if current_user.role.value != 'admin':
             flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
             return redirect(url_for('fleet'))
             
