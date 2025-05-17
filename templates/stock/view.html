@@ -516,8 +516,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Tem certeza que deseja registrar a saída de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
-                <p>Esta ação irá deduzir a quantidade informada do estoque atual.</p>
+                <p>Tem certeza que deseja registrar a <span id="operationType">saída</span> de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
+                <p id="operationDescription">Esta ação irá deduzir a quantidade informada do estoque atual.</p>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
                 </div>
@@ -626,38 +626,89 @@
                 
                 console.log("Direção:", direction, "Quantidade:", quantity);
                 
-                // Se for saída, mostrar modal de confirmação
-                if (direction === 'saida') {
-                    console.log("É uma saída, mostrando modal");
-                    
-                    // Atualizar texto do modal
-                    if (quantityDisplay) {
-                        quantityDisplay.textContent = quantity;
+                // Sempre mostrar modal de confirmação, independente se for entrada ou saída
+                console.log("Preparando modal para direção:", direction);
+                
+                // Atualizar título e texto do modal conforme o tipo de movimento
+                const modalTitle = document.getElementById('confirmOutflowModalLabel');
+                const operationType = document.getElementById('operationType');
+                const operationDescription = document.getElementById('operationDescription');
+                
+                if (modalTitle) {
+                    modalTitle.textContent = direction === 'saida' ? 'Confirmar Saída de Estoque' : 'Confirmar Entrada de Estoque';
+                }
+                
+                if (operationType) {
+                    operationType.textContent = direction === 'saida' ? 'saída' : 'entrada';
+                }
+                
+                if (operationDescription) {
+                    if (direction === 'saida') {
+                        operationDescription.textContent = 'Esta ação irá deduzir a quantidade informada do estoque atual.';
+                    } else {
+                        operationDescription.textContent = 'Esta ação irá adicionar a quantidade informada ao estoque atual.';
                     }
+                }
+                
+                // Atualizar texto do modal
+                if (quantityDisplay) {
+                    quantityDisplay.textContent = quantity;
+                }
+                
+                // Atualizar cores do modal conforme o tipo
+                const modalHeader = document.querySelector('#confirmOutflowModal .modal-header');
+                const confirmButton = document.getElementById('confirmOutflowBtn');
+                
+                if (modalHeader) {
+                    if (direction === 'saida') {
+                        modalHeader.classList.remove('bg-success');
+                        modalHeader.classList.add('bg-danger');
+                    } else {
+                        modalHeader.classList.remove('bg-danger');
+                        modalHeader.classList.add('bg-success');
+                    }
+                }
+                
+                if (confirmButton) {
+                    if (direction === 'saida') {
+                        confirmButton.classList.remove('btn-success');
+                        confirmButton.classList.add('btn-danger');
+                        confirmButton.textContent = 'Confirmar Saída';
+                    } else {
+                        confirmButton.classList.remove('btn-danger');
+                        confirmButton.classList.add('btn-success');
+                        confirmButton.textContent = 'Confirmar Entrada';
+                    }
+                }
+                
+                // Copiar dados do formulário para o formulário oculto
+                if (hiddenForm) {
+                    // Atualizar direction no formulário oculto
+                    document.getElementById('hidden_direction').value = direction;
                     
-                    // Copiar dados do formulário para o formulário oculto
-                    if (hiddenForm) {
-                        hiddenQuantity.value = quantity;
-                        hiddenDescription.value = this.querySelector('[name="description"]')?.value || '';
-                        hiddenReference.value = this.querySelector('[name="reference"]')?.value || '';
-                        
-                        const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
-                        hiddenServiceOrderId.value = serviceOrderId;
-                        
-                        // Exibir modal usando jQuery como alternativa se o modal do Bootstrap não funcionar
+                    hiddenQuantity.value = quantity;
+                    hiddenDescription.value = this.querySelector('[name="description"]')?.value || '';
+                    hiddenReference.value = this.querySelector('[name="reference"]')?.value || '';
+                    
+                    const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
+                    hiddenServiceOrderId.value = serviceOrderId;
+                    
+                    // Exibir modal usando Bootstrap ou jQuery como fallback
+                    try {
                         if (confirmModal) {
                             console.log("Mostrando modal com Bootstrap");
                             confirmModal.show();
                         } else {
-                            console.log("Modal não inicializado, tentando com jQuery");
+                            console.log("Tentando com jQuery");
                             $('#confirmOutflowModal').modal('show');
                         }
-                    } else {
-                        console.log("Formulário oculto não encontrado, enviando formulário diretamente");
+                    } catch (err) {
+                        console.error("Erro ao mostrar modal:", err);
+                        // Se falhar, enviar o formulário diretamente
                         this.submit();
                     }
                 } else {
-                    console.log("É uma entrada, enviando formulário diretamente");
+                    console.log("Formulário oculto não encontrado, enviando formulário diretamente");
                     this.submit();
                 }
             });
