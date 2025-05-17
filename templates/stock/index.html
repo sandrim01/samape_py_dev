@@ -85,52 +85,6 @@
         <button class="mobile-tab" data-filter="esgotado">Esgotados</button>
     </div>
 
-    <!-- Formulário de Movimentação Rápida -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-gradient-success">
-            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-exchange-alt me-1"></i> Movimentação Rápida de Estoque</h6>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('add_stock_movement') }}" id="quick-movement-form">
-                {{ movement_form.hidden_tag() }}
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="stock_item_id" class="form-label">{{ movement_form.stock_item_id.label }}</label>
-                        {{ movement_form.stock_item_id(class="form-select") }}
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="direction" class="form-label">{{ movement_form.direction.label }}</label>
-                        {{ movement_form.direction(class="form-select") }}
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="quantity" class="form-label">{{ movement_form.quantity.label }}</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                            {{ movement_form.quantity(class="form-control") }}
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="description" class="form-label">{{ movement_form.description.label }}</label>
-                        {{ movement_form.description(class="form-control", rows="1") }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="reference" class="form-label">{{ movement_form.reference.label }}</label>
-                        {{ movement_form.reference(class="form-control") }}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="service_order_id" class="form-label">{{ movement_form.service_order_id.label }}</label>
-                        {{ movement_form.service_order_id(class="form-select") }}
-                    </div>
-                    <div class="col-md-2 mb-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success w-100"><i class="fas fa-save me-1"></i> Registrar</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Tabela de Itens -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-gradient-primary">
@@ -375,87 +329,11 @@
         </div>
     </div>
 </div>
-    
-    <!-- Modal de Confirmação de Movimentação -->
-    <div class="modal fade" id="confirmStockMovementModal" tabindex="-1" aria-labelledby="confirmStockMovementModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title" id="confirmStockMovementModalLabel">Confirmar Saída de Estoque</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Você está prestes a registrar uma <strong>saída</strong> de <span class="quantity"></span> unidade(s) do item:</p>
-                    <p class="text-center fs-5"><span class="item-name fw-bold"></span></p>
-                    <p class="mb-0">Esta ação irá reduzir a quantidade disponível no estoque. Deseja continuar?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" id="confirmStockMovementBtn">Confirmar Saída</button>
-                </div>
-            </div>
-        </div>
-    </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        // Variável para controlar se o formulário já foi enviado
-        let formSubmitted = false;
-        
-        // Inicializar o modal de Bootstrap
-        let modalElement = document.getElementById('confirmStockMovementModal');
-        let stockMovementModal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static',
-            keyboard: false
-        });
-        
-        // Modal de confirmação para saída de estoque
-        $('#quick-movement-form').submit(function(e) {
-            console.log("Formulário submetido");
-            const direction = $('#direction').val();
-            const itemName = $('#stock_item_id option:selected').text().split(' - ')[0];
-            const quantity = $('#quantity').val();
-            
-            // Verifica se é uma saída de estoque
-            if (direction === 'saida') {
-                console.log("É uma saída de estoque, mostrando confirmação");
-                // Previne envio imediato
-                e.preventDefault();
-                
-                // Atualiza texto do modal
-                $('#confirmStockMovementModal .item-name').text(itemName);
-                $('#confirmStockMovementModal .quantity').text(quantity);
-                
-                // Mostra o modal
-                stockMovementModal.show();
-                
-                // Reset do evento de clique para evitar múltiplos handlers
-                $('#confirmStockMovementBtn').off('click').on('click', function() {
-                    console.log("Botão de confirmação clicado");
-                    
-                    // Marca como enviado para evitar loop
-                    formSubmitted = true;
-                    
-                    // Esconde o modal
-                    stockMovementModal.hide();
-                    
-                    // Envia o formulário depois que o modal fechar
-                    setTimeout(function() {
-                        console.log("Enviando formulário...");
-                        $('#quick-movement-form')[0].submit();
-                    }, 500);
-                });
-                
-                return false;
-            } else {
-                // Se for entrada, apenas continua normalmente
-                console.log("Entrada de estoque, continuando normalmente");
-                return true;
-            }
-        });
-        
         // Aplica filtros ao mudar select
         $('#type, #status, #supplier_id').change(function() {
             $('#filter-form').submit();

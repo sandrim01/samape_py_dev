@@ -2296,10 +2296,6 @@ def register_routes(app):
             # Atualizar o estoque da peça
             part.stock_quantity -= form.quantity.data
             
-            # Atualizar o status do item de acordo com a nova quantidade
-            if hasattr(part, 'update_status'):
-                part.update_status()
-            
             # Adicionar entrada financeira sempre, independentemente de estar associada a uma OS
             description = f"Venda de peça: {part.name} (x{sale.quantity})"
             if sale.client_id:
@@ -2361,10 +2357,6 @@ def register_routes(app):
         part = Part.query.get(sale.part_id)
         if part:
             part.stock_quantity += sale.quantity
-            
-            # Atualizar o status do item de acordo com a nova quantidade
-            if hasattr(part, 'update_status'):
-                part.update_status()
         
         # Remover entrada financeira associada, sempre
         # Primeiro tenta buscar pela ordem de serviço, se tiver
@@ -2880,16 +2872,12 @@ def register_routes(app):
         # Lista de fornecedores para o filtro
         suppliers = Supplier.query.order_by(Supplier.name).all()
         
-        # Formulário de movimentação rápida
-        movement_form = StockMovementForm()
-        
         return render_template(
             'stock/index.html',
             items=items,
             item_types=StockItemType,
             item_statuses=StockItemStatus,
             suppliers=suppliers,
-            movement_form=movement_form,
             active_filters={
                 'type': item_type,
                 'status': status,
@@ -3145,10 +3133,6 @@ def register_routes(app):
             try:
                 item = StockItem.query.get_or_404(form.stock_item_id.data)
                 
-                # Log para debug
-                app.logger.info(f"Processando movimentação de estoque: item_id={form.stock_item_id.data}, direction={form.direction.data}, quantity={form.quantity.data}")
-                app.logger.info(f"Tipo do item: {item.type.value if item.type else 'Desconhecido'}")
-                
                 # Determinar a quantidade (positiva para entrada, negativa para saída)
                 quantity = form.quantity.data
                 if form.direction.data == 'saida':
@@ -3157,20 +3141,9 @@ def register_routes(app):
                 # Verificar se há quantidade suficiente em caso de saída
                 if quantity < 0 and abs(quantity) > item.quantity:
                     flash('Quantidade insuficiente em estoque para esta saída.', 'danger')
-                    return redirect(url_for('stock_items'))
+                    return redirect(url_for('view_stock_item', id=item.id))
                 
-                # Log para debug
-                app.logger.info(f"Quantidade após processamento: {quantity}")
-                app.logger.info(f"Quantidade atual no estoque: {item.quantity}")
-                
-                # Verificar se é uma saída, se é EPI ou ferramenta, e se tem ordem de serviço vinculada
-                has_service_order = form.service_order_id.data != 0 and form.service_order_id.data is not None
-                is_tool_or_epi = item.type in [StockItemType.epi, StockItemType.ferramenta]
-                is_outflow = quantity < 0
-                
-                app.logger.info(f"É saída: {is_outflow}, É EPI/Ferramenta: {is_tool_or_epi}, Tem OS: {has_service_order}")
-                
-                # Criar o movimento principal
+                # Criar o movimento
                 movement = StockMovement(
                     stock_item_id=form.stock_item_id.data,
                     quantity=quantity,
@@ -3186,40 +3159,7 @@ def register_routes(app):
                 # Atualizar o status do item
                 item.update_status()
                 
-                # Log para debug
-                app.logger.info(f"Nova quantidade após movimentação: {item.quantity}")
-                app.logger.info(f"Novo status: {item.status}")
-                
                 db.session.add(movement)
-                
-                # Para EPIs e ferramentas em saída, registrar automaticamente a baixa
-                if is_outflow and is_tool_or_epi:
-                    app.logger.info("Registrando baixa automática para EPI/Ferramenta")
-                    
-                    # Descrição da baixa automática
-                    baixa_desc = f"Baixa automática de {item.type.value} - {form.description.data}"
-                    if has_service_order:
-                        service_order = ServiceOrder.query.get(form.service_order_id.data)
-                        if service_order:
-                            baixa_desc += f" - OS #{service_order.id}"
-                    
-                    # Usar a referência original (quem está retirando o item)
-                    baixa_ref = form.reference.data if form.reference.data else "Sistema (baixa automática)"
-                    
-                    # Criar movimento adicional para registrar baixa permanente
-                    baixa_movement = StockMovement(
-                        stock_item_id=form.stock_item_id.data,
-                        quantity=0,  # Quantidade 0 indica baixa sem alterar o estoque novamente
-                        description=baixa_desc,
-                        reference=baixa_ref,
-                        service_order_id=form.service_order_id.data if form.service_order_id.data != 0 else None,
-                        created_by=current_user.id,
-                        is_write_off=True  # Marcar como baixa/descarte
-                    )
-                    
-                    db.session.add(baixa_movement)
-                    app.logger.info(f"Baixa automática de {item.name} registrada com sucesso")
-                
                 db.session.commit()
                 
                 # Registrar a ação
@@ -3235,19 +3175,10 @@ def register_routes(app):
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Erro ao registrar movimento de estoque: {str(e)}")
-                # Log detalhado dos valores do formulário
-                app.logger.error(f"Dados do formulário que causou erro: item_id={form.stock_item_id.data}, direction={form.direction.data}, quantity={form.quantity.data}, service_order_id={form.service_order_id.data}")
-                
-                # Mensagem amigável para o usuário
-                if 'violates foreign key constraint' in str(e):
-                    flash('Erro ao registrar movimento: Um dos itens relacionados não existe mais no sistema.', 'danger')
-                elif 'not-null constraint' in str(e):
-                    flash('Erro ao registrar movimento: Dados obrigatórios não foram informados.', 'danger')
-                else:
-                    flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
+                flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
         
-        # Redirecionar para a página de listagem de estoque com uma mensagem
-        return redirect(url_for('stock_items'))
+        # Redirecionar para a visualização do item
+        return redirect(url_for('view_stock_item', id=form.stock_item_id.data))
 
     # Initialize the first admin user if no users exist
     def create_initial_admin():

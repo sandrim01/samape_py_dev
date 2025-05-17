@@ -2,11 +2,6 @@
 
 {% block title %}Item de Estoque: {{ item.name }}{% endblock %}
 
-{% block head %}
-<!-- Garantir que o Bootstrap JS esteja incluído -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -389,16 +384,9 @@
                         <div class="content">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="title">{{ movement.quantity|abs }} unidades</div>
-                                <div>
-                                    {% if movement.is_write_off %}
-                                        <span class="status-badge warning me-1" title="Baixa automática">
-                                            <i class="fas fa-clipboard-check me-1"></i>Baixa
-                                        </span>
-                                    {% endif %}
-                                    <span class="status-badge {% if movement.quantity > 0 %}completed{% else %}cancelled{% endif %}">
-                                        {% if movement.quantity > 0 %}Entrada{% else %}Saída{% endif %}
-                                    </span>
-                                </div>
+                                <span class="status-badge {% if movement.quantity > 0 %}completed{% else %}cancelled{% endif %}">
+                                    {% if movement.quantity > 0 %}Entrada{% else %}Saída{% endif %}
+                                </span>
                             </div>
                             <div class="subtitle">
                                 <div>{{ movement.description }}</div>
@@ -452,11 +440,6 @@
                                         <span class="badge bg-success">Entrada</span>
                                     {% else %}
                                         <span class="badge bg-danger">Saída</span>
-                                    {% endif %}
-                                    {% if movement.is_write_off %}
-                                        <span class="badge bg-warning ms-1" title="Baixa automática">
-                                            <i class="fas fa-clipboard-check me-1"></i>Baixa
-                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>{{ movement.quantity|abs }}</td>
@@ -518,302 +501,67 @@
         </div>
     </div>
 </div>
-
-<!-- Modal de Confirmação de Movimentação de Estoque -->
-<div class="modal fade" id="confirmOutflowModal" tabindex="-1" role="dialog" aria-labelledby="confirmOutflowModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content bg-dark">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="confirmOutflowModalLabel">Confirmar Movimentação de Estoque</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Tem certeza que deseja registrar a <span id="operationType">movimentação</span> de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
-                <p id="operationDescription">Esta ação irá ajustar o estoque conforme a operação selecionada.</p>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
-                </div>
-                <form id="hiddenOutflowForm" method="POST" action="{{ url_for('add_stock_movement') }}">
-                    <!-- Campos ocultos que serão preenchidos via JavaScript -->
-                    {{ movement_form.hidden_tag() }}
-                    {{ movement_form.stock_item_id }}
-                    <input type="hidden" name="direction" id="hidden_direction" value="saida">
-                    <input type="hidden" name="quantity" id="hidden_quantity" value="0">
-                    <input type="hidden" name="description" id="hidden_description" value="">
-                    <input type="hidden" name="reference" id="hidden_reference" value="">
-                    <input type="hidden" name="service_order_id" id="hidden_service_order_id" value="0">
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="confirmOutflowBtn" class="btn btn-danger">Confirmar Operação</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("DOM carregado");
-        
-        // Referencias para formulários e campos importantes
-        const quantityInputs = document.querySelectorAll('#quantity, #mobile_quantity');
-        const directionInputs = document.querySelectorAll('#direction, input[name="direction"]');
-        const stockForms = document.querySelectorAll('form[action="{{ url_for('add_stock_movement') }}"]');
-        const confirmBtn = document.getElementById('confirmOutflowBtn');
-        const quantityDisplay = document.getElementById('outflowQuantity');
-        const hiddenForm = document.getElementById('hiddenOutflowForm');
-        
-        // Verificar se o formulário oculto existe
-        if (!hiddenForm) {
-            console.error("ERRO CRÍTICO: Formulário hiddenOutflowForm não encontrado!");
-        } else {
-            console.log("Formulário oculto encontrado com sucesso");
-        }
-        
-        const hiddenQuantity = document.getElementById('hidden_quantity');
-        const hiddenDescription = document.getElementById('hidden_description');
-        const hiddenReference = document.getElementById('hidden_reference');
-        const hiddenServiceOrderId = document.getElementById('hidden_service_order_id');
-        const currentStock = {{ item.quantity }};
-        const modalElement = document.getElementById('confirmOutflowModal');
-        
-        console.log("Elementos encontrados:", {
-            forms: stockForms.length,
-            modal: modalElement,
-            confirmBtn: confirmBtn
-        });
-        
-        // Criação do modal com Bootstrap JS
-        let confirmModal;
-        
-        try {
-            confirmModal = new bootstrap.Modal(modalElement);
-            console.log("Modal inicializado com sucesso");
-        } catch (error) {
-            console.error("Erro ao inicializar modal:", error);
-        }
-        
-        // Validação de quantidade ao digitar
-        quantityInputs.forEach(input => {
-            input.addEventListener('input', function() {
-                const form = this.closest('form');
-                const direction = form.querySelector('#direction')?.value || 
-                                form.querySelector('input[name="direction"]:checked')?.value;
-                const quantity = parseInt(this.value) || 0;
-                
-                if (direction === 'saida' && quantity > currentStock) {
-                    this.classList.add('is-invalid');
-                    
-                    // Adiciona mensagem de erro se não existir
-                    if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
-                        const feedback = document.createElement('div');
-                        feedback.className = 'invalid-feedback';
-                        feedback.textContent = 'Quantidade maior que o disponível em estoque.';
-                        this.insertAdjacentElement('afterend', feedback);
-                    }
-                } else {
-                    this.classList.remove('is-invalid');
-                    
-                    // Remove mensagem de erro se existir
-                    if (this.nextElementSibling && this.nextElementSibling.classList.contains('invalid-feedback')) {
-                        this.nextElementSibling.remove();
-                    }
-                }
-            });
-        });
-        
-        // Revalidar quando mudar a direção
-        directionInputs.forEach(input => {
-            input.addEventListener('change', function() {
-                quantityInputs.forEach(qInput => qInput.dispatchEvent(new Event('input')));
-            });
-        });
-        
-        // Interceptar envio dos formulários
-        stockForms.forEach(form => {
-            console.log("Adicionando evento de submit ao formulário", form);
-            form.addEventListener('submit', function(e) {
-                console.log("Formulário submetido");
-                e.preventDefault(); // Sempre prevenimos o envio inicial
-                
-                const direction = this.querySelector('#direction')?.value || 
-                                  this.querySelector('input[name="direction"]:checked')?.value;
-                const quantity = parseInt(this.querySelector('#quantity')?.value || 
-                                          this.querySelector('#mobile_quantity')?.value) || 0;
-                
-                console.log("Direção:", direction, "Quantidade:", quantity);
-                
-                // Sempre mostrar modal de confirmação, independente se for entrada ou saída
-                console.log("Preparando modal para direção:", direction);
-                
-                // Atualizar título e texto do modal conforme o tipo de movimento
-                const modalTitle = document.getElementById('confirmOutflowModalLabel');
-                const operationType = document.getElementById('operationType');
-                const operationDescription = document.getElementById('operationDescription');
-                
-                if (modalTitle) {
-                    modalTitle.textContent = direction === 'saida' ? 'Confirmar Saída de Estoque' : 'Confirmar Entrada de Estoque';
-                }
-                
-                if (operationType) {
-                    operationType.textContent = direction === 'saida' ? 'saída' : 'entrada';
-                }
-                
-                if (operationDescription) {
-                    if (direction === 'saida') {
-                        operationDescription.textContent = 'Esta ação irá deduzir a quantidade informada do estoque atual.';
-                    } else {
-                        operationDescription.textContent = 'Esta ação irá adicionar a quantidade informada ao estoque atual.';
-                    }
-                }
-                
-                // Atualizar texto do modal
-                if (quantityDisplay) {
-                    quantityDisplay.textContent = quantity;
-                }
-                
-                // Atualizar cores do modal conforme o tipo
-                const modalHeader = document.querySelector('#confirmOutflowModal .modal-header');
-                const confirmButton = document.getElementById('confirmOutflowBtn');
-                
-                if (modalHeader) {
-                    if (direction === 'saida') {
-                        modalHeader.classList.remove('bg-success');
-                        modalHeader.classList.add('bg-danger');
-                    } else {
-                        modalHeader.classList.remove('bg-danger');
-                        modalHeader.classList.add('bg-success');
-                    }
-                }
-                
-                if (confirmButton) {
-                    if (direction === 'saida') {
-                        confirmButton.classList.remove('btn-success');
-                        confirmButton.classList.add('btn-danger');
-                        confirmButton.textContent = 'Confirmar Saída';
-                    } else {
-                        confirmButton.classList.remove('btn-danger');
-                        confirmButton.classList.add('btn-success');
-                        confirmButton.textContent = 'Confirmar Entrada';
-                    }
-                }
-                
-                // Copiar dados do formulário para o formulário oculto
-                if (hiddenForm) {
-                    // Atualizar direction no formulário oculto
-                    document.getElementById('hidden_direction').value = direction;
-                    
-                    hiddenQuantity.value = quantity;
-                    hiddenDescription.value = this.querySelector('[name="description"]')?.value || '';
-                    hiddenReference.value = this.querySelector('[name="reference"]')?.value || '';
-                    
-                    const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
-                    hiddenServiceOrderId.value = serviceOrderId;
-                    
-                    // Sempre exibir modal para QUALQUER operação, seja entrada ou saída
-                    console.log("Sempre exibindo modal para direção:", direction);
-                    
-                    // Exibir modal usando Bootstrap ou jQuery como fallback
-                    try {
-                        if (confirmModal) {
-                            console.log("Mostrando modal com Bootstrap");
-                            confirmModal.show();
-                        } else {
-                            console.log("Tentando com jQuery");
-                            $('#confirmOutflowModal').modal('show');
-                        }
-                    } catch (err) {
-                        console.error("Erro ao mostrar modal:", err);
-                        // Se falhar, enviar o formulário diretamente
-                        hiddenForm.submit();
-                    }
-                } else {
-                    console.log("Formulário oculto não encontrado, enviando formulário diretamente");
-                    this.submit();
-                }
-            });
-        });
-        
-        // Botão de confirmação no modal
-        if (confirmBtn) {
-            console.log("Configurando botão de confirmação");
-            confirmBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                console.log("Botão de confirmação clicado");
-                
-                // Obter o formulário oculto novamente (para garantir que ele existe)
-                const formToSubmit = document.getElementById('hiddenOutflowForm');
-                
-                if (formToSubmit) {
-                    console.log("Enviando formulário oculto:", formToSubmit);
-                    
-                    try {
-                        // Fechar o modal antes de enviar o formulário
-                        if (confirmModal) {
-                            confirmModal.hide();
-                        } else if (window.jQuery) {
-                            $('#confirmOutflowModal').modal('hide');
-                        }
-                    } catch (error) {
-                        console.error("Erro ao fechar modal:", error);
-                    }
-                    
-                    // Pequeno atraso para garantir que o modal foi fechado
-                    setTimeout(function() {
-                        console.log("Enviando formulário após delay");
-                        formToSubmit.submit();
-                    }, 100);
-                } else {
-                    console.error("ERRO CRÍTICO: Formulário oculto não encontrado no momento do envio");
-                    alert("Erro ao processar formulário. Por favor, tente novamente.");
-                }
-            });
-        } else {
-            console.error("Botão de confirmação não encontrado!");
-        }
-        
-        // Filtro de histórico de movimentos no mobile
-        const mobileTabs = document.querySelectorAll('.mobile-tabs .mobile-tab');
-        mobileTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Atualiza estilo das tabs
-                mobileTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                const filter = this.dataset.filter;
-                const cards = document.querySelectorAll('.interactive-card');
-                
-                if (filter === 'all') {
-                    // Mostra todos os cards
-                    cards.forEach(card => card.style.display = 'block');
-                } else {
-                    // Filtra cards baseado no tipo
-                    cards.forEach(card => {
-                        if (card.dataset.type === filter) {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                }
+    $(document).ready(function() {
+        // Script para validação de quantidade
+        $('#quantity').on('input', function() {
+            const direction = $('#direction').val();
+            const quantity = parseInt($(this).val());
+            const currentStock = {{ item.quantity }};
             
-            // Mostra mensagem se nenhum movimento encontrado
-            const visibleCards = document.querySelectorAll('.interactive-card[style*="block"]').length;
-            if (visibleCards === 0) {
-                if (!document.querySelector('.no-results-message')) {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'text-center py-4 no-results-message';
-                    noResults.innerHTML = 
-                        '<div class="mb-3"><i class="fas fa-search fa-3x text-muted"></i></div>' +
-                        '<p class="text-muted">Nenhum movimento encontrado com o filtro selecionado.</p>';
-                    document.querySelector('.d-lg-none').appendChild(noResults);
+            if (direction === 'saida' && quantity > currentStock) {
+                $(this).addClass('is-invalid');
+                if (!$('#quantity-feedback').length) {
+                    $(this).after('<div id="quantity-feedback" class="invalid-feedback">Quantidade maior que o disponível em estoque.</div>');
                 }
             } else {
-                const noResultsMsg = document.querySelector('.no-results-message');
-                if (noResultsMsg) noResultsMsg.remove();
+                $(this).removeClass('is-invalid');
+                $('#quantity-feedback').remove();
+            }
+        });
+        
+        $('#direction').change(function() {
+            // Revalida a quantidade quando muda a direção
+            $('#quantity').trigger('input');
+        });
+        
+        // Filtro de histórico de movimentos no mobile
+        $('.mobile-tabs .mobile-tab').click(function() {
+            // Atualiza estilo das tabs
+            $('.mobile-tabs .mobile-tab').removeClass('active');
+            $(this).addClass('active');
+            
+            const filter = $(this).data('filter');
+            
+            if (filter === 'all') {
+                // Mostra todos os cards
+                $('.interactive-card').show();
+            } else {
+                // Filtra cards baseado no tipo
+                $('.interactive-card').each(function() {
+                    if ($(this).data('type') === filter) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            }
+            
+            // Mostra mensagem se nenhum movimento encontrado
+            const visibleCards = $('.interactive-card:visible').length;
+            if (visibleCards === 0) {
+                if ($('.no-results-message').length === 0) {
+                    const noResults = $('<div class="text-center py-4 no-results-message">' +
+                        '<div class="mb-3"><i class="fas fa-search fa-3x text-muted"></i></div>' +
+                        '<p class="text-muted">Nenhum movimento encontrado com o filtro selecionado.</p>' +
+                        '</div>');
+                    $('.d-lg-none').append(noResults);
+                }
+            } else {
+                $('.no-results-message').remove();
             }
         });
         

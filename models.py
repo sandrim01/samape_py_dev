@@ -359,7 +359,6 @@ class StockMovement(db.Model):
     service_order_id = db.Column(db.Integer, db.ForeignKey('service_order.id'), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_write_off = db.Column(db.Boolean, default=False)  # Indica se é uma baixa de material
     
     # Relações
     service_order = db.relationship('ServiceOrder', backref='stock_movements')
