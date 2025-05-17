@@ -519,17 +519,17 @@
     </div>
 </div>
 
-<!-- Modal de Confirmação de Saída de Estoque -->
+<!-- Modal de Confirmação de Movimentação de Estoque -->
 <div class="modal fade" id="confirmOutflowModal" tabindex="-1" role="dialog" aria-labelledby="confirmOutflowModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content bg-dark">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="confirmOutflowModalLabel">Confirmar Saída de Estoque</h5>
+                <h5 class="modal-title" id="confirmOutflowModalLabel">Confirmar Movimentação de Estoque</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Tem certeza que deseja registrar a <span id="operationType">saída</span> de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
-                <p id="operationDescription">Esta ação irá deduzir a quantidade informada do estoque atual.</p>
+                <p>Tem certeza que deseja registrar a <span id="operationType">movimentação</span> de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
+                <p id="operationDescription">Esta ação irá ajustar o estoque conforme a operação selecionada.</p>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
                 </div>
@@ -546,7 +546,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="confirmOutflowBtn" class="btn btn-danger">Confirmar Saída</button>
+                <button type="button" id="confirmOutflowBtn" class="btn btn-danger">Confirmar Operação</button>
             </div>
         </div>
     </div>
@@ -705,6 +705,9 @@
                     const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
                     hiddenServiceOrderId.value = serviceOrderId;
                     
+                    // Sempre exibir modal para QUALQUER operação, seja entrada ou saída
+                    console.log("Sempre exibindo modal para direção:", direction);
+                    
                     // Exibir modal usando Bootstrap ou jQuery como fallback
                     try {
                         if (confirmModal) {
@@ -717,7 +720,7 @@
                     } catch (err) {
                         console.error("Erro ao mostrar modal:", err);
                         // Se falhar, enviar o formulário diretamente
-                        this.submit();
+                        hiddenForm.submit();
                     }
                 } else {
                     console.log("Formulário oculto não encontrado, enviando formulário diretamente");
