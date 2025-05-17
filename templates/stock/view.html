@@ -553,7 +553,11 @@
         const currentStock = {{ item.quantity }};
         
         // Criação do modal com Bootstrap JS
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmOutflowModal'));
+        const modalElement = document.getElementById('confirmOutflowModal');
+        const confirmModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
         
         // Validação de quantidade ao digitar
         quantityInputs.forEach(input => {

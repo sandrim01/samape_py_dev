@@ -404,41 +404,56 @@
         // Variável para controlar se o formulário já foi enviado
         let formSubmitted = false;
         
+        // Inicializar o modal de Bootstrap
+        let modalElement = document.getElementById('confirmStockMovementModal');
+        let stockMovementModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        
         // Modal de confirmação para saída de estoque
         $('#quick-movement-form').submit(function(e) {
+            console.log("Formulário submetido");
             const direction = $('#direction').val();
             const itemName = $('#stock_item_id option:selected').text().split(' - ')[0];
             const quantity = $('#quantity').val();
             
-            // Se já foi enviado ou não é uma saída, deixa o processo normal acontecer
-            if (formSubmitted || direction !== 'saida') {
-                console.log("Formulário sendo enviado normalmente");
+            // Verifica se é uma saída de estoque
+            if (direction === 'saida') {
+                console.log("É uma saída de estoque, mostrando confirmação");
+                // Previne envio imediato
+                e.preventDefault();
+                
+                // Atualiza texto do modal
+                $('#confirmStockMovementModal .item-name').text(itemName);
+                $('#confirmStockMovementModal .quantity').text(quantity);
+                
+                // Mostra o modal
+                stockMovementModal.show();
+                
+                // Reset do evento de clique para evitar múltiplos handlers
+                $('#confirmStockMovementBtn').off('click').on('click', function() {
+                    console.log("Botão de confirmação clicado");
+                    
+                    // Marca como enviado para evitar loop
+                    formSubmitted = true;
+                    
+                    // Esconde o modal
+                    stockMovementModal.hide();
+                    
+                    // Envia o formulário depois que o modal fechar
+                    setTimeout(function() {
+                        console.log("Enviando formulário...");
+                        $('#quick-movement-form')[0].submit();
+                    }, 500);
+                });
+                
+                return false;
+            } else {
+                // Se for entrada, apenas continua normalmente
+                console.log("Entrada de estoque, continuando normalmente");
                 return true;
             }
-            
-            // Para saídas, exibe o modal
-            e.preventDefault();
-            
-            // Exibe modal de confirmação
-            $('#confirmStockMovementModal .item-name').text(itemName);
-            $('#confirmStockMovementModal .quantity').text(quantity);
-            $('#confirmStockMovementModal').modal('show');
-            
-            // Quando confirmado, envia o formulário
-            $('#confirmStockMovementBtn').off('click').on('click', function() {
-                console.log("Botão de confirmação clicado");
-                // Fecha o modal
-                $('#confirmStockMovementModal').modal('hide');
-                
-                // Marca como enviado para evitar loop
-                formSubmitted = true;
-                
-                // Envia o formulário após um pequeno delay para o modal fechar
-                setTimeout(function() {
-                    console.log("Enviando formulário...");
-                    $('#quick-movement-form')[0].submit();
-                }, 500);
-            });
         });
         
         // Aplica filtros ao mudar select
