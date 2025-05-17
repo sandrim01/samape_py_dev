@@ -453,6 +453,11 @@
                                     {% else %}
                                         <span class="badge bg-danger">Saída</span>
                                     {% endif %}
+                                    {% if movement.is_write_off %}
+                                        <span class="badge bg-warning ms-1" title="Baixa automática">
+                                            <i class="fas fa-clipboard-check me-1"></i>Baixa
+                                        </span>
+                                    {% endif %}
                                 </td>
                                 <td>{{ movement.quantity|abs }}</td>
                                 <td>{{ movement.description }}</td>
