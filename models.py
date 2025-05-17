@@ -119,6 +119,13 @@ class ServiceOrder(db.Model):
     invoice_amount = db.Column(db.Numeric(10, 2))
     service_details = db.Column(db.Text)
     
+    # Campos para veículo e cálculo de R$/KM
+    vehicle_type = db.Column(db.String(20), nullable=True)  # 'fleet' para veículo da frota, 'rental' para alugado
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    distance_km = db.Column(db.Numeric(10, 2), nullable=True)
+    cost_per_km = db.Column(db.Numeric(10, 2), nullable=True)
+    total_vehicle_cost = db.Column(db.Numeric(10, 2), nullable=True)
+    
     # Relations
     financial_entries = db.relationship('FinancialEntry', backref='service_order', lazy=True)
     images = db.relationship('ServiceOrderImage', backref='service_order', lazy=True, cascade="all, delete-orphan")

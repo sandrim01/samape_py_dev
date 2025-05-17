@@ -167,12 +167,33 @@ class ServiceOrderForm(FlaskForm):
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
     invoice_amount = DecimalField('Valor Total da Nota (R$)', validators=[Optional()], places=2)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
+    
+    # Campos para veículo e cálculo de R$/KM
+    vehicle_type = SelectField('Tipo de Veículo', choices=[
+        ('', 'Nenhum veículo necessário'),
+        ('fleet', 'Veículo da Frota'),
+        ('rental', 'Veículo Alugado')
+    ], validators=[Optional()])
+    vehicle_id = SelectField('Veículo da Frota', coerce=lambda x: int(x) if x else None, validators=[Optional()])
+    distance_km = DecimalField('Distância (KM)', validators=[Optional()], places=2)
+    cost_per_km = DecimalField('Custo por KM (R$)', validators=[Optional()], places=2)
+    total_vehicle_cost = DecimalField('Custo Total Veículo (R$)', validators=[Optional()], places=2)
+    
     images = FileField('Imagens do Equipamento (máx. 500KB por imagem)', validators=[
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], 'Apenas imagens são permitidas!'),
         FileSizeLimit(500)  # Limite de 500KB por arquivo
     ], render_kw={"multiple": True})
     image_descriptions = TextAreaField('Descrições das Imagens (separadas por ponto e vírgula)', validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(ServiceOrderForm, self).__init__(*args, **kwargs)
+        # Carregar veículos disponíveis da frota
+        from models import Vehicle, VehicleStatus
+        self.vehicle_id.choices = [('', 'Selecione um veículo')] + [
+            (v.id, f"{v.plate} - {v.brand} {v.model} ({v.year})") 
+            for v in Vehicle.query.filter(Vehicle.status == VehicleStatus.disponivel).order_by(Vehicle.plate).all()
+        ]
 
 class CloseServiceOrderForm(FlaskForm):
     # Removido campo invoice_number que agora será gerado automaticamente
