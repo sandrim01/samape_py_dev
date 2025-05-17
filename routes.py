@@ -2872,9 +2872,13 @@ def register_routes(app):
         # Lista de fornecedores para o filtro
         suppliers = Supplier.query.order_by(Supplier.name).all()
         
+        # Lista completa de itens para o modal de movimentação
+        all_stock_items = StockItem.query.order_by(StockItem.name).all()
+        
         return render_template(
             'stock/index.html',
             items=items,
+            all_stock_items=all_stock_items,
             item_types=StockItemType,
             item_statuses=StockItemStatus,
             suppliers=suppliers,
@@ -2883,7 +2887,8 @@ def register_routes(app):
                 'status': status,
                 'search': search,
                 'supplier_id': supplier_id
-            }
+            },
+            type_filter=item_type
         )
         
     @app.route('/estoque/novo', methods=['GET', 'POST'])
