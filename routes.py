@@ -3179,6 +3179,81 @@ def register_routes(app):
         
         # Redirecionar para a visualização do item
         return redirect(url_for('view_stock_item', id=form.stock_item_id.data))
+        
+    @app.route('/api/estoque/movimentacao', methods=['POST'])
+    @login_required
+    def add_stock_movement_ajax():
+        """Endpoint para registrar movimento de estoque via AJAX"""
+        try:
+            # Obter dados do formulário
+            stock_item_id = request.form.get('stock_item_id')
+            quantity = int(request.form.get('quantity', 1))
+            direction = request.form.get('direction')
+            description = request.form.get('description', '')
+            reference = request.form.get('reference', '')
+            
+            if not stock_item_id or not direction or not description:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Dados incompletos. Preencha todos os campos obrigatórios.'
+                })
+            
+            # Buscar o item de estoque
+            item = StockItem.query.get_or_404(stock_item_id)
+            
+            # Determinar a quantidade (positiva para entrada, negativa para saída)
+            actual_quantity = quantity
+            if direction == 'saida':
+                actual_quantity = -quantity
+            
+            # Verificar se há quantidade suficiente em caso de saída
+            if actual_quantity < 0 and abs(actual_quantity) > item.quantity:
+                return jsonify({
+                    'success': False,
+                    'message': f'Quantidade insuficiente em estoque. Disponível: {item.quantity}'
+                })
+            
+            # Criar o movimento
+            movement = StockMovement(
+                stock_item_id=stock_item_id,
+                quantity=actual_quantity,
+                description=description,
+                reference=reference,
+                created_by=current_user.id
+            )
+            
+            # Atualizar a quantidade do item
+            item.quantity += actual_quantity
+            
+            # Atualizar o status do item
+            item.update_status()
+            
+            db.session.add(movement)
+            db.session.commit()
+            
+            # Registrar a ação
+            action_type = "Entrada" if actual_quantity > 0 else "Saída"
+            log_action(
+                f"{action_type} de Estoque",
+                'stock_movement',
+                movement.id,
+                f"{abs(actual_quantity)} unidade(s) {direction} de {item.name}"
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': f'Movimento de {abs(actual_quantity)} unidade(s) registrado com sucesso!',
+                'new_quantity': item.quantity,
+                'item_id': item.id
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao registrar movimento via AJAX: {str(e)}")
+            return jsonify({
+                'success': False,
+                'message': f'Erro ao processar: {str(e)}'
+            })
 
     # Initialize the first admin user if no users exist
     def create_initial_admin():
