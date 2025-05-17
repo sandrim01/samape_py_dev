@@ -2,6 +2,11 @@
 
 {% block title %}Item de Estoque: {{ item.name }}{% endblock %}
 
+{% block head %}
+<!-- Garantir que o Bootstrap JS esteja incluído -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -505,10 +510,10 @@
 <!-- Modal de Confirmação de Saída de Estoque -->
 <div class="modal fade" id="confirmOutflowModal" tabindex="-1" role="dialog" aria-labelledby="confirmOutflowModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content bg-dark">
+            <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="confirmOutflowModalLabel">Confirmar Saída de Estoque</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja registrar a saída de <strong id="outflowQuantity">0</strong> unidade(s) de <strong>{{ item.name }}</strong>?</p>
@@ -529,7 +534,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="confirmOutflowBtn" class="btn btn-primary">Confirmar Saída</button>
+                <button type="button" id="confirmOutflowBtn" class="btn btn-danger">Confirmar Saída</button>
             </div>
         </div>
     </div>
@@ -539,6 +544,8 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM carregado");
+        
         // Referencias para formulários e campos importantes
         const quantityInputs = document.querySelectorAll('#quantity, #mobile_quantity');
         const directionInputs = document.querySelectorAll('#direction, input[name="direction"]');
@@ -551,13 +558,23 @@
         const hiddenReference = document.getElementById('hidden_reference');
         const hiddenServiceOrderId = document.getElementById('hidden_service_order_id');
         const currentStock = {{ item.quantity }};
+        const modalElement = document.getElementById('confirmOutflowModal');
+        
+        console.log("Elementos encontrados:", {
+            forms: stockForms.length,
+            modal: modalElement,
+            confirmBtn: confirmBtn
+        });
         
         // Criação do modal com Bootstrap JS
-        const modalElement = document.getElementById('confirmOutflowModal');
-        const confirmModal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static',
-            keyboard: false
-        });
+        let confirmModal;
+        
+        try {
+            confirmModal = new bootstrap.Modal(modalElement);
+            console.log("Modal inicializado com sucesso");
+        } catch (error) {
+            console.error("Erro ao inicializar modal:", error);
+        }
         
         // Validação de quantidade ao digitar
         quantityInputs.forEach(input => {
@@ -597,42 +614,83 @@
         
         // Interceptar envio dos formulários
         stockForms.forEach(form => {
+            console.log("Adicionando evento de submit ao formulário", form);
             form.addEventListener('submit', function(e) {
+                console.log("Formulário submetido");
+                e.preventDefault(); // Sempre prevenimos o envio inicial
+                
                 const direction = this.querySelector('#direction')?.value || 
-                                this.querySelector('input[name="direction"]:checked')?.value;
+                                  this.querySelector('input[name="direction"]:checked')?.value;
                 const quantity = parseInt(this.querySelector('#quantity')?.value || 
-                                        this.querySelector('#mobile_quantity')?.value) || 0;
+                                          this.querySelector('#mobile_quantity')?.value) || 0;
+                
+                console.log("Direção:", direction, "Quantidade:", quantity);
                 
                 // Se for saída, mostrar modal de confirmação
                 if (direction === 'saida') {
-                    e.preventDefault();
+                    console.log("É uma saída, mostrando modal");
                     
                     // Atualizar texto do modal
-                    quantityDisplay.textContent = quantity;
+                    if (quantityDisplay) {
+                        quantityDisplay.textContent = quantity;
+                    }
                     
                     // Copiar dados do formulário para o formulário oculto
-                    hiddenQuantity.value = quantity;
-                    hiddenDescription.value = this.querySelector('[name="description"]').value;
-                    hiddenReference.value = this.querySelector('[name="reference"]').value;
-                    
-                    const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
-                    hiddenServiceOrderId.value = serviceOrderId;
-                    
-                    // Exibir modal
-                    confirmModal.show();
+                    if (hiddenForm) {
+                        hiddenQuantity.value = quantity;
+                        hiddenDescription.value = this.querySelector('[name="description"]')?.value || '';
+                        hiddenReference.value = this.querySelector('[name="reference"]')?.value || '';
+                        
+                        const serviceOrderId = this.querySelector('[name="service_order_id"]')?.value || 0;
+                        hiddenServiceOrderId.value = serviceOrderId;
+                        
+                        // Exibir modal usando jQuery como alternativa se o modal do Bootstrap não funcionar
+                        if (confirmModal) {
+                            console.log("Mostrando modal com Bootstrap");
+                            confirmModal.show();
+                        } else {
+                            console.log("Modal não inicializado, tentando com jQuery");
+                            $('#confirmOutflowModal').modal('show');
+                        }
+                    } else {
+                        console.log("Formulário oculto não encontrado, enviando formulário diretamente");
+                        this.submit();
+                    }
+                } else {
+                    console.log("É uma entrada, enviando formulário diretamente");
+                    this.submit();
                 }
-                // Para entrada, o form é enviado normalmente
             });
         });
         
         // Botão de confirmação no modal
-        confirmBtn.addEventListener('click', function() {
-            // Envia o formulário oculto
-            hiddenForm.submit();
-            
-            // Fecha o modal
-            confirmModal.hide();
-        });
+        if (confirmBtn) {
+            console.log("Configurando botão de confirmação");
+            confirmBtn.addEventListener('click', function() {
+                console.log("Botão de confirmação clicado");
+                
+                // Envia o formulário oculto
+                if (hiddenForm) {
+                    console.log("Enviando formulário oculto");
+                    hiddenForm.submit();
+                } else {
+                    console.log("Formulário oculto não encontrado");
+                }
+                
+                // Fecha o modal (tentando os dois métodos)
+                try {
+                    if (confirmModal) {
+                        confirmModal.hide();
+                    } else {
+                        $('#confirmOutflowModal').modal('hide');
+                    }
+                } catch (error) {
+                    console.error("Erro ao fechar modal:", error);
+                }
+            });
+        } else {
+            console.error("Botão de confirmação não encontrado!");
+        }
         
         // Filtro de histórico de movimentos no mobile
         const mobileTabs = document.querySelectorAll('.mobile-tabs .mobile-tab');
