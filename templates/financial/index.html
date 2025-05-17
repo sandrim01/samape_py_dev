@@ -9,6 +9,9 @@
         <a href="{{ url_for('new_financial_entry') }}" class="btn btn-primary me-2">
             <i class="fas fa-plus me-1"></i> Novo Registro
         </a>
+        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#financialAdjustmentModal">
+            <i class="fas fa-balance-scale me-1"></i> Acerto Manual
+        </button>
         <a href="{{ url_for('export_financial', month=month, year=year) }}" class="btn btn-outline-secondary">
             <i class="fas fa-file-export me-1"></i> Exportar CSV
         </a>
