@@ -389,9 +389,16 @@
                         <div class="content">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="title">{{ movement.quantity|abs }} unidades</div>
-                                <span class="status-badge {% if movement.quantity > 0 %}completed{% else %}cancelled{% endif %}">
-                                    {% if movement.quantity > 0 %}Entrada{% else %}Saída{% endif %}
-                                </span>
+                                <div>
+                                    {% if movement.is_write_off %}
+                                        <span class="status-badge warning me-1" title="Baixa automática">
+                                            <i class="fas fa-clipboard-check me-1"></i>Baixa
+                                        </span>
+                                    {% endif %}
+                                    <span class="status-badge {% if movement.quantity > 0 %}completed{% else %}cancelled{% endif %}">
+                                        {% if movement.quantity > 0 %}Entrada{% else %}Saída{% endif %}
+                                    </span>
+                                </div>
                             </div>
                             <div class="subtitle">
                                 <div>{{ movement.description }}</div>
