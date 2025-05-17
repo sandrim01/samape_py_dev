@@ -3744,6 +3744,129 @@ def register_routes(app):
         """Excluir veículo - redirecionar para a versão correta"""
         # Redirecionar para a nova rota de exclusão de veículos
         return redirect(url_for('delete_fleet_vehicle', id=id))
+    
+    @app.route('/frota/<int:id>/apagar-registros', methods=['POST'])
+    @login_required
+    def delete_vehicle_records(id):
+        """Apaga registros selecionados de um veículo (manutenções e abastecimentos)
+        e faz o ajuste automático no sistema financeiro"""
+        
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        try:
+            # Obter dados do formulário
+            maintenance_ids = request.form.getlist('maintenance_ids[]')
+            refueling_ids = request.form.getlist('refueling_ids[]')
+            removal_reason = request.form.get('removal_reason', '')
+            
+            if not maintenance_ids and not refueling_ids:
+                flash('Nenhum registro selecionado para exclusão.', 'warning')
+                return redirect(url_for('view_vehicle', id=id))
+            
+            total_financial_adjustments = 0
+            records_deleted = 0
+            
+            # Processar exclusão de registros de manutenção
+            for maint_id in maintenance_ids:
+                maintenance = VehicleMaintenance.query.get(maint_id)
+                if maintenance and maintenance.vehicle_id == vehicle.id:
+                    # Verificar se existem entradas financeiras relacionadas
+                    financial_entries = FinancialEntry.query.filter_by(
+                        entry_type='vehicle_maintenance',
+                        reference_id=int(maint_id)
+                    ).all()
+                    
+                    # Registrar o valor para posterior ajuste financeiro
+                    if maintenance.cost:
+                        total_financial_adjustments += float(maintenance.cost)
+                    
+                    # Apagar entradas financeiras relacionadas
+                    for entry in financial_entries:
+                        db.session.delete(entry)
+                    
+                    # Registrar ação de exclusão
+                    log_action(
+                        'Registro de Manutenção Excluído',
+                        'vehicle_maintenance',
+                        maintenance.id,
+                        f"Manutenção de {maintenance.date.strftime('%d/%m/%Y')} excluída: {maintenance.description}"
+                    )
+                    
+                    # Apagar registro de manutenção
+                    db.session.delete(maintenance)
+                    records_deleted += 1
+            
+            # Processar exclusão de registros de abastecimento
+            for refuel_id in refueling_ids:
+                refueling = Refueling.query.get(refuel_id)
+                if refueling and refueling.vehicle_id == vehicle.id:
+                    # Verificar se existem entradas financeiras relacionadas
+                    financial_entries = FinancialEntry.query.filter_by(
+                        entry_type='vehicle_refueling',
+                        reference_id=int(refuel_id)
+                    ).all()
+                    
+                    # Registrar o valor para posterior ajuste financeiro
+                    if refueling.total_cost:
+                        total_financial_adjustments += float(refueling.total_cost)
+                    
+                    # Apagar entradas financeiras relacionadas
+                    for entry in financial_entries:
+                        db.session.delete(entry)
+                    
+                    # Registrar ação de exclusão
+                    log_action(
+                        'Registro de Abastecimento Excluído',
+                        'refueling',
+                        refueling.id,
+                        f"Abastecimento de {refueling.date.strftime('%d/%m/%Y')} excluído: {refueling.liters}L de {refueling.fuel_type.value}"
+                    )
+                    
+                    # Apagar registro de abastecimento
+                    db.session.delete(refueling)
+                    records_deleted += 1
+            
+            # Criar entrada financeira de ajuste se necessário
+            if total_financial_adjustments > 0:
+                adjustment_entry = FinancialEntry(
+                    description=f"[Acerto Automático] Exclusão de registros de veículo {vehicle.plate}: {removal_reason}",
+                    amount=total_financial_adjustments,
+                    type=FinancialEntryType.entrada,  # Entrada para compensar as saídas excluídas
+                    date=datetime.utcnow(),
+                    created_by=current_user.id,
+                    entry_type='vehicle_adjustment',
+                    reference_id=vehicle.id
+                )
+                db.session.add(adjustment_entry)
+                
+                log_action(
+                    'Acerto Financeiro Automático',
+                    'financial',
+                    0,  # O ID será obtido após o commit
+                    f"Acerto automático de R$ {total_financial_adjustments:.2f} por exclusão de registros do veículo {vehicle.plate}"
+                )
+            
+            db.session.commit()
+            
+            # Atualizar o ID da ação se um acerto financeiro foi criado
+            if total_financial_adjustments > 0:
+                action_log = ActionLog.query.filter_by(
+                    action='Acerto Financeiro Automático',
+                    entity_id=0
+                ).order_by(ActionLog.id.desc()).first()
+                
+                if action_log:
+                    action_log.entity_id = adjustment_entry.id
+                    db.session.commit()
+            
+            flash(f'{records_deleted} registro(s) excluído(s) com sucesso. Ajuste financeiro de R$ {total_financial_adjustments:.2f} realizado.', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir registros do veículo: {str(e)}")
+            flash(f'Erro ao excluir registros: {str(e)}', 'danger')
+            
+        return redirect(url_for('view_vehicle', id=id))
         
     @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
     @login_required
