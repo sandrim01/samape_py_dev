@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block extra_js %}
+<!-- JS para cálculo de veículo R$/KM -->
+<script src="{{ url_for('static', filename='js/vehicle-calculation.js') }}"></script>
+{% endblock %}
+
 {% block title %}Nova Ordem de Serviço - SAMAPE{% endblock %}
 
 {% block content %}

@@ -303,7 +303,13 @@ def register_routes(app):
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     description=form.description.data,
                     estimated_value=form.estimated_value.data,
-                    status=ServiceOrderStatus[form.status.data]
+                    status=ServiceOrderStatus[form.status.data],
+                    # Campos para veículo e cálculo de R$/KM
+                    vehicle_type=form.vehicle_type.data if form.vehicle_type.data else None,
+                    vehicle_id=form.vehicle_id.data if form.vehicle_id.data else None,
+                    distance_km=form.distance_km.data if form.distance_km.data else None,
+                    cost_per_km=form.cost_per_km.data if form.cost_per_km.data else None,
+                    total_vehicle_cost=form.total_vehicle_cost.data if form.total_vehicle_cost.data else None
                 )
                 
                 # Add equipment relationships if selected
