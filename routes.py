@@ -1315,6 +1315,64 @@ def register_routes(app):
             
         return render_template('financial/create.html', form=form)
 
+    @app.route('/financeiro/acerto-manual', methods=['POST'])
+    @manager_required
+    def add_financial_adjustment():
+        try:
+            # Obter dados do formulário
+            type_value = request.form.get('type')
+            amount = float(request.form.get('amount', 0))
+            description = request.form.get('description', '')
+            date_str = request.form.get('date')
+            category = request.form.get('category', 'acerto')
+            
+            # Validar dados
+            if not type_value or not amount or not description or not date_str:
+                flash('Todos os campos são obrigatórios.', 'danger')
+                return redirect(url_for('financial'))
+            
+            # Montar descrição completa
+            category_text = {
+                'acerto': 'Acerto de Caixa',
+                'ajuste': 'Ajuste Contábil',
+                'transferencia': 'Transferência',
+                'imposto': 'Imposto',
+                'outro': 'Outros'
+            }.get(category, 'Acerto de Caixa')
+            
+            full_description = f"[{category_text}] {description}"
+            
+            # Criar registro financeiro
+            entry = FinancialEntry(
+                description=full_description,
+                amount=amount,
+                type=FinancialEntryType[type_value],
+                date=datetime.strptime(date_str, '%Y-%m-%d'),
+                created_by=current_user.id
+            )
+            
+            db.session.add(entry)
+            db.session.commit()
+            
+            # Registrar ação
+            log_action(
+                'Acerto Manual Financeiro',
+                'financial',
+                entry.id,
+                f"Acerto manual: {format_currency(amount)} ({FinancialEntryType[type_value].value})"
+            )
+            
+            flash(f'Acerto manual de {format_currency(amount)} registrado com sucesso!', 'success')
+            
+        except ValueError as e:
+            flash(f'Erro no formato dos dados: {str(e)}', 'danger')
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao registrar acerto manual: {str(e)}")
+            flash(f'Erro ao processar acerto manual: {str(e)}', 'danger')
+            
+        return redirect(url_for('financial'))
+
     @app.route('/financeiro/exportar')
     @manager_required
     def export_financial():
