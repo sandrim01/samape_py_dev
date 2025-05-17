@@ -565,6 +565,14 @@
         const confirmBtn = document.getElementById('confirmOutflowBtn');
         const quantityDisplay = document.getElementById('outflowQuantity');
         const hiddenForm = document.getElementById('hiddenOutflowForm');
+        
+        // Verificar se o formulário oculto existe
+        if (!hiddenForm) {
+            console.error("ERRO CRÍTICO: Formulário hiddenOutflowForm não encontrado!");
+        } else {
+            console.log("Formulário oculto encontrado com sucesso");
+        }
+        
         const hiddenQuantity = document.getElementById('hidden_quantity');
         const hiddenDescription = document.getElementById('hidden_description');
         const hiddenReference = document.getElementById('hidden_reference');
