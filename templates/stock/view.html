@@ -516,7 +516,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i> Estoque atual: <strong>{{ item.quantity }}</strong> unidade(s)
                 </div>
-                <form id="hiddenOutflowForm" method="POST" action="/estoque/movimentacao">
+                <form id="hiddenOutflowForm" method="POST" action="{{ url_for('add_stock_movement') }}">
                     <!-- Campos ocultos que serão preenchidos via JavaScript -->
                     {{ movement_form.hidden_tag() }}
                     {{ movement_form.stock_item_id }}
@@ -542,7 +542,7 @@
         // Referencias para formulários e campos importantes
         const quantityInputs = document.querySelectorAll('#quantity, #mobile_quantity');
         const directionInputs = document.querySelectorAll('#direction, input[name="direction"]');
-        const stockForms = document.querySelectorAll('form[action="/estoque/movimentacao"]');
+        const stockForms = document.querySelectorAll('form[action="{{ url_for('add_stock_movement') }}"]');
         const confirmBtn = document.getElementById('confirmOutflowBtn');
         const quantityDisplay = document.getElementById('outflowQuantity');
         const hiddenForm = document.getElementById('hiddenOutflowForm');
