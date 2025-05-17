@@ -11,8 +11,8 @@
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary mr-2">
-                        <i class="fas fa-arrow-left mr-1"></i> Voltar
+                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i> Voltar
                     </a>
                     <!-- Todos os usuários podem acessar os botões de ação -->
                     <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning me-2">
@@ -337,7 +337,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success">Registrar Abastecimento</button>
                 </div>
             </form>
@@ -351,16 +351,14 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="deleteVehicleModalLabel">Confirmar Exclusão</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir o veículo <strong>{{ vehicle.plate }}</strong>?</p>
                 <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Esta ação é irreversível. Todos os dados relacionados a este veículo, incluindo histórico de manutenções e abastecimentos, serão removidos.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <form action="{{ url_for('excluir_veiculo_direct', id=vehicle.id) }}" method="post" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
@@ -370,7 +368,7 @@
     </div>
 </div>
 
-<!-- Script para garantir que o formulário seja enviado corretamente -->
+<!-- Scripts para garantir que os formulários funcionem corretamente -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Certifica-se de que o formulário existe na página
@@ -385,6 +383,30 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
         });
     }
+    
+    // Script para o modal de apagar registros
+    // Gerencia a habilitação do botão de exclusão baseado na seleção de registros
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][name^="maintenance_ids"], input[type="checkbox"][name^="refueling_ids"]');
+    const deleteButton = document.getElementById('delete-records-button');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+    
+    // Também monitora o campo de motivo da remoção
+    const removalReason = document.getElementById('removal-reason');
+    if (removalReason) {
+        removalReason.addEventListener('input', updateDeleteButton);
+    }
+    
+    function updateDeleteButton() {
+        const anyChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+        const reasonFilled = removalReason && removalReason.value.trim().length > 0;
+        
+        if (deleteButton) {
+            deleteButton.disabled = !(anyChecked && reasonFilled);
+        }
+    }
 });
 </script>
 
@@ -394,11 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="deleteRecordsModalLabel">
-                    <i class="fas fa-broom mr-1"></i> Apagar Registros
+                    <i class="fas fa-broom me-1"></i> Apagar Registros
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ url_for('delete_vehicle_records', id=vehicle.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -524,9 +544,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger" id="delete-records-button" disabled>
-                        <i class="fas fa-trash-alt mr-1"></i> Apagar Registros Selecionados
+                        <i class="fas fa-trash-alt me-1"></i> Apagar Registros Selecionados
                     </button>
                 </div>
             </form>
