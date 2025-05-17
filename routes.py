@@ -3145,6 +3145,9 @@ def register_routes(app):
             try:
                 item = StockItem.query.get_or_404(form.stock_item_id.data)
                 
+                # Log para debug
+                app.logger.info(f"Processando movimentação de estoque: item_id={form.stock_item_id.data}, direction={form.direction.data}, quantity={form.quantity.data}")
+                
                 # Determinar a quantidade (positiva para entrada, negativa para saída)
                 quantity = form.quantity.data
                 if form.direction.data == 'saida':
@@ -3153,7 +3156,11 @@ def register_routes(app):
                 # Verificar se há quantidade suficiente em caso de saída
                 if quantity < 0 and abs(quantity) > item.quantity:
                     flash('Quantidade insuficiente em estoque para esta saída.', 'danger')
-                    return redirect(url_for('view_stock_item', id=item.id))
+                    return redirect(url_for('stock_items'))
+                
+                # Log para debug
+                app.logger.info(f"Quantidade após processamento: {quantity}")
+                app.logger.info(f"Quantidade atual no estoque: {item.quantity}")
                 
                 # Criar o movimento
                 movement = StockMovement(
@@ -3171,6 +3178,10 @@ def register_routes(app):
                 # Atualizar o status do item
                 item.update_status()
                 
+                # Log para debug
+                app.logger.info(f"Nova quantidade após movimentação: {item.quantity}")
+                app.logger.info(f"Novo status: {item.status}")
+                
                 db.session.add(movement)
                 db.session.commit()
                 
@@ -3187,7 +3198,16 @@ def register_routes(app):
             except Exception as e:
                 db.session.rollback()
                 app.logger.error(f"Erro ao registrar movimento de estoque: {str(e)}")
-                flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
+                # Log detalhado dos valores do formulário
+                app.logger.error(f"Dados do formulário que causou erro: item_id={form.stock_item_id.data}, direction={form.direction.data}, quantity={form.quantity.data}, service_order_id={form.service_order_id.data}")
+                
+                # Mensagem amigável para o usuário
+                if 'violates foreign key constraint' in str(e):
+                    flash('Erro ao registrar movimento: Um dos itens relacionados não existe mais no sistema.', 'danger')
+                elif 'not-null constraint' in str(e):
+                    flash('Erro ao registrar movimento: Dados obrigatórios não foram informados.', 'danger')
+                else:
+                    flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
         
         # Redirecionar para a página de listagem de estoque com uma mensagem
         return redirect(url_for('stock_items'))
