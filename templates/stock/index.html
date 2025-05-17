@@ -13,67 +13,41 @@
         </div>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros Simplificados -->
     <div class="card mb-4">
         <div class="card-header py-3 bg-gradient-primary">
-            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-filter me-1"></i> Filtros</h6>
+            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-filter me-1"></i> Busca Rápida</h6>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ url_for('stock_items') }}" id="filter-form">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label for="search" class="form-label">Pesquisar</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="search" name="search" 
-                               value="{{ active_filters.search }}" placeholder="Nome ou descrição...">
-                        <div class="input-group-append">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search" name="search" 
+                                value="{{ active_filters.search }}" placeholder="Buscar por nome, descrição ou localização...">
                             <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search"></i>
+                                <i class="fas fa-search"></i> Buscar
                             </button>
+                            <a href="{{ url_for('stock_items') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
                         </div>
                     </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="btn-group">
+                            <a href="{{ url_for('stock_items') }}" class="btn btn-outline-primary {{ 'active' if not active_filters.type }}">Todos</a>
+                            <a href="{{ url_for('stock_items', type='epi') }}" class="btn btn-outline-primary {{ 'active' if active_filters.type == 'epi' }}">EPIs</a>
+                            <a href="{{ url_for('stock_items', type='ferramenta') }}" class="btn btn-outline-primary {{ 'active' if active_filters.type == 'ferramenta' }}">Ferramentas</a>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#stockMovementModal">
+                            <i class="fas fa-exchange-alt"></i> Movimentar
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label for="type" class="form-label">Tipo</label>
-                    <select class="form-control" id="type" name="type">
-                        <option value="">Todos os tipos</option>
-                        {% for type in item_types %}
-                        <option value="{{ type.name }}" {% if active_filters.type == type.name %}selected{% endif %}>
-                            {{ type.value }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-control" id="status" name="status">
-                        <option value="">Todos os status</option>
-                        {% for status in item_statuses %}
-                        <option value="{{ status.name }}" {% if active_filters.status == status.name %}selected{% endif %}>
-                            {{ status.value }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="supplier_id" class="form-label">Fornecedor</label>
-                    <select class="form-control" id="supplier_id" name="supplier_id">
-                        <option value="">Todos os fornecedores</option>
-                        {% for supplier in suppliers %}
-                        <option value="{{ supplier.id }}" {% if active_filters.supplier_id|string == supplier.id|string %}selected{% endif %}>
-                            {{ supplier.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 text-right">
-                    <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
-                    <a href="{{ url_for('stock_items') }}" class="btn btn-secondary">Limpar</a>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <!-- Tabs para Mobile -->
