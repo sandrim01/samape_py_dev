@@ -740,26 +740,35 @@
         // Botão de confirmação no modal
         if (confirmBtn) {
             console.log("Configurando botão de confirmação");
-            confirmBtn.addEventListener('click', function() {
+            confirmBtn.addEventListener('click', function(event) {
+                event.preventDefault();
                 console.log("Botão de confirmação clicado");
                 
-                // Envia o formulário oculto
-                if (hiddenForm) {
-                    console.log("Enviando formulário oculto");
-                    hiddenForm.submit();
-                } else {
-                    console.log("Formulário oculto não encontrado");
-                }
+                // Obter o formulário oculto novamente (para garantir que ele existe)
+                const formToSubmit = document.getElementById('hiddenOutflowForm');
                 
-                // Fecha o modal (tentando os dois métodos)
-                try {
-                    if (confirmModal) {
-                        confirmModal.hide();
-                    } else {
-                        $('#confirmOutflowModal').modal('hide');
+                if (formToSubmit) {
+                    console.log("Enviando formulário oculto:", formToSubmit);
+                    
+                    try {
+                        // Fechar o modal antes de enviar o formulário
+                        if (confirmModal) {
+                            confirmModal.hide();
+                        } else if (window.jQuery) {
+                            $('#confirmOutflowModal').modal('hide');
+                        }
+                    } catch (error) {
+                        console.error("Erro ao fechar modal:", error);
                     }
-                } catch (error) {
-                    console.error("Erro ao fechar modal:", error);
+                    
+                    // Pequeno atraso para garantir que o modal foi fechado
+                    setTimeout(function() {
+                        console.log("Enviando formulário após delay");
+                        formToSubmit.submit();
+                    }, 100);
+                } else {
+                    console.error("ERRO CRÍTICO: Formulário oculto não encontrado no momento do envio");
+                    alert("Erro ao processar formulário. Por favor, tente novamente.");
                 }
             });
         } else {
