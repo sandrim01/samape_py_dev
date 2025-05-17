@@ -91,7 +91,7 @@
             <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-exchange-alt me-1"></i> Movimentação Rápida de Estoque</h6>
         </div>
         <div class="card-body">
-            <form method="POST" action="/estoque/movimentacao" id="quick-movement-form">
+            <form method="POST" action="{{ url_for('add_stock_movement') }}" id="quick-movement-form">
                 {{ movement_form.hidden_tag() }}
                 <div class="row">
                     <div class="col-md-4 mb-3">
@@ -380,6 +380,28 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
+        // Modal de confirmação para saída de estoque
+        $('#quick-movement-form').submit(function(e) {
+            const direction = $('#direction').val();
+            const itemName = $('#stock_item_id option:selected').text().split(' - ')[0];
+            const quantity = $('#quantity').val();
+            
+            // Só exibe confirmação para saídas de estoque
+            if (direction === 'saida') {
+                e.preventDefault();
+                
+                // Exibe modal de confirmação
+                $('#confirmStockMovementModal .item-name').text(itemName);
+                $('#confirmStockMovementModal .quantity').text(quantity);
+                $('#confirmStockMovementModal').modal('show');
+                
+                // Quando confirmado, envia o formulário
+                $('#confirmStockMovementBtn').off('click').on('click', function() {
+                    $('#quick-movement-form')[0].submit();
+                });
+            }
+        });
+        
         // Aplica filtros ao mudar select
         $('#type, #status, #supplier_id').change(function() {
             $('#filter-form').submit();

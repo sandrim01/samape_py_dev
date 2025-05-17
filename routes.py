@@ -2880,12 +2880,16 @@ def register_routes(app):
         # Lista de fornecedores para o filtro
         suppliers = Supplier.query.order_by(Supplier.name).all()
         
+        # Formulário de movimentação rápida
+        movement_form = StockMovementForm()
+        
         return render_template(
             'stock/index.html',
             items=items,
             item_types=StockItemType,
             item_statuses=StockItemStatus,
             suppliers=suppliers,
+            movement_form=movement_form,
             active_filters={
                 'type': item_type,
                 'status': status,
@@ -3185,8 +3189,8 @@ def register_routes(app):
                 app.logger.error(f"Erro ao registrar movimento de estoque: {str(e)}")
                 flash(f'Erro ao registrar movimento: {str(e)}', 'danger')
         
-        # Redirecionar para a visualização do item
-        return redirect(url_for('view_stock_item', id=form.stock_item_id.data))
+        # Redirecionar para a página de listagem de estoque com uma mensagem
+        return redirect(url_for('stock_items'))
 
     # Initialize the first admin user if no users exist
     def create_initial_admin():
