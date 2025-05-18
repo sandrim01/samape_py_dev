@@ -423,6 +423,15 @@ def register_routes(app):
             # Gerar o número da nota automaticamente
             from utils import get_next_invoice_number
             
+            # Calcular valor adicional de KM, se aplicável
+            km_value = 0
+            if form.include_km_calculation.data and form.distance_km.data and form.price_per_km.data:
+                km_value = form.distance_km.data * form.price_per_km.data
+                # Adicionar informação de KM aos detalhes do serviço
+                km_details = f"\n\nDetalhes de deslocamento:\n- Distância: {form.distance_km.data} KM\n- Valor por KM: R$ {form.price_per_km.data:.2f}\n- Total deslocamento: R$ {km_value:.2f}"
+                form.service_details.data += km_details
+            
+            # Atualizar os dados da OS
             service_order.status = ServiceOrderStatus.fechada
             service_order.closed_at = datetime.utcnow()
             service_order.invoice_number = get_next_invoice_number()
