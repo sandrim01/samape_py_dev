@@ -358,13 +358,13 @@ def register_routes(app):
             form=form
         )
 
-    # Rota para visualizar detalhes de uma ordem de serviço (versão básica)
-    @app.route('/os/<int:id>')
+    # Rota para visualizar detalhes de uma ordem de serviço (versão totalmente nova)
+    @app.route('/os/<int:id>', methods=['GET'])
     @login_required
     def view_service_order(id):
         try:
-            # Consulta SQL simples para obter dados da ordem de serviço
-            query = """
+            # Consulta direta e simples para obter os dados básicos da OS
+            ordem_query = """
                 SELECT 
                     id, description, status, created_at, closed_at, 
                     invoice_number, invoice_date, invoice_amount, 
@@ -373,51 +373,98 @@ def register_routes(app):
                 FROM service_order
                 WHERE id = :id
             """
-            ordem = db.session.execute(db.text(query), {"id": id}).fetchone()
+            ordem = db.session.execute(
+                db.text(ordem_query), 
+                {"id": id}
+            ).fetchone()
             
             if not ordem:
-                flash("Ordem de serviço não encontrada", "danger")
+                flash("Ordem de serviço não encontrada.", "danger")
                 return redirect(url_for('service_orders'))
-                
-            # Obter dados do cliente em consulta separada
-            query_cliente = """
-                SELECT name, document, email, phone, address
+            
+            # 1. Obter informações do cliente
+            cliente_query = """
+                SELECT 
+                    name, document, email, phone, address
                 FROM client
                 WHERE id = :client_id
             """
-            cliente_raw = db.session.execute(
-                db.text(query_cliente), 
+            cliente_data = db.session.execute(
+                db.text(cliente_query), 
                 {"client_id": ordem.client_id}
-            ).fetchone()
+            ).fetchone() if ordem.client_id else None
             
-            # Formato do cliente para o template
             cliente = {
-                'nome': cliente_raw.name if cliente_raw else None,
-                'documento': cliente_raw.document if cliente_raw else None,
-                'email': cliente_raw.email if cliente_raw else None,
-                'telefone': cliente_raw.phone if cliente_raw else None,
-                'endereco': cliente_raw.address if cliente_raw else None
+                'nome': cliente_data.name if cliente_data else None,
+                'documento': cliente_data.document if cliente_data else None,
+                'email': cliente_data.email if cliente_data else None,
+                'telefone': cliente_data.phone if cliente_data else None,
+                'endereco': cliente_data.address if cliente_data else None
             }
             
-            # Obter nome do responsável pela OS
-            responsavel = None
-            if ordem.responsible_id:
-                query_resp = """
-                    SELECT name FROM "user"
-                    WHERE id = :resp_id
-                """
-                resp = db.session.execute(
-                    db.text(query_resp),
-                    {"resp_id": ordem.responsible_id}
-                ).fetchone()
-                responsavel = resp.name if resp else None
+            # 2. Obter informações do responsável
+            responsavel_query = """
+                SELECT name FROM "user"
+                WHERE id = :resp_id
+            """
+            responsavel_data = db.session.execute(
+                db.text(responsavel_query), 
+                {"resp_id": ordem.responsible_id}
+            ).fetchone() if ordem.responsible_id else None
             
-            # Renderizar o template simplificado
+            responsavel = responsavel_data.name if responsavel_data else None
+            
+            # 3. Obter equipamentos relacionados
+            equipamentos_query = """
+                SELECT e.id, e.type, e.brand, e.model, e.serial_number 
+                FROM equipment e
+                JOIN equipment_service_orders eso ON e.id = eso.equipment_id
+                WHERE eso.service_order_id = :os_id
+            """
+            equipamentos = db.session.execute(
+                db.text(equipamentos_query), 
+                {"os_id": id}
+            ).fetchall()
+            
+            # 4. Obter registros financeiros
+            financeiros_query = """
+                SELECT id, date, description, type, amount
+                FROM financial_entry
+                WHERE service_order_id = :os_id
+                ORDER BY date DESC
+            """
+            financeiros = db.session.execute(
+                db.text(financeiros_query), 
+                {"os_id": id}
+            ).fetchall()
+            
+            # 5. Verificar se o usuário é administrador para exibir controles adicionais
+            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Criar objeto para a ordem contendo o responsável
+            ordem_completa = {
+                'id': ordem.id,
+                'description': ordem.description,
+                'status': ordem.status,
+                'created_at': ordem.created_at,
+                'closed_at': ordem.closed_at,
+                'invoice_number': ordem.invoice_number,
+                'invoice_date': ordem.invoice_date,
+                'invoice_amount': ordem.invoice_amount,
+                'service_details': ordem.service_details,
+                'estimated_value': ordem.estimated_value,
+                'total_value': ordem.total_value,
+                'responsavel': responsavel
+            }
+            
+            # Renderizar o template com todos os dados necessários
             return render_template(
-                'service_orders/view_os_basic.html',
-                ordem=ordem,
+                'service_orders/simple_view.html',  # Use o novo template
+                ordem=ordem_completa,
                 cliente=cliente,
-                responsavel=responsavel
+                equipamentos=equipamentos,
+                financeiros=financeiros,
+                is_admin=is_admin
             )
                 
         except Exception as e:
