@@ -362,14 +362,8 @@ def register_routes(app):
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
-        try:
-            service_order = ServiceOrder.query.get_or_404(id)
-            close_form = CloseServiceOrderForm()
-            return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
-        except Exception as e:
-            app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
-            flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
-            return redirect(url_for('service_orders'))
+        # Redirecionar para a nova função de visualização que usa SQL direto
+        return redirect(url_for('view_service_order_alt', id=id))
     
     # Rota para visualizar OS com tratamento especial
     @app.route('/ordem/<int:id>/visualizar')
@@ -469,10 +463,18 @@ def register_routes(app):
             # Formulário para fechar OS
             close_form = CloseServiceOrderForm()
             
+            # Verificar se o usuário é admin para mostrar botão de exclusão
+            is_admin = False
+            if current_user.is_authenticated and hasattr(current_user, 'role'):
+                is_admin = current_user.role == 'admin'
+            
             # Registrar visualização no log
             log_action(f"Visualizou a OS #{id}", f"Visualização da OS #{id}")
             
-            return render_template('service_orders/view_simple.html', service_order=service_order_dict, close_form=close_form)
+            return render_template('service_orders/view_simple.html', 
+                                   service_order=service_order_dict, 
+                                   close_form=close_form,
+                                   is_admin=is_admin)
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
             flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
@@ -717,29 +719,95 @@ def register_routes(app):
             form=form
         )
         
-    @app.route('/ordem-servico/<int:id>/excluir')
+    @app.route('/ordem/<int:id>/excluir')
     @login_required
-    @admin_required
     def delete_service_order(id):
-        """Rota para excluir uma ordem de serviço"""
+        """Rota para excluir uma ordem de serviço e seus registros financeiros associados"""
         try:
-            service_order = ServiceOrder.query.get_or_404(id)
-            
-            # Verificar se há fotos relacionadas
-            images = ServiceOrderImage.query.filter_by(service_order_id=id).all()
-            for image in images:
-                try:
-                    # Tenta excluir o arquivo físico
-                    file_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), image.filename)
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except Exception as img_error:
-                    app.logger.error(f"Erro ao excluir arquivo de imagem: {str(img_error)}")
+            # Verificar se o usuário é admin
+            if not current_user.role == 'admin':
+                flash("Apenas administradores podem excluir ordens de serviço", "danger")
+                return redirect(url_for('view_service_order_alt', id=id))
                 
-                db.session.delete(image)
+            # Obter informações da OS para registro de log antes de excluir
+            os_info = db.session.execute(
+                db.text("""
+                SELECT o.id, c.name as client_name
+                FROM service_order o
+                LEFT JOIN client c ON o.client_id = c.id
+                WHERE o.id = :order_id
+                """), 
+                {"order_id": id}
+            ).fetchone()
             
-            # Remover relações com equipamentos na tabela de relacionamento
-            db.session.execute(
+            if not os_info:
+                flash(f"Ordem de Serviço #{id} não encontrada", "danger")
+                return redirect(url_for('service_orders'))
+                
+            # Registrar cliente para o log
+            client_name = os_info.client_name if os_info.client_name else "Cliente desconhecido"
+            
+            # Iniciar transação
+            transaction = db.session.begin()
+            
+            try:
+                # 1. Excluir registros financeiros associados
+                db.session.execute(
+                    db.text("""
+                    DELETE FROM financial_entry 
+                    WHERE service_order_id = :order_id
+                    """), 
+                    {"order_id": id}
+                )
+                
+                # 2. Excluir imagens associadas à OS
+                db.session.execute(
+                    db.text("""
+                    DELETE FROM service_order_image 
+                    WHERE service_order_id = :order_id
+                    """), 
+                    {"order_id": id}
+                )
+                
+                # 3. Remover associações com equipamentos
+                db.session.execute(
+                    db.text("""
+                    DELETE FROM equipment_service_orders 
+                    WHERE service_order_id = :order_id
+                    """), 
+                    {"order_id": id}
+                )
+                
+                # 4. Finalmente excluir a OS
+                db.session.execute(
+                    db.text("""
+                    DELETE FROM service_order 
+                    WHERE id = :order_id
+                    """), 
+                    {"order_id": id}
+                )
+                
+                # Confirmar transação
+                transaction.commit()
+                
+                # Registrar no log de ações
+                log_action(
+                    f"Excluiu a OS #{id}",
+                    f"OS #{id} de {client_name} excluída com sucesso, incluindo registros financeiros associados"
+                )
+                
+                flash(f'Ordem de serviço #{id} excluída com sucesso!', 'success')
+                return redirect(url_for('service_orders'))
+                
+            except Exception as tx_error:
+                # Reverter transação em caso de erro
+                transaction.rollback()
+                raise tx_error
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
+            flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
+            return redirect(url_for('service_orders'))
                 db.delete(equipment_service_orders).where(
                     equipment_service_orders.c.service_order_id == id
                 )
