@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}OS #{{ order_id }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ordem de Serviço #{{ order_id }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                    {% else %}
+                    <p><strong>Descrição:</strong> {{ description }}</p>
+                    <p><strong>Status:</strong> {{ status }}</p>
+                    <p><strong>Cliente:</strong> {{ client_name }}</p>
+                    <p><strong>Data de Criação:</strong> {{ created_at }}</p>
+                    
+                    {% if cliente_telefone %}
+                    <p><strong>Telefone do Cliente:</strong> {{ cliente_telefone }}</p>
+                    {% endif %}
+                    
+                    {% if responsavel_nome %}
+                    <p><strong>Responsável:</strong> {{ responsavel_nome }}</p>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('service_orders') }}" class="btn btn-secondary">Voltar para Lista</a>
+                        
+                        {% if is_admin %}
+                        <a href="{{ url_for('delete_service_order', id=order_id) }}" 
+                           class="btn btn-danger"
+                           onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')">
+                            Excluir OS
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

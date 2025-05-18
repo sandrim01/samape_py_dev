@@ -358,6 +358,84 @@ def register_routes(app):
             form=form
         )
 
+    # Rota super básica para visualizar ordens de serviço (solução emergencial)
+    @app.route('/os_basico/<int:id>')
+    @login_required
+    def view_service_order_basic(id):
+        """Versão ultra simplificada de visualização para resolver problemas urgentes"""
+        try:
+            # Consulta direta sem joins para evitar problemas com o PostgreSQL
+            conn = db.engine.raw_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, description, status, created_at, client_id, responsible_id FROM service_order WHERE id = %s", 
+                (id,)
+            )
+            order = cursor.fetchone()
+            
+            if not order:
+                flash("Ordem de serviço não encontrada", "danger")
+                return redirect(url_for('service_orders'))
+            
+            # Dados básicos da OS
+            order_id = order[0]
+            description = order[1]
+            status = order[2]
+            created_at = order[3].strftime('%d/%m/%Y %H:%M') if order[3] else 'Data não disponível'
+            client_id = order[4]
+            responsible_id = order[5]
+            
+            # Recuperar nome do cliente (opcional)
+            client_name = "Cliente não especificado"
+            cliente_telefone = None
+            responsavel_nome = None
+            
+            try:
+                cursor.execute("SELECT name, phone FROM client WHERE id = %s", (client_id,))
+                client = cursor.fetchone()
+                if client:
+                    client_name = client[0]
+                    cliente_telefone = client[1]
+            except:
+                pass
+                
+            # Recuperar nome do responsável (opcional)
+            try:
+                cursor.execute('SELECT name FROM "user" WHERE id = %s', (responsible_id,))
+                resp = cursor.fetchone()
+                if resp:
+                    responsavel_nome = resp[0]
+            except:
+                pass
+            
+            cursor.close()
+            conn.close()
+            
+            # Verificar se o usuário é administrador
+            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Template super simplificado
+            return render_template(
+                'service_orders/os_simples.html',
+                order_id=order_id,
+                description=description,
+                status=status,
+                created_at=created_at,
+                client_name=client_name,
+                cliente_telefone=cliente_telefone,
+                responsavel_nome=responsavel_nome,
+                is_admin=is_admin,
+                error=None
+            )
+            
+        except Exception as e:
+            app.logger.error(f"Erro emergencial na visualização da OS: {str(e)}")
+            return render_template(
+                'service_orders/os_simples.html',
+                order_id=id,
+                error=f"Não foi possível carregar os detalhes completos. Erro: {str(e)}"
+            )
+            
     # Rota para visualizar detalhes de uma Ordem de Serviço específica
     @app.route('/os/<int:id>')
     @login_required
