@@ -248,9 +248,11 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Carregar os dados da OS no modal
+    // Carregar os dados da OS no modal (versão simplificada)
     function loadOrderDetails(orderId) {
-        // Limpar conteúdo anterior e mostrar loading
+        console.log("Carregando detalhes da OS #" + orderId);
+        
+        // Reset modal content para o estado inicial
         $('#viewOrderModal .modal-content').html(`
             <div class="modal-body text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -260,54 +262,76 @@ $(document).ready(function() {
             </div>
         `);
         
-        // Mostrar o modal enquanto carrega
-        $('#viewOrderModal').modal('show');
+        // Mostrar o modal imediatamente enquanto carrega os dados
+        var modal = new bootstrap.Modal(document.getElementById('viewOrderModal'));
+        modal.show();
         
         // Carregar os dados via AJAX
         $.ajax({
-            url: `/os_dados/${orderId}`,
+            url: '/os_dados/' + orderId,
             method: 'GET',
+            dataType: 'json',
             success: function(data) {
-                // Carregar o template e preencher os dados
-                $.get("{{ url_for('static', filename='templates/service_orders/modal_view.html') }}", function(template) {
-                    $('#viewOrderModal .modal-content').html(template);
-                    
-                    // Preencher os dados no modal
-                    $('#modal-os-id').text(data.id);
-                    $('#modal-os-description').text(data.description);
-                    $('#modal-os-status').text(data.status_label).addClass(data.status);
-                    $('#modal-os-client').text(data.client_name);
-                    $('#modal-os-responsible').text(data.responsible_name);
-                    $('#modal-os-created').text(data.created_at);
-                    $('#modal-os-closed').text(data.closed_at);
-                    $('#modal-os-total').text(data.total_value);
-                    $('#modal-os-original').text(data.original_amount);
-                    $('#modal-os-discount').text(data.discount_amount);
-                    
-                    // Links para visualização completa e edição
-                    $('#modal-os-view-link').attr('href', data.view_url);
-                    $('#modal-os-edit-link').attr('href', data.edit_url);
-                }, 'html')
-                .fail(function() {
-                    // Se falhar ao carregar o template
-                    $('#viewOrderModal .modal-content').html(`
-                        <div class="modal-header">
-                            <h5 class="modal-title">Erro</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                console.log("Dados recebidos:", data);
+                
+                // Construir o HTML do modal diretamente
+                var modalContent = `
+                <div class="modal-header">
+                    <h5 class="modal-title">Ordem de Serviço #${data.id}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Informações Gerais</h6>
+                            <p><strong>Status:</strong> <span class="badge ${data.status}">${data.status_label}</span></p>
+                            <p><strong>Cliente:</strong> ${data.client_name}</p>
+                            <p><strong>Responsável:</strong> ${data.responsible_name}</p>
                         </div>
-                        <div class="modal-body">
-                            <div class="alert alert-danger">
-                                Não foi possível carregar o template do modal. Por favor, use a visualização básica.
-                            </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Datas</h6>
+                            <p><strong>Abertura:</strong> ${data.created_at}</p>
+                            <p><strong>Fechamento:</strong> ${data.closed_at}</p>
                         </div>
-                    `);
-                });
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Descrição</h6>
+                            <p>${data.description}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Informações Financeiras</h6>
+                            <p><strong>Total:</strong> R$ ${data.total_value}</p>
+                            <p><strong>Valor Original:</strong> R$ ${data.original_amount}</p>
+                            <p><strong>Desconto:</strong> R$ ${data.discount_amount}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="${data.view_url}" class="btn btn-primary">Ver Completo</a>
+                    <a href="${data.edit_url}" class="btn btn-secondary">Editar</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+                `;
+                
+                // Atualizar o conteúdo do modal
+                $('#viewOrderModal .modal-content').html(modalContent);
             },
-            error: function(xhr) {
+            error: function(xhr, status, error) {
+                console.error("Erro ao carregar dados:", error);
+                console.log("Status:", status);
+                console.log("Resposta:", xhr.responseText);
+                
                 let errorMsg = 'Erro ao carregar os dados da OS.';
                 try {
                     errorMsg = JSON.parse(xhr.responseText).error || errorMsg;
-                } catch(e) {}
+                } catch(e) {
+                    console.error("Erro ao fazer parse da resposta:", e);
+                }
                 
                 $('#viewOrderModal .modal-content').html(`
                     <div class="modal-header">
@@ -315,8 +339,14 @@ $(document).ready(function() {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="alert alert-danger">${errorMsg}</div>
-                        <a href="/os_basico/${orderId}" class="btn btn-primary">Ver na Visualização Básica</a>
+                        <div class="alert alert-danger">
+                            ${errorMsg}
+                            <br>
+                            <small>${error}</small>
+                        </div>
+                        <div class="text-center">
+                            <a href="/os_basico/${orderId}" class="btn btn-primary">Ver na Visualização Básica</a>
+                        </div>
                     </div>
                 `);
             }
