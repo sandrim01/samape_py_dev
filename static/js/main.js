@@ -10,6 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
     popoverTriggerList.map(function (popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl)
     });
+    
+    // Inicialização manual para o modal de fechar OS
+    const fecharOSBtns = document.querySelectorAll('button[data-bs-target="#closeOrderModal"]');
+    fecharOSBtns.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modalId = this.getAttribute('data-bs-target');
+            const modalElement = document.querySelector(modalId);
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+        });
+    });
 
     // Inicializar elementos de data (datepicker)
     setupDateInputs();
