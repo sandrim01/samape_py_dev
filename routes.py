@@ -360,49 +360,6 @@ def register_routes(app):
 
     # Rota super básica para visualizar ordens de serviço (solução emergencial)
     # Rota para obter dados da OS para o modal
-    # API para obter os dados da OS para o modal
-    @app.route('/api/service-orders/<int:id>')
-    @login_required
-    def get_service_order_api(id):
-        """API para retornar dados da OS para o modal"""
-        try:
-            # Consulta direta sem joins para evitar problemas
-            conn = db.engine.raw_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                SELECT 
-                    so.id, so.description, so.status, so.created_at, so.closed_at,
-                    so.client_id, so.responsible_id, so.estimated_value, so.total_value
-                FROM service_order so
-                WHERE so.id = %s
-                """, 
-                (id,)
-            )
-            order = cursor.fetchone()
-            
-            if not order:
-                return jsonify({'success': False, 'message': 'Ordem de serviço não encontrada'}), 404
-                
-            # Dados básicos da OS
-            service_order = {
-                'id': order[0],
-                'description': order[1],
-                'status': order[2],
-                'created_at': order[3].strftime('%d/%m/%Y %H:%M') if order[3] else None,
-                'closed_at': order[4].strftime('%d/%m/%Y %H:%M') if order[4] else None,
-                'client_id': order[5],
-                'responsible_id': order[6],
-                'estimated_value': float(order[7]) if order[7] else 0,
-                'total_value': float(order[8]) if order[8] else 0
-            }
-            
-            return jsonify({'success': True, 'service_order': service_order})
-            
-        except Exception as e:
-            app.logger.error(f"Erro ao obter dados da OS via API: {str(e)}")
-            return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
-            
     @app.route('/os_dados/<int:id>')
     @login_required
     def get_service_order_data(id):
@@ -780,43 +737,6 @@ def register_routes(app):
             flash(f"Erro ao carregar a ordem de serviço: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
 
-    @app.route('/os/<int:id>/excluir')
-    @login_required
-    def delete_service_order(id):
-        """Rota para excluir uma ordem de serviço"""
-        service_order = ServiceOrder.query.get_or_404(id)
-        
-        # Verificar permissões
-        if not (current_user.role.name == 'admin' or current_user.role.name == 'gerente'):
-            flash('Você não tem permissão para excluir ordens de serviço.', 'danger')
-            return redirect(url_for('service_orders'))
-        
-        try:
-            # Verificar se a OS tem lançamentos financeiros associados
-            financial_entries = FinancialEntry.query.filter_by(service_order_id=id).all()
-            for entry in financial_entries:
-                db.session.delete(entry)
-            
-            # Registrar log de exclusão
-            log_action(
-                'Exclusão de OS', 
-                'service_order', 
-                service_order.id, 
-                f"OS #{service_order.id} excluída."
-            )
-            
-            # Excluir a OS
-            db.session.delete(service_order)
-            db.session.commit()
-            
-            flash('Ordem de serviço excluída com sucesso!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao excluir OS: {str(e)}', 'danger')
-            app.logger.error(f"Erro ao excluir OS {id}: {str(e)}")
-        
-        return redirect(url_for('service_orders'))
-    
     @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
     def edit_service_order(id):
@@ -1128,16 +1048,16 @@ def register_routes(app):
         
     @app.route('/ordem/<int:id>/excluir')
     @login_required
-    def delete_service_order_old(id):
-        """Versão antiga da rota para excluir uma ordem de serviço (redirecionando para a nova)"""
-        # Redirecionar para a nova rota
-        return redirect(url_for('delete_service_order', id=id))
-        
-    # A nova rota de exclusão está definida nas linhas acima (linha ~784)
-            
-    # Continuação da função view_order_alt
-    def continue_view_order_alt():
-        os_info = db.session.execute(
+    def delete_service_order(id):
+        """Rota para excluir uma ordem de serviço e seus registros financeiros associados"""
+        try:
+            # Verificar se o usuário é admin
+            if not current_user.role == 'admin':
+                flash("Apenas administradores podem excluir ordens de serviço", "danger")
+                return redirect(url_for('view_service_order_alt', id=id))
+                
+            # Obter informações da OS para registro de log antes de excluir
+            os_info = db.session.execute(
                 db.text("""
                 SELECT o.id, c.name as client_name
                 FROM service_order o

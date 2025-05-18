@@ -219,11 +219,6 @@
                                 <i class="fas fa-check-circle"></i>
                             </a>
                             {% endif %}
-                            
-                            <!-- Botão de exclusão -->
-                            <a href="{{ url_for('delete_service_order', id=order.id) }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.');">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
                             {% if order.status.name == 'fechada' %}
                             <a href="{{ url_for('view_invoice', id=order.id) }}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver NF-e">
                                 <i class="fas fa-file-invoice"></i>
@@ -466,22 +461,15 @@ $(document).ready(function() {
                 // Preencher o formulário com os dados da OS
                 $('#invoice_amount').val(data.service_order.estimated_value || '');
                 $('#service_details').val('Serviço realizado conforme solicitado.');
-                
-                // Inicializar cálculo de KM
-                $('#include_km_calculation').prop('checked', false);
-                toggleKmCalculation();
-                
-                // Mostrar o modal usando o Bootstrap 5 Modal
-                var modal = new bootstrap.Modal(document.getElementById('closeOrderModal'));
-                modal.show();
             } else {
                 console.error('Erro ao buscar dados da OS:', data.message);
-                alert('Erro ao carregar dados da OS. Tente novamente.');
             }
         }).fail(function(error) {
             console.error('Erro na requisição:', error);
-            alert('Erro de comunicação com o servidor. Tente novamente.');
         });
+        
+        // Mostrar o modal
+        $('#closeOrderModal').modal('show');
     });
 });
 </script>
