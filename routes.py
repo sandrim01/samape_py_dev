@@ -372,7 +372,7 @@ def register_routes(app):
             return redirect(url_for('service_orders'))
     
     # Rota alternativa para visualizar OS
-    @app.route('/ordens/<int:id>/visualizar')
+    @app.route('/ordem/<int:id>/visualizar')
     @login_required
     def view_service_order_alt(id):
         try:
