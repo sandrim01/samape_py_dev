@@ -369,3 +369,92 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Funções para o cálculo de valor por KM
+        const includeKmCalcCheckbox = document.getElementById('include_km_calculation');
+        if (includeKmCalcCheckbox) {
+            // Inicializa o estado dos campos de cálculo KM ao carregar
+            toggleKmCalculation();
+            
+            // Configura o botão para adicionar valor calculado ao total
+            const addKmValueBtn = document.getElementById('add_km_value');
+            if (addKmValueBtn) {
+                addKmValueBtn.addEventListener('click', function() {
+                    addKmValueToTotal();
+                });
+            }
+        }
+    });
+    
+    // Função para mostrar/esconder os campos de cálculo de KM
+    function toggleKmCalculation() {
+        const kmCalcFields = document.getElementById('km_calculation_fields');
+        const includeKmCalc = document.getElementById('include_km_calculation');
+        
+        if (kmCalcFields && includeKmCalc) {
+            kmCalcFields.style.display = includeKmCalc.checked ? 'block' : 'none';
+            
+            // Se desmarcar, limpar os valores
+            if (!includeKmCalc.checked) {
+                document.getElementById('distance_km').value = '';
+                document.getElementById('price_per_km').value = '';
+                document.getElementById('km_total').textContent = 'R$ 0,00';
+            }
+        }
+    }
+    
+    // Função para calcular o total do valor por KM
+    function calculateKmTotal() {
+        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+        
+        const total = distanceKm * pricePerKm;
+        
+        // Formatar valor para moeda brasileira
+        const formattedTotal = total.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        
+        document.getElementById('km_total').textContent = formattedTotal;
+    }
+    
+    // Função para adicionar o valor calculado ao total da OS
+    function addKmValueToTotal() {
+        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+        
+        if (distanceKm <= 0 || pricePerKm <= 0) {
+            alert('Informe valores válidos para distância e preço por KM.');
+            return;
+        }
+        
+        const kmValue = distanceKm * pricePerKm;
+        
+        // Obter o valor atual do campo de valor total
+        const invoiceAmountField = document.getElementById('invoice_amount');
+        const currentTotal = parseFloat(invoiceAmountField.value) || 0;
+        
+        // Atualizar o valor total
+        const newTotal = currentTotal + kmValue;
+        invoiceAmountField.value = newTotal.toFixed(2);
+        
+        // Adicionar informação nos detalhes do serviço
+        const serviceDetailsField = document.getElementById('service_details');
+        const kmInfo = `\n\nValor de deslocamento: ${distanceKm.toFixed(2)} KM x R$ ${pricePerKm.toFixed(2)} = R$ ${kmValue.toFixed(2)}`;
+        
+        if (serviceDetailsField.value) {
+            serviceDetailsField.value += kmInfo;
+        } else {
+            serviceDetailsField.value = `Detalhes do serviço executado:${kmInfo}`;
+        }
+        
+        // Notificar o usuário
+        alert(`Valor de R$ ${kmValue.toFixed(2)} adicionado ao total da OS.`);
+    }
+</script>
+{% endblock %}

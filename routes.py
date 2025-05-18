@@ -538,6 +538,14 @@ def register_routes(app):
                 service_order.invoice_amount = form.invoice_amount.data
                 service_order.service_details = form.service_details.data
                 
+                # Informações sobre cálculo de KM (se incluídas)
+                km_info = ""
+                if form.include_km_calculation.data and form.distance_km.data and form.price_per_km.data:
+                    distance_km = form.distance_km.data
+                    price_per_km = form.price_per_km.data
+                    km_total = distance_km * price_per_km
+                    km_info = f" (Inclui deslocamento: {distance_km} KM x R$ {price_per_km} = R$ {km_total})"
+                
                 # Verificamos se o cliente existe antes de tentar criar a entrada financeira
                 if not service_order.client:
                     flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
@@ -559,7 +567,7 @@ def register_routes(app):
                         'Atualização Financeira',
                         'financial',
                         existing_entry.id,
-                        f"Valor da OS #{service_order.id} atualizado para {form.invoice_amount.data}"
+                        f"Valor da OS #{service_order.id} atualizado para {form.invoice_amount.data}{km_info}"
                     )
                 else:
                     # Create new financial entry
