@@ -114,9 +114,19 @@
                 </div>
                 
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <h6 class="fw-bold">Valor Total</h6>
                         <p class="text-success fw-bold">{{ format_currency(service_order.invoice_amount) }}</p>
+                        
+                        {% if service_order.distance_km and service_order.cost_per_km %}
+                        <div class="small text-muted mt-2">
+                            <span>Detalhe da composição do valor:</span>
+                            <ul class="mb-0 ps-3">
+                                <li>Valor do serviço: {{ format_currency(service_order.invoice_amount - service_order.total_distance_cost) }}</li>
+                                <li>Custo de deslocamento ({{ service_order.distance_km }} KM): {{ format_currency(service_order.total_distance_cost) }}</li>
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
