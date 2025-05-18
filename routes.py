@@ -1050,12 +1050,12 @@ def register_routes(app):
     @login_required
     def delete_service_order(id):
         """Rota para excluir uma ordem de serviço e seus registros financeiros associados"""
-        try:
-            # Verificar se o usuário é admin
-            if not current_user.role.name == 'admin':
-                flash("Apenas administradores podem excluir ordens de serviço", "danger")
-                return redirect(url_for('view_service_order_alt', id=id))
-                
+        # Verificar se o usuário é admin
+        if not current_user.role.name == 'admin':
+            flash("Apenas administradores podem excluir ordens de serviço", "danger")
+            return redirect(url_for('view_service_order_alt', id=id))
+        
+        try:  
             # Obter informações da OS para registro de log antes de excluir
             os_info = db.session.execute(
                 db.text("""
@@ -1074,62 +1074,56 @@ def register_routes(app):
             # Registrar cliente para o log
             client_name = os_info.client_name if os_info.client_name else "Cliente desconhecido"
             
-            try:
-                # 1. Excluir registros financeiros associados
-                db.session.execute(
-                    db.text("""
-                    DELETE FROM financial_entry 
-                    WHERE service_order_id = :order_id
-                    """), 
-                    {"order_id": id}
-                )
-                
-                # 2. Excluir imagens associadas à OS
-                db.session.execute(
-                    db.text("""
-                    DELETE FROM service_order_image 
-                    WHERE service_order_id = :order_id
-                    """), 
-                    {"order_id": id}
-                )
-                
-                # 3. Remover associações com equipamentos
-                db.session.execute(
-                    db.text("""
-                    DELETE FROM equipment_service_orders 
-                    WHERE service_order_id = :order_id
-                    """), 
-                    {"order_id": id}
-                )
-                
-                # 4. Finalmente excluir a OS
-                db.session.execute(
-                    db.text("""
-                    DELETE FROM service_order 
-                    WHERE id = :order_id
-                    """), 
-                    {"order_id": id}
-                )
-                
-                # Confirmar transação
-                db.session.commit()
-                
-                # Registrar no log de ações
-                log_action(
-                    f"Excluiu a OS #{id}",
-                    f"OS #{id} de {client_name} excluída com sucesso, incluindo registros financeiros associados"
-                )
-                
-                flash(f'Ordem de serviço #{id} excluída com sucesso!', 'success')
-                return redirect(url_for('service_orders'))
-                
-            except Exception as e:
-                # Reverter transação em caso de erro
-                db.session.rollback()
-                app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
-                flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
-                return redirect(url_for('service_orders'))
+            # 1. Excluir registros financeiros associados
+            db.session.execute(
+                db.text("""
+                DELETE FROM financial_entry 
+                WHERE service_order_id = :order_id
+                """), 
+                {"order_id": id}
+            )
+            
+            # 2. Excluir imagens associadas à OS
+            db.session.execute(
+                db.text("""
+                DELETE FROM service_order_image 
+                WHERE service_order_id = :order_id
+                """), 
+                {"order_id": id}
+            )
+            
+            # 3. Remover associações com equipamentos
+            db.session.execute(
+                db.text("""
+                DELETE FROM equipment_service_orders 
+                WHERE service_order_id = :order_id
+                """), 
+                {"order_id": id}
+            )
+            
+            # 4. Finalmente excluir a OS
+            db.session.execute(
+                db.text("""
+                DELETE FROM service_order 
+                WHERE id = :order_id
+                """), 
+                {"order_id": id}
+            )
+            
+            # Confirmar transação
+            db.session.commit()
+            
+            # Registrar no log de ações
+            log_action(
+                f"Excluiu a OS #{id}",
+                f"OS #{id} de {client_name} excluída com sucesso, incluindo registros financeiros associados"
+            )
+            
+            flash(f'Ordem de serviço #{id} excluída com sucesso!', 'success')
+            return redirect(url_for('service_orders'))
+            
         except Exception as e:
+            # Reverter transação em caso de erro
             db.session.rollback()
             app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
             flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
