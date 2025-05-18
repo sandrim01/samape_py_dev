@@ -371,7 +371,7 @@ def register_routes(app):
             flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
     
-    # Rota alternativa para visualizar OS com tratamento especial
+    # Rota para visualizar OS com tratamento especial
     @app.route('/ordem/<int:id>/visualizar')
     @login_required
     def view_service_order_alt(id):
@@ -380,6 +380,7 @@ def register_routes(app):
             sql = """
             SELECT o.id, o.client_id, o.description, o.estimated_value, o.created_at, o.closed_at, 
                    o.status, o.responsible_id, o.invoice_number, o.invoice_amount, o.service_details,
+                   o.discount_amount, o.original_amount, o.total_value,
                    c.name as client_name, c.document as client_document, c.email as client_email, 
                    c.phone as client_phone, c.address as client_address,
                    u.name as responsible_name
@@ -404,6 +405,9 @@ def register_routes(app):
                 'invoice_number': result.invoice_number,
                 'invoice_amount': result.invoice_amount,
                 'service_details': result.service_details,
+                'discount_amount': result.discount_amount,
+                'original_amount': result.original_amount,
+                'total_value': result.total_value,
                 'client': {
                     'id': result.client_id,
                     'name': result.client_name,
@@ -413,21 +417,21 @@ def register_routes(app):
                     'address': result.client_address
                 },
                 'status': {
-                    'name': result.status,  # O status agora é uma coluna direta na tabela
+                    'name': result.status,  # O status é uma coluna direta na tabela
                     'value': result.status.capitalize() if result.status else 'Não definido'
                 },
                 'responsible': {
                     'name': result.responsible_name
                 } if result.responsible_name else None,
-                'images': [],
-                'equipment': []
+                'equipment': [],
+                'financial_entries': []
             }
             
             # Buscar equipamentos associados
             sql_equipment = """
             SELECT e.id, e.type, e.brand, e.model, e.serial_number
             FROM equipment e
-            JOIN service_order_equipment soe ON e.id = soe.equipment_id
+            JOIN equipment_service_orders soe ON e.id = soe.equipment_id
             WHERE soe.service_order_id = :order_id
             """
             equipment_results = db.session.execute(db.text(sql_equipment), {"order_id": id}).fetchall()
@@ -446,11 +450,10 @@ def register_routes(app):
             SELECT f.id, f.date, f.description, f.amount, f.type, f.entry_type
             FROM financial_entry f
             WHERE f.service_order_id = :order_id
-            ORDER BY f.date
+            ORDER BY f.date DESC
             """
             financial_results = db.session.execute(db.text(sql_financial), {"order_id": id}).fetchall()
             
-            service_order_dict['financial_entries'] = []
             for fin in financial_results:
                 service_order_dict['financial_entries'].append({
                     'id': fin.id,
@@ -463,8 +466,12 @@ def register_routes(app):
                     }
                 })
             
-            # Passar o dicionário para o template em vez do objeto SQLAlchemy
+            # Formulário para fechar OS
             close_form = CloseServiceOrderForm()
+            
+            # Registrar visualização no log
+            log_action(f"Visualizou a OS #{id}", f"Visualização da OS #{id}")
+            
             return render_template('service_orders/view_simple.html', service_order=service_order_dict, close_form=close_form)
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
