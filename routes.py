@@ -358,87 +358,66 @@ def register_routes(app):
             form=form
         )
 
-    # Rota para visualizar detalhes de uma ordem de serviço
+    # Rota para visualizar detalhes de uma ordem de serviço (versão básica)
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
         try:
-            # Obter os dados da ordem de serviço em duas etapas para evitar problemas com a tabela "user"
-            # 1. Primeiro, obter os dados básicos da ordem e do cliente
-            query_os = """
+            # Consulta SQL simples para obter dados da ordem de serviço
+            query = """
                 SELECT 
-                    so.id, so.client_id, so.responsible_id, so.description, 
-                    so.status, so.created_at, so.closed_at, so.invoice_number,
-                    so.invoice_date, so.invoice_amount, so.service_details,
-                    so.estimated_value, so.discount_amount, so.original_amount,
-                    so.total_value,
-                    c.name as client_name, c.document as client_document, 
-                    c.email as client_email, c.phone as client_phone, 
-                    c.address as client_address
-                FROM service_order so
-                LEFT JOIN client c ON so.client_id = c.id
-                WHERE so.id = :id
+                    id, description, status, created_at, closed_at, 
+                    invoice_number, invoice_date, invoice_amount, 
+                    service_details, estimated_value, total_value,
+                    client_id, responsible_id
+                FROM service_order
+                WHERE id = :id
             """
-            ordem = db.session.execute(db.text(query_os), {"id": id}).fetchone()
+            ordem = db.session.execute(db.text(query), {"id": id}).fetchone()
             
             if not ordem:
                 flash("Ordem de serviço não encontrada", "danger")
                 return redirect(url_for('service_orders'))
                 
-            # 2. Obter o nome do responsável em uma consulta separada
-            responsible_name = None
-            if ordem.responsible_id:
-                query_responsible = 'SELECT name FROM "user" WHERE id = :responsible_id'
-                responsible = db.session.execute(
-                    db.text(query_responsible), 
-                    {"responsible_id": ordem.responsible_id}
-                ).fetchone()
-                responsible_name = responsible.name if responsible else None
+            # Obter dados do cliente em consulta separada
+            query_cliente = """
+                SELECT name, document, email, phone, address
+                FROM client
+                WHERE id = :client_id
+            """
+            cliente_raw = db.session.execute(
+                db.text(query_cliente), 
+                {"client_id": ordem.client_id}
+            ).fetchone()
             
-            # Consulta para obter equipamentos associados à OS
-            equipamentos = db.session.execute(db.text("""
-                SELECT e.id, e.type, e.brand, e.model, e.serial_number
-                FROM equipment e
-                JOIN equipment_service_orders eso ON e.id = eso.equipment_id
-                WHERE eso.service_order_id = :id
-            """), {"id": id}).fetchall()
-            
-            # Consulta para obter registros financeiros associados à OS
-            financeiros = db.session.execute(db.text("""
-                SELECT id, date, description, type, amount
-                FROM financial_entry
-                WHERE service_order_id = :id
-                ORDER BY date DESC
-            """), {"id": id}).fetchall()
-            
-            # Formulário para fechar a OS (usado no modal)
-            close_form = CloseServiceOrderForm()
-            
-            # Dados do cliente formatados para o template
+            # Formato do cliente para o template
             cliente = {
-                'nome': ordem.client_name,
-                'documento': ordem.client_document,
-                'email': ordem.client_email,
-                'telefone': ordem.client_phone,
-                'endereco': ordem.client_address
+                'nome': cliente_raw.name if cliente_raw else None,
+                'documento': cliente_raw.document if cliente_raw else None,
+                'email': cliente_raw.email if cliente_raw else None,
+                'telefone': cliente_raw.phone if cliente_raw else None,
+                'endereco': cliente_raw.address if cliente_raw else None
             }
             
-            # Verificar se o usuário é admin para controlar permissões
-            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            # Obter nome do responsável pela OS
+            responsavel = None
+            if ordem.responsible_id:
+                query_resp = """
+                    SELECT name FROM "user"
+                    WHERE id = :resp_id
+                """
+                resp = db.session.execute(
+                    db.text(query_resp),
+                    {"resp_id": ordem.responsible_id}
+                ).fetchone()
+                responsavel = resp.name if resp else None
             
-            # Adicionar o nome do responsável ao objeto da ordem
-            ordem_dict = dict(ordem)
-            ordem_dict['responsible_name'] = responsible_name
-            
-            # Renderizar o template com todos os dados
+            # Renderizar o template simplificado
             return render_template(
-                'service_orders/visualizar.html',
-                ordem=ordem_dict,
+                'service_orders/view_os_basic.html',
+                ordem=ordem,
                 cliente=cliente,
-                equipamentos=equipamentos,
-                financeiros=financeiros,
-                close_form=close_form,
-                is_admin=is_admin
+                responsavel=responsavel
             )
                 
         except Exception as e:
