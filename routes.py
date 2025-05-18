@@ -368,7 +368,8 @@ def register_routes(app):
                 SELECT 
                     id, description, status, created_at, closed_at, 
                     invoice_number, invoice_date, invoice_amount, 
-                    service_details, estimated_value, total_value,
+                    service_details, estimated_value, discount_amount, 
+                    original_amount, total_value,
                     client_id, responsible_id
                 FROM service_order
                 WHERE id = :id
@@ -441,7 +442,7 @@ def register_routes(app):
             # 5. Verificar se o usuário é administrador para exibir controles adicionais
             is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
             
-            # Criar objeto para a ordem contendo o responsável
+            # Criar objeto para a ordem contendo o responsável e todos os campos
             ordem_completa = {
                 'id': ordem.id,
                 'description': ordem.description,
@@ -453,6 +454,8 @@ def register_routes(app):
                 'invoice_amount': ordem.invoice_amount,
                 'service_details': ordem.service_details,
                 'estimated_value': ordem.estimated_value,
+                'discount_amount': ordem.discount_amount,
+                'original_amount': ordem.original_amount,
                 'total_value': ordem.total_value,
                 'responsavel': responsavel
             }
@@ -542,7 +545,7 @@ def register_routes(app):
             order = db.session.execute(db.text("""
                 SELECT 
                     so.id, so.description, so.status, so.created_at, so.closed_at,
-                    so.invoice_number, so.invoice_amount, so.service_details, 
+                    so.invoice_number, so.invoice_date, so.invoice_amount, so.service_details, 
                     so.estimated_value, so.discount_amount, so.original_amount, so.total_value,
                     c.id as client_id, c.name as client_name, c.document as client_document,
                     c.email as client_email, c.phone as client_phone, c.address as client_address,
