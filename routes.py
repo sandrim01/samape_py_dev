@@ -1157,22 +1157,37 @@ def register_routes(app):
     @login_required
     def view_service_order_image(image_id):
         """Rota para visualizar uma imagem de ordem de serviço diretamente do banco de dados"""
-        image = ServiceOrderImage.query.get_or_404(image_id)
-        
-        # Verificar se temos dados da imagem no banco
-        if not image.image_data:
-            # Se não há dados da imagem, retornar uma imagem padrão
-            return redirect(url_for('static', filename='img/image-not-found.svg'))
-        
-        # Criar um objeto BytesIO a partir dos dados binários
-        image_binary = io.BytesIO(image.image_data)
-        
-        # Enviar o arquivo como resposta com o tipo MIME apropriado
-        return send_file(
-            image_binary,
-            mimetype=image.mimetype or 'image/jpeg',
-            download_name=image.filename
-        )
+        try:
+            image = ServiceOrderImage.query.get_or_404(image_id)
+            
+            # Tenta acessar a coluna image_data com tratamento de erro
+            try:
+                # Verificar se temos dados da imagem no banco
+                has_image_data = hasattr(image, 'image_data') and image.image_data is not None
+                
+                if not has_image_data:
+                    # Se não há dados da imagem, retornar uma imagem padrão
+                    return redirect(url_for('static', filename='img/image-not-found.svg'))
+                
+                # Criar um objeto BytesIO a partir dos dados binários
+                image_binary = io.BytesIO(image.image_data)
+                
+                # Enviar o arquivo como resposta com o tipo MIME apropriado
+                return send_file(
+                    image_binary,
+                    mimetype=image.mimetype or 'image/jpeg',
+                    download_name=image.filename
+                )
+            except (AttributeError, Exception) as e:
+                # Se a coluna não existir ou ocorrer outro erro, retornar imagem padrão
+                app.logger.error(f"Erro ao carregar imagem #{image_id}: {str(e)}")
+                return redirect(url_for('static', filename='img/image-not-found.svg'))
+                
+        except Exception as e:
+            app.logger.error(f"Erro ao visualizar imagem de OS #{image_id}: {str(e)}")
+            flash(f"Erro ao visualizar imagem: {str(e)}", "danger")
+            # Redirecionar para a lista de OS
+            return redirect(url_for('service_orders'))
     
     # Employee routes
     @app.route('/funcionarios')
