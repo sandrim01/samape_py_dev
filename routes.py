@@ -371,19 +371,104 @@ def register_routes(app):
             flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
     
-    # Rota alternativa para visualizar OS
+    # Rota alternativa para visualizar OS com tratamento especial
     @app.route('/ordem/<int:id>/visualizar')
     @login_required
     def view_service_order_alt(id):
         try:
-            # Carregando a ordem de serviço de forma mais simples
-            service_order = ServiceOrder.query.get_or_404(id)
+            # Usando SQL nativo para evitar problemas com o ORM
+            sql = """
+            SELECT o.id, o.client_id, o.description, o.estimated_value, o.created_at, o.closed_at, o.status_id, 
+                   o.responsible_id, o.invoice_number, o.invoice_amount, o.service_details,
+                   c.name as client_name, c.document as client_document, c.email as client_email, 
+                   c.phone as client_phone, c.address as client_address,
+                   s.name as status_name, s.value as status_value,
+                   u.name as responsible_name
+            FROM service_order o
+            LEFT JOIN client c ON o.client_id = c.id
+            LEFT JOIN service_order_status s ON o.status_id = s.id
+            LEFT JOIN user u ON o.responsible_id = u.id
+            WHERE o.id = :order_id
+            """
+            result = db.session.execute(db.text(sql), {"order_id": id}).fetchone()
             
-            # Definindo manualmente uma lista vazia de imagens para evitar o erro
-            service_order.images = []
+            if not result:
+                flash(f"Ordem de Serviço #{id} não encontrada", "danger")
+                return redirect(url_for('service_orders'))
+                
+            # Criando um dicionário com os dados da OS
+            service_order_dict = {
+                'id': result.id,
+                'description': result.description,
+                'estimated_value': result.estimated_value,
+                'created_at': result.created_at,
+                'closed_at': result.closed_at,
+                'invoice_number': result.invoice_number,
+                'invoice_amount': result.invoice_amount,
+                'service_details': result.service_details,
+                'client': {
+                    'id': result.client_id,
+                    'name': result.client_name,
+                    'document': result.client_document,
+                    'email': result.client_email,
+                    'phone': result.client_phone,
+                    'address': result.client_address
+                },
+                'status': {
+                    'name': result.status_name,
+                    'value': result.status_value
+                },
+                'responsible': {
+                    'name': result.responsible_name
+                } if result.responsible_name else None,
+                'images': [],
+                'equipment': []
+            }
             
+            # Buscar equipamentos associados
+            sql_equipment = """
+            SELECT e.id, e.type, e.brand, e.model, e.serial_number
+            FROM equipment e
+            JOIN service_order_equipment soe ON e.id = soe.equipment_id
+            WHERE soe.service_order_id = :order_id
+            """
+            equipment_results = db.session.execute(db.text(sql_equipment), {"order_id": id}).fetchall()
+            
+            for eq in equipment_results:
+                service_order_dict['equipment'].append({
+                    'id': eq.id,
+                    'type': eq.type,
+                    'brand': eq.brand,
+                    'model': eq.model,
+                    'serial_number': eq.serial_number
+                })
+                
+            # Buscar movimentações financeiras associadas
+            sql_financial = """
+            SELECT f.id, f.date, f.description, f.amount, f.type_id, ft.name as type_name, ft.value as type_value
+            FROM financial_entry f
+            JOIN financial_entry_type ft ON f.type_id = ft.id
+            WHERE f.service_order_id = :order_id
+            ORDER BY f.date
+            """
+            financial_results = db.session.execute(db.text(sql_financial), {"order_id": id}).fetchall()
+            
+            service_order_dict['financial_entries'] = []
+            for fin in financial_results:
+                service_order_dict['financial_entries'].append({
+                    'id': fin.id,
+                    'date': fin.date,
+                    'description': fin.description,
+                    'amount': fin.amount,
+                    'type': {
+                        'name': fin.type_name,
+                        'value': fin.type_value
+                    }
+                })
+            
+            # Passar o dicionário para o template em vez do objeto SQLAlchemy
             close_form = CloseServiceOrderForm()
-            return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
+            return render_template('service_orders/view_simple.html', service_order=service_order_dict, close_form=close_form)
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
             flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
