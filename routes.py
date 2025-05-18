@@ -129,7 +129,7 @@ def register_routes(app):
                 except Exception:
                     db.session.rollback()
                     flash('Erro ao efetuar login. Tente novamente.', 'danger')
-                    return render_template('standalone_login.html', form=form)
+                    return render_template('login_standalone.html', form=form)
             else:
                 try:
                     record_login_attempt(username, False)
@@ -415,8 +415,6 @@ def register_routes(app):
     # Rota alternativa redireciona para a implementação principal
     
     @app.route('/ordem/<int:id>/visualizar')
-    @login_required
-    @app.route("/ordem/<int:id>/visualizar")
     @login_required
     def view_service_order_alt(id):
         # Redireciona para a implementação principal
