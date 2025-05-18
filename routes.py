@@ -376,7 +376,18 @@ def register_routes(app):
     @login_required
     def view_service_order_alt(id):
         try:
-            service_order = ServiceOrder.query.get_or_404(id)
+            # Use uma consulta personalizada para evitar carregar as imagens automaticamente
+            service_order = ServiceOrder.query.options(
+                db.joinedload(ServiceOrder.client),
+                db.joinedload(ServiceOrder.responsible),
+                db.joinedload(ServiceOrder.status),
+                db.joinedload(ServiceOrder.equipment),
+                db.joinedload(ServiceOrder.financial_entries)
+            ).get_or_404(id)
+            
+            # Adicione um atributo vazio para imagens para evitar erros no template
+            service_order.images = []
+            
             close_form = CloseServiceOrderForm()
             return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
         except Exception as e:
