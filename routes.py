@@ -429,7 +429,11 @@ def register_routes(app):
                 km_value = form.distance_km.data * form.price_per_km.data
                 # Adicionar informação de KM aos detalhes do serviço
                 km_details = f"\n\nDetalhes de deslocamento:\n- Distância: {form.distance_km.data} KM\n- Valor por KM: R$ {form.price_per_km.data:.2f}\n- Total deslocamento: R$ {km_value:.2f}"
-                form.service_details.data += km_details
+                # Garantir que service_details não seja None antes de concatenar
+                if form.service_details.data:
+                    form.service_details.data = form.service_details.data + km_details
+                else:
+                    form.service_details.data = "Serviço realizado" + km_details
             
             # Atualizar os dados da OS
             service_order.status = ServiceOrderStatus.fechada
