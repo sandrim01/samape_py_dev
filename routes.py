@@ -1116,6 +1116,8 @@ def register_routes(app):
             # Registrar no log de ações
             log_action(
                 f"Excluiu a OS #{id}",
+                "service_order",
+                id,
                 f"OS #{id} de {client_name} excluída com sucesso, incluindo registros financeiros associados"
             )
             
