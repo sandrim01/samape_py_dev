@@ -215,13 +215,13 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if order.status.name != 'fechada' %}
-                            <a href="#" class="btn btn-sm btn-outline-success show-close-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS">
+                            <a href="{{ url_for('close_service_order', id=order.id) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS">
                                 <i class="fas fa-check-circle"></i>
                             </a>
                             {% endif %}
                             
                             <!-- Botão de exclusão -->
-                            <a href="{{ url_for('delete_service_order', id=order.id) }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.');">
+                            <a href="{{ url_for('service_orders') }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="if(confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')) { window.location.href='{{ url_for('delete_service_order_url', id=order.id) }}'; return false; }">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                             {% if order.status.name == 'fechada' %}
