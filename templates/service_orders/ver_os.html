@@ -255,39 +255,6 @@
                             </div>
                         {% endif %}
                     </div>
-                    
-                    <!-- Seção de cálculo de KM -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <div class="form-check">
-                                {{ close_form.include_km_calculation(class="form-check-input", id="include_km_calculation", onchange="toggleKmFields()") if close_form }}
-                                <label class="form-check-label fw-bold" for="include_km_calculation">
-                                    Incluir cálculo de valor por KM
-                                </label>
-                            </div>
-                        </div>
-                        <div class="card-body" id="km_calculation_fields" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="distance_km" class="form-label">Distância (KM)</label>
-                                    {{ close_form.distance_km(class="form-control", id="distance_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="price_per_km" class="form-label">Valor por KM (R$)</label>
-                                    {{ close_form.price_per_km(class="form-control", id="price_per_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
-                                </div>
-                            </div>
-                            <div class="alert alert-info">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>Total do deslocamento:</span>
-                                    <span class="fw-bold" id="km_total">R$ 0,00</span>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addKmValueToTotal()">
-                                    <i class="fas fa-plus-circle"></i> Adicionar ao total da OS
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -300,70 +267,4 @@
     </div>
 </div>
 {% endif %}
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-    // Controlar visibilidade dos campos de cálculo de KM
-    function toggleKmFields() {
-        const includeKmCalc = document.getElementById('include_km_calculation');
-        const kmFields = document.getElementById('km_calculation_fields');
-        
-        if (includeKmCalc) {
-            kmFields.style.display = includeKmCalc.checked ? 'block' : 'none';
-            
-            // Se desmarcar, limpar os valores
-            if (!includeKmCalc.checked) {
-                document.getElementById('distance_km').value = '';
-                document.getElementById('price_per_km').value = '';
-                document.getElementById('km_total').textContent = 'R$ 0,00';
-            }
-        }
-    }
-    
-    // Função para calcular o total do valor por KM
-    function calculateKmTotal() {
-        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
-        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
-        
-        const total = distanceKm * pricePerKm;
-        
-        // Formatar valor para moeda brasileira
-        const formattedTotal = total.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-        
-        document.getElementById('km_total').textContent = formattedTotal;
-    }
-    
-    // Função para adicionar o valor calculado ao total da OS
-    function addKmValueToTotal() {
-        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
-        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
-        
-        if (distanceKm <= 0 || pricePerKm <= 0) {
-            alert('Informe valores válidos para distância e preço por KM.');
-            return;
-        }
-        
-        const kmValue = distanceKm * pricePerKm;
-        const currentTotal = parseFloat(document.getElementById('invoice_amount').value) || 0;
-        
-        // Soma o valor de KM ao total atual
-        const newTotal = currentTotal + kmValue;
-        
-        // Atualiza o campo de valor total
-        document.getElementById('invoice_amount').value = newTotal.toFixed(2);
-        
-        // Exibir mensagem de confirmação
-        alert(`Valor de deslocamento (R$ ${kmValue.toFixed(2)}) adicionado ao total da OS.`);
-    }
-    
-    // Inicializar os controles quando a página carregar
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleKmFields();
-    });
-</script>
 {% endblock %}
