@@ -82,8 +82,8 @@ app.jinja_env.filters['status_color'] = status_color
 app.jinja_env.filters['abs'] = absolute_value
 
 # Import and register routes
-from routes import register_routes
-register_routes(app)
+# As rotas são importadas diretamente em main.py
+# register_routes é chamado em routes.py
 
 # Create initial admin user if needed
 with app.app_context():

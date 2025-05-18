@@ -413,12 +413,8 @@ def register_routes(app):
             return redirect(url_for('service_orders'))
     
     # Rota alternativa redireciona para a implementação principal
-    
     @app.route('/ordem/<int:id>/visualizar')
     @login_required
-    @app.route("/ordem/<int:id>/visualizar")
-    @login_required
     def view_service_order_alt(id):
-        # Redireciona para a implementação principal
-        return redirect(url_for("view_service_order", id=id))
-
+        # Simplesmente redireciona para a nova implementação
+        return redirect(url_for('view_service_order', id=id))

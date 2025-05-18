@@ -1,24 +1,28 @@
-#!/usr/bin/env python3
-# Script para simplificar a rota view_service_order_alt no arquivo routes.py
+import os
 
-import re
+# Criar a versão correta da função view_service_order_alt
+corrected_function = """
+    @app.route('/ordem/<int:id>/visualizar')
+    @login_required
+    def view_service_order_alt(id):
+        # Simplesmente redireciona para a implementação principal
+        return redirect(url_for('view_service_order', id=id))
+"""
 
+# Ler o arquivo routes.py
 with open('routes.py', 'r') as file:
     content = file.read()
 
-# Expressão regular para encontrar toda a função view_service_order_alt
-pattern = r'@app\.route\(\'/ordem/<int:id>/visualizar\'\)\s+@login_required\s+def view_service_order_alt\(id\):.*?return render_template\(.*?\)'
-replacement = """@app.route('/ordem/<int:id>/visualizar')
-    @login_required
-    def view_service_order_alt(id):
-        # Redirecionar para a implementação principal
-        return redirect(url_for('view_service_order', id=id))"""
+# Procurar por um padrão específico que identifique a função view_service_order_alt
+import re
+pattern = r'@app\.route\(\'/ordem/<int:id>/visualizar\'\)(.*?)def view_service_order_alt\(id\):.*?(?=@app\.route|$)'
+replacement = corrected_function
 
-# Substituir usando regex com flag DOTALL para considerar múltiplas linhas
-new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+# Realizar a substituição no conteúdo (usando re.DOTALL para corresponder a várias linhas)
+updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-# Escrever o resultado em um arquivo temporário
+# Escrever o conteúdo atualizado de volta ao arquivo
 with open('routes.py.fixed', 'w') as file:
-    file.write(new_content)
+    file.write(updated_content)
 
-print("Arquivo routes.py.fixed gerado com sucesso.")
+print("Arquivo routes.py.fixed criado com a função view_service_order_alt corrigida.")
