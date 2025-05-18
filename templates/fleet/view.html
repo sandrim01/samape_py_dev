@@ -11,22 +11,19 @@
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary me-2">
-                        <i class="fas fa-arrow-left me-1"></i> Voltar
+                    <a href="{{ url_for('fleet') }}" class="btn btn-secondary mr-2">
+                        <i class="fas fa-arrow-left mr-1"></i> Voltar
                     </a>
                     <!-- Todos os usuários podem acessar os botões de ação -->
-                    <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning me-2">
-                        <i class="fas fa-edit me-1"></i> Editar
+                    <a href="{{ url_for('edit_vehicle', id=vehicle.id) }}" class="btn btn-warning mr-2">
+                        <i class="fas fa-edit mr-1"></i> Editar
                     </a>
-                    <a href="#" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#refuelingModal">
-                        <i class="fas fa-gas-pump me-1"></i> Registrar Abastecimento
+                    <a href="#" class="btn btn-success mr-2" data-toggle="modal" data-target="#refuelingModal">
+                        <i class="fas fa-gas-pump mr-1"></i> Registrar Abastecimento
                     </a>
-                    <button type="button" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#deleteRecordsModal">
-                        <i class="fas fa-broom me-1"></i> Apagar Registros
-                    </button>
                     {% if current_user.role == 'admin' %}
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVehicleModal">
-                        <i class="fas fa-trash me-1"></i> Excluir Veículo
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteVehicleModal">
+                        <i class="fas fa-trash mr-1"></i> Excluir Veículo
                     </button>
                     {% endif %}
                 </div>
@@ -273,7 +270,9 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="refuelingModalLabel">Registrar Abastecimento</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form action="{{ url_for('register_refueling', id=vehicle.id) }}" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
@@ -337,7 +336,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success">Registrar Abastecimento</button>
                 </div>
             </form>
@@ -351,14 +350,16 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="deleteVehicleModalLabel">Confirmar Exclusão</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir o veículo <strong>{{ vehicle.plate }}</strong>?</p>
                 <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Esta ação é irreversível. Todos os dados relacionados a este veículo, incluindo histórico de manutenções e abastecimentos, serão removidos.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <form action="{{ url_for('excluir_veiculo_direct', id=vehicle.id) }}" method="post" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
@@ -368,7 +369,7 @@
     </div>
 </div>
 
-<!-- Scripts para garantir que os formulários funcionem corretamente -->
+<!-- Script para garantir que o formulário seja enviado corretamente -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Certifica-se de que o formulário existe na página
@@ -383,176 +384,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
         });
     }
-    
-    // Script para o modal de apagar registros
-    // Gerencia a habilitação do botão de exclusão baseado na seleção de registros
-    const checkboxes = document.querySelectorAll('input[type="checkbox"][name^="maintenance_ids"], input[type="checkbox"][name^="refueling_ids"]');
-    const deleteButton = document.getElementById('delete-records-button');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateDeleteButton);
-    });
-    
-    // Também monitora o campo de motivo da remoção
-    const removalReason = document.getElementById('removal-reason');
-    if (removalReason) {
-        removalReason.addEventListener('input', updateDeleteButton);
-    }
-    
-    function updateDeleteButton() {
-        const anyChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
-        const reasonFilled = removalReason && removalReason.value.trim().length > 0;
-        
-        if (deleteButton) {
-            deleteButton.disabled = !(anyChecked && reasonFilled);
-        }
-    }
 });
 </script>
-
-<!-- Modal para Apagar Registros -->
-<div class="modal fade" id="deleteRecordsModal" tabindex="-1" aria-labelledby="deleteRecordsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="deleteRecordsModalLabel">
-                    <i class="fas fa-broom me-1"></i> Apagar Registros
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ url_for('delete_vehicle_records', id=vehicle.id) }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle mr-1"></i> Selecione os registros que deseja apagar. Os valores financeiros associados serão automaticamente ajustados.
-                    </div>
-
-                    <ul class="nav nav-tabs mb-3" id="deleteRecordsTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" id="delete-maintenance-tab" data-toggle="tab" href="#delete-maintenance" role="tab">
-                                <i class="fas fa-tools mr-1"></i> Manutenções
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" id="delete-refueling-tab" data-toggle="tab" href="#delete-refueling" role="tab">
-                                <i class="fas fa-gas-pump mr-1"></i> Abastecimentos
-                            </a>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="deleteRecordsTabsContent">
-                        <!-- Aba de Seleção de Manutenções -->
-                        <div class="tab-pane fade show active" id="delete-maintenance" role="tabpanel">
-                            {% if maintenance_history %}
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="width: 5%;">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="select-all-maintenance">
-                                                    <label class="custom-control-label" for="select-all-maintenance"></label>
-                                                </div>
-                                            </th>
-                                            <th>Data</th>
-                                            <th>Descrição</th>
-                                            <th>Custo</th>
-                                            <th>Prestador</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for maint in maintenance_history %}
-                                        <tr>
-                                            <td>
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input maintenance-select" 
-                                                           id="maint-{{ maint.id }}" name="maintenance_ids[]" value="{{ maint.id }}">
-                                                    <label class="custom-control-label" for="maint-{{ maint.id }}"></label>
-                                                </div>
-                                            </td>
-                                            <td>{{ maint.date.strftime('%d/%m/%Y') }}</td>
-                                            <td>{{ maint.description }}</td>
-                                            <td>{{ "R$ {:.2f}".format(maint.cost) if maint.cost else '-' }}</td>
-                                            <td>{{ maint.workshop or '-' }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-tools fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Nenhum registro de manutenção encontrado.</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Aba de Seleção de Abastecimentos -->
-                        <div class="tab-pane fade" id="delete-refueling" role="tabpanel">
-                            {% if refueling_history %}
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="width: 5%;">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="select-all-refueling">
-                                                    <label class="custom-control-label" for="select-all-refueling"></label>
-                                                </div>
-                                            </th>
-                                            <th>Data</th>
-                                            <th>Combustível</th>
-                                            <th>Litros</th>
-                                            <th>Total</th>
-                                            <th>Posto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for refuel in refueling_history %}
-                                        <tr>
-                                            <td>
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input refueling-select" 
-                                                           id="refuel-{{ refuel.id }}" name="refueling_ids[]" value="{{ refuel.id }}">
-                                                    <label class="custom-control-label" for="refuel-{{ refuel.id }}"></label>
-                                                </div>
-                                            </td>
-                                            <td>{{ refuel.date.strftime('%d/%m/%Y') }}</td>
-                                            <td>{{ refuel.fuel_type.value }}</td>
-                                            <td>{{ "{:.2f}".format(refuel.liters) }} L</td>
-                                            <td>R$ {{ "{:.2f}".format(refuel.total_cost) }}</td>
-                                            <td>{{ refuel.gas_station or '-' }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-gas-pump fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Nenhum registro de abastecimento encontrado.</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-3">
-                        <label for="removal-reason">Motivo da Remoção</label>
-                        <textarea id="removal-reason" name="removal_reason" class="form-control" rows="2" 
-                                  placeholder="Descreva o motivo da remoção desses registros..." required></textarea>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger" id="delete-records-button" disabled>
-                        <i class="fas fa-trash-alt me-1"></i> Apagar Registros Selecionados
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 {% block scripts %}
 <script>
@@ -564,28 +397,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const total = liters * pricePerLiter;
             $('#totalCost').val(total.toFixed(2));
         });
-        
-        // Funcionalidade para seleção de todos os registros
-        $('#select-all-maintenance').on('change', function() {
-            $('.maintenance-select').prop('checked', $(this).is(':checked'));
-            updateDeleteButton();
-        });
-        
-        $('#select-all-refueling').on('change', function() {
-            $('.refueling-select').prop('checked', $(this).is(':checked'));
-            updateDeleteButton();
-        });
-        
-        // Atualizar estado do botão quando itens individuais são selecionados
-        $('.maintenance-select, .refueling-select').on('change', function() {
-            updateDeleteButton();
-        });
-        
-        // Atualizar estado do botão "Apagar Registros"
-        function updateDeleteButton() {
-            const anySelected = $('.maintenance-select:checked, .refueling-select:checked').length > 0;
-            $('#delete-records-button').prop('disabled', !anySelected);
-        }
     });
 </script>
 {% endblock %}
