@@ -197,15 +197,14 @@
                     <div class="col-6 col-md-4 col-lg-3 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="position-relative">
-                                <a href="{{ url_for('view_service_order_image', image_id=image.id) }}" 
+                                <a href="{{ url_for('static', filename='img/image-not-found.svg') }}" 
                                    data-fancybox="gallery" 
                                    data-caption="{{ image.description or 'Imagem ' ~ loop.index }}" 
                                    target="_blank">
-                                    <img src="{{ url_for('view_service_order_image', image_id=image.id) }}" 
+                                    <img src="{{ url_for('static', filename='img/image-not-found.svg') }}" 
                                          alt="{{ image.description or 'Imagem ' ~ loop.index }}" 
                                          class="card-img-top" 
-                                         style="height: 150px; object-fit: cover;"
-                                         onerror="this.onerror=null; this.src='/static/img/placeholder.svg';">
+                                         style="height: 150px; object-fit: cover;">
                                     <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" 
                                          style="background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease; border-radius: 4px;">
                                         <i class="fas fa-search-plus text-white fa-2x"></i>
