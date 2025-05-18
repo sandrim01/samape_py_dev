@@ -215,7 +215,7 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if order.status.name != 'fechada' %}
-                            <a href="{{ url_for('quick_close_service_order', id=order.id) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS" onclick="return confirm('Deseja fechar esta OS? Isso criará um lançamento financeiro com o valor estimado.');">
+                            <a href="#" class="btn btn-sm btn-outline-success show-close-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS">
                                 <i class="fas fa-check-circle"></i>
                             </a>
                             {% endif %}
@@ -441,6 +441,180 @@ $(document).ready(function() {
         if (typeof showSnack === 'function') {
             showSnack('Excluindo ordem de serviço...');
         }
+    });
+    
+    // Botões para mostrar o modal de fechamento
+    $('.show-close-modal').click(function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        
+        // Configurar o formulário
+        const form = $('#closeOrderForm');
+        form.attr('action', `/os/${orderId}/fechar`);
+        
+        // Atualizar o título do modal
+        $('#closeOrderModalLabel').text(`Fechar Ordem de Serviço #${orderId}`);
+        
+        // Buscar os dados da OS via AJAX para preencher o modal
+        $.get(`/api/service-orders/${orderId}`, function(data) {
+            if (data.success) {
+                // Preencher o formulário com os dados da OS
+                $('#invoice_amount').val(data.service_order.estimated_value || '');
+                $('#service_details').val('Serviço realizado conforme solicitado.');
+            } else {
+                console.error('Erro ao buscar dados da OS:', data.message);
+            }
+        }).fail(function(error) {
+            console.error('Erro na requisição:', error);
+        });
+        
+        // Mostrar o modal
+        $('#closeOrderModal').modal('show');
+    });
+});
+</script>
+
+<!-- Modal para fechar OS -->
+<div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeOrderModalLabel">Fechar Ordem de Serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="closeOrderForm" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <!-- O número da NF-e agora é gerado automaticamente -->
+                    <div class="mb-3">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O número da nota fiscal será gerado automaticamente.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Total (R$) *</label>
+                        <input type="number" class="form-control" id="invoice_amount" name="invoice_amount" step="0.01" required>
+                    </div>
+                    
+                    <!-- Seção de cálculo de valor por KM -->
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="include_km_calculation" name="include_km_calculation" onchange="toggleKmCalculation()">
+                            <label class="form-check-label" for="include_km_calculation">
+                                <i class="fas fa-road me-1"></i> Incluir cálculo de valor por KM
+                            </label>
+                        </div>
+                        
+                        <div id="km_calculation_fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="distance_km" class="form-label">Distância percorrida (KM)</label>
+                                    <input type="number" class="form-control" id="distance_km" name="distance_km" step="0.01" onchange="calculateKmTotal()">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="price_per_km" class="form-label">Valor por KM (R$)</label>
+                                    <input type="number" class="form-control" id="price_per_km" name="price_per_km" step="0.01" onchange="calculateKmTotal()">
+                                </div>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-calculator me-1"></i> 
+                                Valor calculado: <strong id="km_total">R$ 0,00</strong>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="add_km_value">
+                                    <i class="fas fa-plus-circle"></i> Adicionar ao total
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_details" class="form-label">Detalhes do Serviço Executado *</label>
+                        <textarea class="form-control" id="service_details" name="service_details" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i> Fechar OS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para mostrar/esconder os campos de cálculo de KM
+function toggleKmCalculation() {
+    const kmCalcFields = document.getElementById('km_calculation_fields');
+    const includeKmCalc = document.getElementById('include_km_calculation');
+    
+    if (kmCalcFields && includeKmCalc) {
+        kmCalcFields.style.display = includeKmCalc.checked ? 'block' : 'none';
+        
+        // Se desmarcar, limpar os valores
+        if (!includeKmCalc.checked) {
+            document.getElementById('distance_km').value = '';
+            document.getElementById('price_per_km').value = '';
+            document.getElementById('km_total').textContent = 'R$ 0,00';
+        }
+    }
+}
+
+// Função para calcular o total do valor por KM
+function calculateKmTotal() {
+    const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+    const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+    
+    const total = distanceKm * pricePerKm;
+    
+    // Formatar valor para moeda brasileira
+    const formattedTotal = total.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+    
+    document.getElementById('km_total').textContent = formattedTotal;
+}
+
+// Função para adicionar o valor calculado ao total da OS
+function addKmValueToTotal() {
+    const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+    const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+    
+    if (distanceKm <= 0 || pricePerKm <= 0) {
+        alert('Informe valores válidos para distância e preço por KM.');
+        return;
+    }
+    
+    const kmValue = distanceKm * pricePerKm;
+    
+    // Obter o valor atual do campo de valor total
+    const invoiceAmountField = document.getElementById('invoice_amount');
+    const currentTotal = parseFloat(invoiceAmountField.value) || 0;
+    
+    // Atualizar o valor total
+    const newTotal = currentTotal + kmValue;
+    invoiceAmountField.value = newTotal.toFixed(2);
+    
+    // Adicionar informação nos detalhes do serviço
+    const serviceDetailsField = document.getElementById('service_details');
+    const kmInfo = `\n\nValor de deslocamento: ${distanceKm.toFixed(2)} KM x R$ ${pricePerKm.toFixed(2)} = R$ ${kmValue.toFixed(2)}`;
+    
+    if (serviceDetailsField.value) {
+        serviceDetailsField.value += kmInfo;
+    } else {
+        serviceDetailsField.value = `Detalhes do serviço executado:${kmInfo}`;
+    }
+    
+    // Notificar o usuário
+    alert(`Valor de R$ ${kmValue.toFixed(2)} adicionado ao total da OS.`);
+}
+
+// Configurar o botão para adicionar valor calculado ao total quando o documento estiver pronto
+$(document).ready(function() {
+    $('#add_km_value').click(function() {
+        addKmValueToTotal();
     });
 });
 </script>
