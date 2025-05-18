@@ -890,7 +890,7 @@ def register_routes(app):
     @login_required
     def quick_close_service_order(id):
         """Rota para fechar rapidamente uma ordem de serviço sem formulário adicional"""
-        if not current_user.has_role(['admin', 'gerente']):
+        if not (current_user.role.name == 'admin' or current_user.role.name == 'gerente'):
             flash('Você não tem permissão para fechar ordens de serviço.', 'danger')
             return redirect(url_for('service_orders'))
         
