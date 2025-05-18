@@ -358,96 +358,34 @@ def register_routes(app):
             form=form
         )
 
-    # Rota para visualizar detalhes de uma Ordem de Serviço específica
+    # Rota de diagnóstico para verificar uma ordem de serviço específica
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
         try:
-            # Consulta simplificada para pegar os dados essenciais da OS
-            query = """
-            SELECT 
-                so.id, so.description, so.status, so.created_at, so.closed_at,
-                so.invoice_number, so.invoice_amount, so.service_details, 
-                so.estimated_value, so.discount_amount, so.original_amount, 
-                so.total_value, so.client_id, so.responsible_id,
-                c.name as client_name, c.document as client_document, 
-                c.email as client_email, c.phone as client_phone, 
-                c.address as client_address,
-                u.name as responsible_name
-            FROM service_order so
-            LEFT JOIN client c ON so.client_id = c.id
-            LEFT JOIN user u ON so.responsible_id = u.id
-            WHERE so.id = :id
-            """
-            ordem = db.session.execute(db.text(query), {'id': id}).fetchone()
+            # Consulta SQL direta e simplificada
+            ordem = db.session.execute(db.text("""
+                SELECT 
+                    so.id, so.description, so.status, so.created_at,
+                    c.name as client_name
+                FROM service_order so
+                LEFT JOIN client c ON so.client_id = c.id
+                WHERE so.id = :id
+            """), {"id": id}).fetchone()
             
             if not ordem:
-                flash(f"Ordem de serviço #{id} não encontrada.", "danger")
+                flash("Ordem de serviço não encontrada", "danger")
                 return redirect(url_for('service_orders'))
                 
-            # Preparando dados do cliente para o template
-            cliente = {
-                'id': ordem.client_id,
-                'nome': ordem.client_name,
-                'documento': ordem.client_document,
-                'email': ordem.client_email,
-                'telefone': ordem.client_phone,
-                'endereco': ordem.client_address
-            }
-            
-            # Consulta equipamentos vinculados
-            query_equip = """
-            SELECT e.id, e.type, e.brand, e.model, e.serial_number
-            FROM equipment e
-            JOIN equipment_service_orders eso ON e.id = eso.equipment_id
-            WHERE eso.service_order_id = :id
-            """
-            equipamentos = db.session.execute(db.text(query_equip), {'id': id}).fetchall()
-            
-            # Consulta entradas financeiras
-            query_fin = """
-            SELECT id, date, description, amount, type
-            FROM financial_entry
-            WHERE service_order_id = :id
-            ORDER BY date DESC
-            """
-            financeiros = db.session.execute(db.text(query_fin), {'id': id}).fetchall()
-            
-            # Preparando objeto OS para o template
-            os_data = {
-                'id': ordem.id,
-                'description': ordem.description,
-                'status': ordem.status,
-                'status_display': ordem.status.capitalize() if ordem.status else 'Não definido',
-                'created_at': ordem.created_at,
-                'closed_at': ordem.closed_at,
-                'invoice_number': ordem.invoice_number,
-                'invoice_amount': ordem.invoice_amount,
-                'service_details': ordem.service_details,
-                'estimated_value': ordem.estimated_value
-            }
-            
-            # Verificando se usuário é admin
-            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
-            
-            # Formulário para fechar a OS
-            close_form = CloseServiceOrderForm()
-            
-            # Template mais simples e direto
+            # Usar template de diagnóstico extremamente simples
             return render_template(
-                'service_orders/ver_os.html',
-                os=os_data,
-                cliente=cliente,
-                responsavel=ordem.responsible_name,
-                equipamentos=equipamentos,
-                financeiros=financeiros,
-                close_form=close_form,
-                is_admin=is_admin
+                'debug.html',
+                ordem=ordem
             )
-        
+                
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
-            flash(f"Erro ao visualizar ordem de serviço: {str(e)}", "danger")
+            flash(f"Erro: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
     
     # Rota para visualizar OS com tratamento especial (nova versão completa)
