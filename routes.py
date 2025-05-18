@@ -573,7 +573,7 @@ def register_routes(app):
                     # Create new financial entry
                     financial_entry = FinancialEntry(
                         service_order_id=service_order.id,
-                        description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
+                        description=f"Pagamento OS #{service_order.id} - {service_order.client.name}{km_info}",
                         amount=form.invoice_amount.data,
                         type=FinancialEntryType.entrada,
                         created_by=current_user.id
@@ -587,7 +587,7 @@ def register_routes(app):
                     'Fechamento de OS',
                     'service_order',
                     service_order.id,
-                    f"OS fechada - Valor: R${form.invoice_amount.data}"
+                    f"OS fechada - Valor: R${form.invoice_amount.data}{km_info}"
                 )
                 
                 return redirect(url_for('view_service_order', id=id))
