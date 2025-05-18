@@ -376,7 +376,7 @@ def register_routes(app):
                 u.name as responsible_name
             FROM service_order so
             LEFT JOIN client c ON so.client_id = c.id
-            LEFT JOIN user u ON so.responsible_id = u.id
+            LEFT JOIN "user" u ON so.responsible_id = u.id
             WHERE so.id = :id
             """
             ordem = db.session.execute(db.text(query), {'id': id}).fetchone()
@@ -406,7 +406,7 @@ def register_routes(app):
             
             # Consulta entradas financeiras
             query_fin = """
-            SELECT id, date, description, amount, type
+            SELECT id, date, description, amount, type, entry_type
             FROM financial_entry
             WHERE service_order_id = :id
             ORDER BY date DESC
@@ -466,7 +466,7 @@ def register_routes(app):
                     u.name as responsible_name
                 FROM service_order so
                 LEFT JOIN client c ON so.client_id = c.id
-                LEFT JOIN user u ON so.responsible_id = u.id
+                LEFT JOIN "user" u ON so.responsible_id = u.id
                 WHERE so.id = :id
             """), {'id': id}).fetchone()
             
