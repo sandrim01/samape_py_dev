@@ -1074,9 +1074,6 @@ def register_routes(app):
             # Registrar cliente para o log
             client_name = os_info.client_name if os_info.client_name else "Cliente desconhecido"
             
-            # Iniciar transação
-            transaction = db.session.begin()
-            
             try:
                 # 1. Excluir registros financeiros associados
                 db.session.execute(
@@ -1115,7 +1112,7 @@ def register_routes(app):
                 )
                 
                 # Confirmar transação
-                transaction.commit()
+                db.session.commit()
                 
                 # Registrar no log de ações
                 log_action(
@@ -1126,43 +1123,17 @@ def register_routes(app):
                 flash(f'Ordem de serviço #{id} excluída com sucesso!', 'success')
                 return redirect(url_for('service_orders'))
                 
-            except Exception as tx_error:
+            except Exception as e:
                 # Reverter transação em caso de erro
-                transaction.rollback()
-                raise tx_error
+                db.session.rollback()
+                app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
+                flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
+                return redirect(url_for('service_orders'))
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
             flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
             return redirect(url_for('service_orders'))
-            # Excluir a ordem de serviço
-            order_number = service_order.id
-            client_name = service_order.client.name if service_order.client else "Cliente desconhecido"
-            db.session.delete(service_order)
-            db.session.commit()
-            
-            try:
-                log_action(
-                    'Exclusão de Ordem de Serviço',
-                    'service_order',
-                    id,
-                    f"OS #{order_number} de {client_name} excluída"
-                )
-            except Exception as log_error:
-                app.logger.error(f"Erro ao registrar log de exclusão de OS: {str(log_error)}")
-            
-            flash('Ordem de serviço excluída com sucesso!', 'success')
-            return redirect(url_for('service_orders'))
-            
-        except IntegrityError:
-            db.session.rollback()
-            flash('Erro de integridade ao excluir ordem de serviço. Pode haver registros vinculados.', 'danger')
-            return redirect(url_for('view_service_order', id=id))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
-            app.logger.error(f"Erro ao excluir ordem de serviço {id}: {str(e)}")
-            return redirect(url_for('view_service_order', id=id))
 
     @app.route('/api/cliente/<int:client_id>/equipamentos')
     @login_required
