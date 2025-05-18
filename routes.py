@@ -1052,7 +1052,7 @@ def register_routes(app):
         """Rota para excluir uma ordem de serviço e seus registros financeiros associados"""
         try:
             # Verificar se o usuário é admin
-            if not current_user.role == 'admin':
+            if not current_user.role.name == 'admin':
                 flash("Apenas administradores podem excluir ordens de serviço", "danger")
                 return redirect(url_for('view_service_order_alt', id=id))
                 
