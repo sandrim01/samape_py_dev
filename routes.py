@@ -886,6 +886,76 @@ def register_routes(app):
             
         return redirect(url_for('view_service_order', id=service_order_id))
     
+    @app.route('/os/fechar_rapido/<int:id>', methods=['GET'])
+    @login_required
+    def quick_close_service_order(id):
+        """Rota para fechar rapidamente uma ordem de serviço sem formulário adicional"""
+        if not current_user.has_role(['admin', 'gerente']):
+            flash('Você não tem permissão para fechar ordens de serviço.', 'danger')
+            return redirect(url_for('service_orders'))
+        
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Verificar se já está fechada
+        if service_order.status == ServiceOrderStatus.fechada:
+            flash('Esta OS já está fechada.', 'info')
+            return redirect(url_for('service_orders'))
+        
+        try:
+            # Gerar o número da nota automaticamente
+            from utils import get_next_invoice_number
+            
+            # Atualizar status e datas
+            service_order.status = ServiceOrderStatus.fechada
+            service_order.closed_at = datetime.utcnow()
+            service_order.invoice_number = get_next_invoice_number()
+            service_order.invoice_date = datetime.utcnow()
+            
+            # Se tiver valor estimado, usá-lo como valor final
+            # Caso contrário, usar o valor 0 (o usuário poderá editar depois)
+            invoice_amount = service_order.estimated_value or 0
+            service_order.invoice_amount = invoice_amount
+            
+            # Verificamos se o cliente existe antes de tentar criar a entrada financeira
+            if not service_order.client:
+                flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
+                return redirect(url_for('service_orders'))
+                
+            # Verifica se já existe um lançamento financeiro para esta OS
+            existing_entry = FinancialEntry.query.filter_by(
+                service_order_id=service_order.id,
+                type=FinancialEntryType.entrada
+            ).first()
+            
+            # Se não existir entrada financeira e houver valor, criar uma
+            if not existing_entry and invoice_amount and invoice_amount > 0:
+                financial_entry = FinancialEntry(
+                    service_order_id=service_order.id,
+                    description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
+                    amount=invoice_amount,
+                    type=FinancialEntryType.entrada,
+                    date=datetime.utcnow(),
+                    created_by=current_user.id
+                )
+                db.session.add(financial_entry)
+            
+            db.session.commit()
+            
+            flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
+            log_action(
+                'Fechamento de OS',
+                'service_order',
+                service_order.id,
+                f"OS fechada rapidamente - Valor: R${invoice_amount}"
+            )
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao fechar OS: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao fechar OS {id}: {str(e)}")
+        
+        return redirect(url_for('service_orders'))
+    
     @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
     def close_service_order(id):

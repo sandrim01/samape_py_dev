@@ -215,7 +215,7 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if order.status.name != 'fechada' %}
-                            <a href="{{ url_for('close_service_order', id=order.id) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS">
+                            <a href="{{ url_for('quick_close_service_order', id=order.id) }}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS" onclick="return confirm('Deseja fechar esta OS? Isso criará um lançamento financeiro com o valor estimado.');">
                                 <i class="fas fa-check-circle"></i>
                             </a>
                             {% endif %}
