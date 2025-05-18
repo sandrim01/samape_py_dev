@@ -239,20 +239,42 @@
     </div>
 </div>
 
-<!-- Modal para visualização rápida de OS -->
+<!-- Modal para visualização rápida de OS (versão simplificada) -->
 <div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewOrderModalLabel">Carregando...</h5>
+                <h5 class="modal-title" id="viewOrderModalLabel">Detalhes da OS</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body text-center">
+            <div class="modal-body text-center p-4">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando...</span>
                 </div>
                 <p class="mt-2">Carregando informações da OS...</p>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vamos adicionar um modal alternativo usando HTML/CSS puro para garantir -->
+<div id="fallbackModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 9999;">
+    <div style="position: relative; width: 80%; max-width: 700px; margin: 10% auto; background-color: white; padding: 20px; border-radius: 5px; color: #333;">
+        <button onclick="document.getElementById('fallbackModal').style.display='none'" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        <h3 id="fallbackTitle">Detalhes da OS</h3>
+        <div id="fallbackContent" style="margin: 20px 0;">
+            <div style="text-align: center;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações...</p>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <button onclick="document.getElementById('fallbackModal').style.display='none'" style="padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">Fechar</button>
         </div>
     </div>
 </div>
@@ -266,108 +288,111 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Carregar os dados da OS no modal (versão simplificada e melhorada)
+    // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
     function loadOrderDetails(orderId) {
         console.log("Carregando detalhes da OS #" + orderId);
         
-        // Reset modal content para o estado inicial
-        $('#viewOrderModal .modal-content').html(`
-            <div class="modal-body text-center">
+        // Usar o modal de fallback HTML puro, que funciona sem depender de Bootstrap
+        document.getElementById('fallbackModal').style.display = 'block';
+        document.getElementById('fallbackTitle').textContent = 'Detalhes da OS #' + orderId;
+        document.getElementById('fallbackContent').innerHTML = `
+            <div style="text-align: center;">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando...</span>
                 </div>
-                <p class="mt-2">Carregando informações da OS #${orderId}...</p>
+                <p>Carregando informações da OS #${orderId}...</p>
             </div>
-        `);
+        `;
         
-        // Mostrar o modal imediatamente enquanto carrega os dados (método jQuery)
-        $('#viewOrderModal').modal('show');
+        // Carregar os dados via AJAX utilizando XMLHttpRequest para máxima compatibilidade
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/os_dados/' + orderId, true);
         
-        // Carregar os dados via AJAX
-        $.ajax({
-            url: '/os_dados/' + orderId,
-            method: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                console.log("Dados recebidos:", data);
-                
-                // Construir o HTML do modal diretamente
-                var modalContent = `
-                <div class="modal-header">
-                    <h5 class="modal-title">Ordem de Serviço #${data.id}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Informações Gerais</h6>
-                            <p><strong>Status:</strong> <span class="badge ${data.status}">${data.status_label}</span></p>
-                            <p><strong>Cliente:</strong> ${data.client_name}</p>
-                            <p><strong>Responsável:</strong> ${data.responsible_name}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Datas</h6>
-                            <p><strong>Abertura:</strong> ${data.created_at}</p>
-                            <p><strong>Fechamento:</strong> ${data.closed_at}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="fw-bold">Descrição</h6>
-                            <p>${data.description}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="fw-bold">Informações Financeiras</h6>
-                            <p><strong>Total:</strong> R$ ${data.total_value}</p>
-                            <p><strong>Valor Original:</strong> R$ ${data.original_amount}</p>
-                            <p><strong>Desconto:</strong> R$ ${data.discount_amount}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <a href="${data.view_url}" class="btn btn-primary">Ver Completo</a>
-                    <a href="${data.edit_url}" class="btn btn-secondary">Editar</a>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-                `;
-                
-                // Atualizar o conteúdo do modal
-                $('#viewOrderModal .modal-content').html(modalContent);
-            },
-            error: function(xhr, status, error) {
-                console.error("Erro ao carregar dados:", error);
-                console.log("Status:", status);
-                console.log("Resposta:", xhr.responseText);
-                
-                let errorMsg = 'Erro ao carregar os dados da OS.';
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                var data;
                 try {
-                    errorMsg = JSON.parse(xhr.responseText).error || errorMsg;
-                } catch(e) {
-                    console.error("Erro ao fazer parse da resposta:", e);
+                    data = JSON.parse(xhr.responseText);
+                    console.log("Dados recebidos:", data);
+                    
+                    // Atualizar o conteúdo do modal alternativo
+                    var htmlContent = `
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Gerais</h4>
+                                    <p><strong>Status:</strong> <span style="padding: 5px 10px; border-radius: 4px; background-color: #007bff; color: white;">${data.status_label}</span></p>
+                                    <p><strong>Cliente:</strong> ${data.client_name}</p>
+                                    <p><strong>Responsável:</strong> ${data.responsible_name}</p>
+                                </div>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Datas</h4>
+                                    <p><strong>Abertura:</strong> ${data.created_at}</p>
+                                    <p><strong>Fechamento:</strong> ${data.closed_at}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <h4 style="font-size: 16px; margin-bottom: 10px;">Descrição</h4>
+                                <p>${data.description}</p>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Financeiras</h4>
+                                <p><strong>Total:</strong> R$ ${data.total_value}</p>
+                                <p><strong>Valor Original:</strong> R$ ${data.original_amount}</p>
+                                <p><strong>Desconto:</strong> R$ ${data.discount_amount}</p>
+                            </div>
+                            
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <a href="${data.view_url}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver Completo</a>
+                                <a href="${data.edit_url}" style="padding: 8px 12px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Editar</a>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('fallbackContent').innerHTML = htmlContent;
+                    
+                } catch (e) {
+                    console.error("Erro ao fazer parse da resposta JSON:", e);
+                    document.getElementById('fallbackContent').innerHTML = `
+                        <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                            <p><strong>Erro ao processar os dados da OS.</strong></p>
+                            <p>Ocorreu um erro inesperado.</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
+                        </div>
+                    `;
                 }
-                
-                $('#viewOrderModal .modal-content').html(`
-                    <div class="modal-header">
-                        <h5 class="modal-title">Erro</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            } else {
+                console.error("Erro ao carregar dados. Status:", xhr.status);
+                document.getElementById('fallbackContent').innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                        <p><strong>Erro ao carregar os dados da OS #${orderId}</strong></p>
+                        <p>Status: ${xhr.status}</p>
                     </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger">
-                            ${errorMsg}
-                            <br>
-                            <small>${error}</small>
-                        </div>
-                        <div class="text-center">
-                            <a href="/os_basico/${orderId}" class="btn btn-primary">Ver na Visualização Básica</a>
-                        </div>
+                    <div style="text-align: center;">
+                        <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
                     </div>
-                `);
+                `;
             }
-        });
+        };
+        
+        xhr.onerror = function() {
+            console.error("Erro de rede ao tentar obter os dados da OS");
+            document.getElementById('fallbackContent').innerHTML = `
+                <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                    <p><strong>Erro de conexão</strong></p>
+                    <p>Não foi possível conectar ao servidor para obter os dados da OS.</p>
+                </div>
+                <div style="text-align: center;">
+                    <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
+                </div>
+            `;
+        };
+        
+        xhr.send();
     }
     
     // Configurar cliques nos botões de visualização com a classe modal-trigger
