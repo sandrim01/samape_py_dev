@@ -549,7 +549,7 @@ def register_routes(app):
                     u.name as responsible_name
                 FROM service_order so
                 LEFT JOIN client c ON so.client_id = c.id
-                LEFT JOIN user u ON so.responsible_id = u.id
+                LEFT JOIN "user" u ON so.responsible_id = u.id
                 WHERE so.id = :id
             """), {'id': id}).fetchone()
             
