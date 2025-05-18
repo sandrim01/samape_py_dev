@@ -362,9 +362,27 @@ def register_routes(app):
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
-        service_order = ServiceOrder.query.get_or_404(id)
-        close_form = CloseServiceOrderForm()
-        return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
+        try:
+            service_order = ServiceOrder.query.get_or_404(id)
+            close_form = CloseServiceOrderForm()
+            return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
+        except Exception as e:
+            app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
+            flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
+            return redirect(url_for('service_orders'))
+    
+    # Rota alternativa para visualizar OS
+    @app.route('/ordens/<int:id>/visualizar')
+    @login_required
+    def view_service_order_alt(id):
+        try:
+            service_order = ServiceOrder.query.get_or_404(id)
+            close_form = CloseServiceOrderForm()
+            return render_template('service_orders/view.html', service_order=service_order, close_form=close_form)
+        except Exception as e:
+            app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
+            flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
+            return redirect(url_for('service_orders'))
 
     @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
