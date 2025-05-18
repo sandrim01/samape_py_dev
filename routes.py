@@ -432,10 +432,10 @@ def register_routes(app):
             flash(f"Erro: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
     
-    # Rota para excluir uma ordem de serviço
+    # Rota para excluir uma ordem de serviço (nova implementação)
     @app.route('/os/<int:id>/excluir', methods=['GET', 'POST'])
     @login_required
-    def delete_service_order(id):
+    def delete_service_order_new(id):
         # Verificar se o usuário é administrador
         if not hasattr(current_user, 'role') or current_user.role != 'admin':
             flash("Apenas administradores podem excluir ordens de serviço.", "danger")
@@ -852,7 +852,7 @@ def register_routes(app):
         
     @app.route('/ordem/<int:id>/excluir')
     @login_required
-    def delete_service_order(id):
+    def delete_service_order_old(id):
         """Rota para excluir uma ordem de serviço e seus registros financeiros associados"""
         try:
             # Verificar se o usuário é admin

@@ -15,8 +15,7 @@
                         <i class="fas fa-arrow-left me-1"></i>Voltar
                     </a>
                     {% if is_admin and ordem.status != 'fechado' %}
-                    <a href="{{ url_for('delete_service_order', id=ordem.id) }}" class="btn btn-sm btn-danger ms-2" 
-                        onclick="return confirm('Tem certeza que deseja excluir esta OS? Esta ação não pode ser desfeita.')">
+                    <a href="{{ url_for('delete_service_order_new', id=ordem.id) }}" class="btn btn-sm btn-danger ms-2">
                         <i class="fas fa-trash me-1"></i>Excluir
                     </a>
                     {% endif %}
