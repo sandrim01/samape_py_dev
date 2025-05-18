@@ -266,7 +266,7 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Carregar os dados da OS no modal (versão simplificada)
+    // Carregar os dados da OS no modal (versão simplificada e melhorada)
     function loadOrderDetails(orderId) {
         console.log("Carregando detalhes da OS #" + orderId);
         
@@ -280,9 +280,8 @@ $(document).ready(function() {
             </div>
         `);
         
-        // Mostrar o modal imediatamente enquanto carrega os dados
-        var modal = new bootstrap.Modal(document.getElementById('viewOrderModal'));
-        modal.show();
+        // Mostrar o modal imediatamente enquanto carrega os dados (método jQuery)
+        $('#viewOrderModal').modal('show');
         
         // Carregar os dados via AJAX
         $.ajax({
