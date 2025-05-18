@@ -309,10 +309,17 @@
             <i class="fas fa-clipboard-list"></i>
             <span>OS</span>
         </a>
+        {% if current_user.is_authenticated %}
         <a href="{{ url_for('clients') }}" class="nav-item {% if '/clientes' in request.path %}active{% endif %}">
             <i class="fas fa-users"></i>
             <span>Clientes</span>
         </a>
+        {% else %}
+        <a href="#" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Clientes</span>
+        </a>
+        {% endif %}
         <a href="{{ url_for('equipment') }}" class="nav-item {% if '/equipamentos' in request.path %}active{% endif %}">
             <i class="fas fa-tools"></i>
             <span>Equip.</span>
