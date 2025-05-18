@@ -17,4 +17,7 @@ dependencies = [
     "weasyprint>=65.1",
     "markupsafe>=3.0.2",
     "sqlalchemy>=2.0.40",
+    "flask-dance>=7.1.0",
+    "oauthlib>=3.2.2",
+    "pyjwt>=2.10.1",
 ]

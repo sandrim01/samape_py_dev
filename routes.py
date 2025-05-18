@@ -358,16 +358,22 @@ def register_routes(app):
             form=form
         )
 
-    # Rota de diagnóstico para verificar uma ordem de serviço específica
+    # Rota para visualizar detalhes de uma ordem de serviço
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
         try:
-            # Consulta SQL corrigida
+            # Consulta SQL para obter os dados principais da OS
             ordem = db.session.execute(db.text("""
                 SELECT 
-                    so.id, so.description, so.status, so.created_at,
-                    c.name as client_name,
+                    so.id, so.client_id, so.responsible_id, so.description, 
+                    so.status, so.created_at, so.closed_at, so.invoice_number,
+                    so.invoice_date, so.invoice_amount, so.service_details,
+                    so.estimated_value, so.discount_amount, so.original_amount,
+                    so.total_value,
+                    c.name as client_name, c.document as client_document, 
+                    c.email as client_email, c.phone as client_phone, 
+                    c.address as client_address,
                     u.name as responsible_name
                 FROM service_order so
                 LEFT JOIN client c ON so.client_id = c.id
@@ -379,15 +385,112 @@ def register_routes(app):
                 flash("Ordem de serviço não encontrada", "danger")
                 return redirect(url_for('service_orders'))
                 
-            # Usar template de diagnóstico extremamente simples
+            # Consulta para obter equipamentos associados à OS
+            equipamentos = db.session.execute(db.text("""
+                SELECT e.id, e.type, e.brand, e.model, e.serial_number
+                FROM equipment e
+                JOIN equipment_service_orders eso ON e.id = eso.equipment_id
+                WHERE eso.service_order_id = :id
+            """), {"id": id}).fetchall()
+            
+            # Consulta para obter registros financeiros associados à OS
+            financeiros = db.session.execute(db.text("""
+                SELECT id, date, description, type, amount
+                FROM financial_entry
+                WHERE service_order_id = :id
+                ORDER BY date DESC
+            """), {"id": id}).fetchall()
+            
+            # Formulário para fechar a OS (usado no modal)
+            close_form = CloseServiceOrderForm()
+            
+            # Dados do cliente formatados para o template
+            cliente = {
+                'nome': ordem.client_name,
+                'documento': ordem.client_document,
+                'email': ordem.client_email,
+                'telefone': ordem.client_phone,
+                'endereco': ordem.client_address
+            }
+            
+            # Verificar se o usuário é admin para controlar permissões
+            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Renderizar o template com todos os dados
             return render_template(
-                'debug.html',
-                ordem=ordem
+                'service_orders/visualizar.html',
+                ordem=ordem,
+                cliente=cliente,
+                equipamentos=equipamentos,
+                financeiros=financeiros,
+                close_form=close_form,
+                is_admin=is_admin
             )
                 
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
             flash(f"Erro: {str(e)}", "danger")
+            return redirect(url_for('service_orders'))
+    
+    # Rota para excluir uma ordem de serviço
+    @app.route('/os/<int:id>/excluir', methods=['GET', 'POST'])
+    @login_required
+    def delete_service_order(id):
+        # Verificar se o usuário é administrador
+        if not hasattr(current_user, 'role') or current_user.role != 'admin':
+            flash("Apenas administradores podem excluir ordens de serviço.", "danger")
+            return redirect(url_for('service_orders'))
+            
+        try:
+            # Primeiro, verificar se a OS existe
+            ordem = db.session.execute(db.text("""
+                SELECT id FROM service_order WHERE id = :id
+            """), {"id": id}).fetchone()
+            
+            if not ordem:
+                flash("Ordem de serviço não encontrada.", "danger")
+                return redirect(url_for('service_orders'))
+                
+            # Para GET, mostrar página de confirmação
+            if request.method == 'GET':
+                return render_template('service_orders/delete_confirm.html', id=id)
+                
+            # Para POST, realizar a exclusão
+            
+            # 1. Excluir associações com equipamentos
+            db.session.execute(db.text("""
+                DELETE FROM equipment_service_orders
+                WHERE service_order_id = :id
+            """), {"id": id})
+            
+            # 2. Excluir registros financeiros
+            db.session.execute(db.text("""
+                DELETE FROM financial_entry
+                WHERE service_order_id = :id
+            """), {"id": id})
+            
+            # 3. Excluir a ordem de serviço
+            db.session.execute(db.text("""
+                DELETE FROM service_order
+                WHERE id = :id
+            """), {"id": id})
+            
+            # Confirmar transação
+            db.session.commit()
+            
+            # Registrar no log
+            try:
+                log_action(f"Exclusão da OS #{id}", "service_order", id, f"OS #{id} excluída por {current_user.name}")
+            except Exception as log_error:
+                app.logger.warning(f"Erro ao registrar log de exclusão: {str(log_error)}")
+                
+            flash(f"Ordem de serviço #{id} excluída com sucesso.", "success")
+            return redirect(url_for('service_orders'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
+            flash(f"Erro ao excluir ordem de serviço: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
     
     # Rota para visualizar OS com tratamento especial (nova versão completa)
