@@ -93,11 +93,12 @@ def create_test_data():
 
 if __name__ == "__main__":
     # Este arquivo pode ser executado diretamente
+    import os
     from flask import Flask
     from app import db
     
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:qUngJAyBvLWQdkmSkZEjjEoMoDVzOBnx@trolley.proxy.rlwy.net:22285/railway"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
     db.init_app(app)
     
     with app.app_context():
