@@ -9,7 +9,7 @@
         <a href="{{ url_for('edit_service_order', id=service_order.id) }}" class="btn btn-outline-secondary me-2">
             <i class="fas fa-edit me-1"></i> Editar
         </a>
-        {% if service_order.status.name != 'fechada' %}
+        {% if service_order.status != 'fechada' %}
         <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#closeOrderModal">
             <i class="fas fa-check-circle me-1"></i> Fechar OS
         </button>

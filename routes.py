@@ -411,7 +411,7 @@ def register_routes(app):
                     'address': result.client_address
                 },
                 'status': {
-                    'name': result.status,  # O status é uma coluna direta na tabela
+                    'name': result.status,  # O status é uma coluna direta na tabela 
                     'value': result.status.capitalize() if result.status else 'Não definido'
                 },
                 'responsible': {
