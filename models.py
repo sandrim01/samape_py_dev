@@ -122,8 +122,6 @@ class ServiceOrder(db.Model):
     # Relations
     financial_entries = db.relationship('FinancialEntry', backref='service_order', lazy=True)
     images = db.relationship('ServiceOrderImage', backref='service_order', lazy=True, cascade="all, delete-orphan")
-    equipment = db.relationship('Equipment', secondary=equipment_service_orders, lazy='subquery', 
-                               backref=db.backref('service_orders', lazy=True))
 
 class ServiceOrderImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
