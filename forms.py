@@ -166,6 +166,11 @@ class ServiceOrderForm(FlaskForm):
     description = TextAreaField('Descrição do Serviço', validators=[DataRequired()])
     estimated_value = DecimalField('Valor Estimado (R$)', validators=[Optional()], places=2)
     invoice_amount = DecimalField('Valor Total da Nota (R$)', validators=[Optional()], places=2)
+    # Novos campos para cálculo de R$/KM
+    calculate_distance_cost = BooleanField('Calcular Custo de Deslocamento (R$/KM)', default=False)
+    distance_km = DecimalField('Distância (KM)', validators=[Optional()], places=2, default=0)
+    cost_per_km = DecimalField('Valor por KM (R$)', validators=[Optional()], places=2, default=0)
+    total_distance_cost = DecimalField('Custo Total de Deslocamento (R$)', validators=[Optional()], places=2, default=0)
     status = SelectField('Status', choices=[(status.name, status.value) for status in ServiceOrderStatus], validators=[DataRequired()])
     images = FileField('Imagens do Equipamento (máx. 500KB por imagem)', validators=[
         Optional(),

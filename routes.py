@@ -298,6 +298,7 @@ def register_routes(app):
         
         if form.validate_on_submit():
             try:
+                # Cria objeto de ordem de serviço com os dados do formulário
                 service_order = ServiceOrder(
                     client_id=form.client_id.data,
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
@@ -305,6 +306,12 @@ def register_routes(app):
                     estimated_value=form.estimated_value.data,
                     status=ServiceOrderStatus[form.status.data]
                 )
+                
+                # Processar os campos de cálculo de R$/KM se o checkbox estiver marcado
+                if form.calculate_distance_cost.data:
+                    service_order.distance_km = form.distance_km.data
+                    service_order.cost_per_km = form.cost_per_km.data
+                    service_order.total_distance_cost = form.total_distance_cost.data
                 
                 # Add equipment relationships if selected
                 if form.equipment_ids.data:
