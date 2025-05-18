@@ -372,6 +372,41 @@ def register_routes(app):
             
         return redirect(url_for('view_service_order', id=service_order_id))
     
+    @app.route('/os/<int:id>/excluir')
+    @login_required
+    def delete_service_order(id):
+        """Exclui uma ordem de serviço e seus registros associados"""
+        # Verificar se o usuário tem permissão (somente admin e gerente podem excluir)
+        if not (current_user.is_admin() or current_user.is_manager()):
+            flash('Você não tem permissão para excluir ordens de serviço.', 'danger')
+            return redirect(url_for('service_orders'))
+            
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        try:
+            # Excluir os registros financeiros associados
+            FinancialEntry.query.filter_by(service_order_id=id).delete()
+            
+            # Registrar log de exclusão
+            log_action(
+                'Exclusão de OS', 
+                'service_order', 
+                id, 
+                f"OS #{id} excluída"
+            )
+            
+            # Excluir a ordem de serviço
+            db.session.delete(service_order)
+            db.session.commit()
+            
+            flash('Ordem de serviço excluída com sucesso.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir OS {id}: {str(e)}")
+            flash(f'Erro ao excluir a ordem de serviço: {str(e)}', 'danger')
+            
+        return redirect(url_for('service_orders'))
+    
     @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
     def close_service_order(id):

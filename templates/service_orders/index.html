@@ -221,7 +221,7 @@
                             {% endif %}
                             
                             <!-- Botão de exclusão -->
-                            <a href="{{ url_for('service_orders') }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="if(confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')) { window.location.href='{{ url_for('delete_service_order_url', id=order.id) }}'; return false; }">
+                            <a href="#" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="if(confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')) { window.location.href='{{ url_for('delete_service_order', id=order.id) }}'; return false; }">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                             {% if order.status.name == 'fechada' %}
