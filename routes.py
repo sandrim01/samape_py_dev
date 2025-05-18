@@ -362,122 +362,210 @@ def register_routes(app):
     @app.route('/os/<int:id>')
     @login_required
     def view_service_order(id):
-        # Redirecionar para a nova função de visualização que usa SQL direto
-        return redirect(url_for('view_service_order_alt', id=id))
+        try:
+            # Consulta simplificada para pegar os dados essenciais da OS
+            query = """
+            SELECT 
+                so.id, so.description, so.status, so.created_at, so.closed_at,
+                so.invoice_number, so.invoice_amount, so.service_details, 
+                so.estimated_value, so.discount_amount, so.original_amount, 
+                so.total_value, so.client_id, so.responsible_id,
+                c.name as client_name, c.document as client_document, 
+                c.email as client_email, c.phone as client_phone, 
+                c.address as client_address,
+                u.name as responsible_name
+            FROM service_order so
+            LEFT JOIN client c ON so.client_id = c.id
+            LEFT JOIN user u ON so.responsible_id = u.id
+            WHERE so.id = :id
+            """
+            ordem = db.session.execute(db.text(query), {'id': id}).fetchone()
+            
+            if not ordem:
+                flash(f"Ordem de serviço #{id} não encontrada.", "danger")
+                return redirect(url_for('service_orders'))
+                
+            # Preparando dados do cliente para o template
+            cliente = {
+                'id': ordem.client_id,
+                'nome': ordem.client_name,
+                'documento': ordem.client_document,
+                'email': ordem.client_email,
+                'telefone': ordem.client_phone,
+                'endereco': ordem.client_address
+            }
+            
+            # Consulta equipamentos vinculados
+            query_equip = """
+            SELECT e.id, e.type, e.brand, e.model, e.serial_number
+            FROM equipment e
+            JOIN equipment_service_orders eso ON e.id = eso.equipment_id
+            WHERE eso.service_order_id = :id
+            """
+            equipamentos = db.session.execute(db.text(query_equip), {'id': id}).fetchall()
+            
+            # Consulta entradas financeiras
+            query_fin = """
+            SELECT id, date, description, amount, type
+            FROM financial_entry
+            WHERE service_order_id = :id
+            ORDER BY date DESC
+            """
+            financeiros = db.session.execute(db.text(query_fin), {'id': id}).fetchall()
+            
+            # Preparando objeto OS para o template
+            os_data = {
+                'id': ordem.id,
+                'description': ordem.description,
+                'status': ordem.status,
+                'status_display': ordem.status.capitalize() if ordem.status else 'Não definido',
+                'created_at': ordem.created_at,
+                'closed_at': ordem.closed_at,
+                'invoice_number': ordem.invoice_number,
+                'invoice_amount': ordem.invoice_amount,
+                'service_details': ordem.service_details,
+                'estimated_value': ordem.estimated_value
+            }
+            
+            # Verificando se usuário é admin
+            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Formulário para fechar a OS
+            close_form = CloseServiceOrderForm()
+            
+            # Template mais simples e direto
+            return render_template(
+                'service_orders/ver_os.html',
+                os=os_data,
+                cliente=cliente,
+                responsavel=ordem.responsible_name,
+                equipamentos=equipamentos,
+                financeiros=financeiros,
+                close_form=close_form,
+                is_admin=is_admin
+            )
+        
+        except Exception as e:
+            app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
+            flash(f"Erro ao visualizar ordem de serviço: {str(e)}", "danger")
+            return redirect(url_for('service_orders'))
     
-    # Rota para visualizar OS com tratamento especial
+    # Rota para visualizar OS com tratamento especial (nova versão completa)
     @app.route('/ordem/<int:id>/visualizar')
     @login_required
     def view_service_order_alt(id):
         try:
-            # Usando SQL nativo adaptado para a estrutura real do banco de dados
-            sql = """
-            SELECT o.id, o.client_id, o.description, o.estimated_value, o.created_at, o.closed_at, 
-                   o.status, o.responsible_id, o.invoice_number, o.invoice_amount, o.service_details,
-                   o.discount_amount, o.original_amount, o.total_value,
-                   c.name as client_name, c.document as client_document, c.email as client_email, 
-                   c.phone as client_phone, c.address as client_address,
-                   u.name as responsible_name
-            FROM service_order o
-            LEFT JOIN client c ON o.client_id = c.id
-            LEFT JOIN user u ON o.responsible_id = u.id
-            WHERE o.id = :order_id
-            """
-            result = db.session.execute(db.text(sql), {"order_id": id}).fetchone()
+            # Consulta básica para obter os dados da OS
+            order = db.session.execute(db.text("""
+                SELECT 
+                    so.id, so.description, so.status, so.created_at, so.closed_at,
+                    so.invoice_number, so.invoice_amount, so.service_details, 
+                    so.estimated_value, so.discount_amount, so.original_amount, so.total_value,
+                    c.id as client_id, c.name as client_name, c.document as client_document,
+                    c.email as client_email, c.phone as client_phone, c.address as client_address,
+                    u.name as responsible_name
+                FROM service_order so
+                LEFT JOIN client c ON so.client_id = c.id
+                LEFT JOIN user u ON so.responsible_id = u.id
+                WHERE so.id = :id
+            """), {'id': id}).fetchone()
             
-            if not result:
-                flash(f"Ordem de Serviço #{id} não encontrada", "danger")
+            if not order:
+                flash(f"Ordem de serviço #{id} não encontrada.", "danger")
                 return redirect(url_for('service_orders'))
-                
-            # Criando um dicionário com os dados da OS
-            service_order_dict = {
-                'id': result.id,
-                'description': result.description,
-                'estimated_value': result.estimated_value,
-                'created_at': result.created_at,
-                'closed_at': result.closed_at,
-                'invoice_number': result.invoice_number,
-                'invoice_amount': result.invoice_amount,
-                'service_details': result.service_details,
-                'discount_amount': result.discount_amount,
-                'original_amount': result.original_amount,
-                'total_value': result.total_value,
+            
+            # Consulta para obter equipamentos
+            equipments = db.session.execute(db.text("""
+                SELECT 
+                    e.id, e.type, e.brand, e.model, e.serial_number
+                FROM equipment e
+                JOIN equipment_service_orders eso ON e.id = eso.equipment_id
+                WHERE eso.service_order_id = :id
+            """), {'id': id}).fetchall()
+            
+            # Consulta para obter entradas financeiras
+            finances = db.session.execute(db.text("""
+                SELECT 
+                    id, date, description, amount, type, entry_type
+                FROM financial_entry
+                WHERE service_order_id = :id
+                ORDER BY date DESC
+            """), {'id': id}).fetchall()
+            
+            # Verificar se o usuário é administrador
+            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Formulário para fechar OS
+            close_form = CloseServiceOrderForm()
+            
+            # Registrar visualização no log
+            try:
+                log_action(f"Visualização da OS #{id}", "service_order", id, f"Visualização da OS #{id}")
+            except Exception as log_error:
+                app.logger.warning(f"Erro ao registrar log de visualização: {str(log_error)}")
+            
+            # Criando um objeto diretamente compatível com o template
+            service_order = {
+                'id': order.id,
+                'description': order.description,
+                'status': order.status,  # Status como string
+                'created_at': order.created_at,
+                'closed_at': order.closed_at,
+                'invoice_number': order.invoice_number,
+                'invoice_amount': order.invoice_amount,
+                'service_details': order.service_details,
+                'estimated_value': order.estimated_value,
+                'discount_amount': order.discount_amount,
+                'original_amount': order.original_amount,
+                'total_value': order.total_value,
                 'client': {
-                    'id': result.client_id,
-                    'name': result.client_name,
-                    'document': result.client_document,
-                    'email': result.client_email,
-                    'phone': result.client_phone,
-                    'address': result.client_address
-                },
-                'status': {
-                    'name': result.status,  # O status é uma coluna direta na tabela 
-                    'value': result.status.capitalize() if result.status else 'Não definido'
+                    'id': order.client_id,
+                    'name': order.client_name,
+                    'document': order.client_document,
+                    'email': order.client_email,
+                    'phone': order.client_phone,
+                    'address': order.client_address
                 },
                 'responsible': {
-                    'name': result.responsible_name
-                } if result.responsible_name else None,
+                    'name': order.responsible_name
+                } if order.responsible_name else None,
                 'equipment': [],
                 'financial_entries': []
             }
             
-            # Buscar equipamentos associados
-            sql_equipment = """
-            SELECT e.id, e.type, e.brand, e.model, e.serial_number
-            FROM equipment e
-            JOIN equipment_service_orders soe ON e.id = soe.equipment_id
-            WHERE soe.service_order_id = :order_id
-            """
-            equipment_results = db.session.execute(db.text(sql_equipment), {"order_id": id}).fetchall()
-            
-            for eq in equipment_results:
-                service_order_dict['equipment'].append({
+            # Adicionar equipamentos
+            for eq in equipments:
+                service_order['equipment'].append({
                     'id': eq.id,
                     'type': eq.type,
                     'brand': eq.brand,
                     'model': eq.model,
                     'serial_number': eq.serial_number
                 })
-                
-            # Buscar movimentações financeiras associadas
-            sql_financial = """
-            SELECT f.id, f.date, f.description, f.amount, f.type, f.entry_type
-            FROM financial_entry f
-            WHERE f.service_order_id = :order_id
-            ORDER BY f.date DESC
-            """
-            financial_results = db.session.execute(db.text(sql_financial), {"order_id": id}).fetchall()
             
-            for fin in financial_results:
-                service_order_dict['financial_entries'].append({
+            # Adicionar entradas financeiras
+            for fin in finances:
+                service_order['financial_entries'].append({
                     'id': fin.id,
                     'date': fin.date,
                     'description': fin.description,
                     'amount': fin.amount,
                     'type': {
                         'name': fin.type,
-                        'value': fin.entry_type if fin.entry_type else fin.type.capitalize()
+                        'value': fin.type.capitalize() if fin.type else 'Não definido'
                     }
                 })
             
-            # Formulário para fechar OS
-            close_form = CloseServiceOrderForm()
+            return render_template(
+                'service_orders/view_simple.html',
+                service_order=service_order,
+                close_form=close_form,
+                is_admin=is_admin
+            )
             
-            # Verificar se o usuário é admin para mostrar botão de exclusão
-            is_admin = False
-            if current_user.is_authenticated and hasattr(current_user, 'role'):
-                is_admin = current_user.role == 'admin'
-            
-            # Registrar visualização no log
-            log_action(f"Visualizou a OS #{id}", f"Visualização da OS #{id}")
-            
-            return render_template('service_orders/view_simple.html', 
-                                   service_order=service_order_dict, 
-                                   close_form=close_form,
-                                   is_admin=is_admin)
         except Exception as e:
             app.logger.error(f"Erro ao visualizar OS #{id}: {str(e)}")
-            flash(f"Erro ao visualizar OS #{id}: {str(e)}", "danger")
+            flash(f"Erro ao carregar a ordem de serviço: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
 
     @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
