@@ -358,7 +358,8 @@ def register_routes(app):
             form=form
         )
 
-    @app.route('/os/<int:id>')
+    # Rota para visualizar detalhes de uma Ordem de Serviço específica
+    @app.route('/os/<int:id>/visualizar')
     @login_required
     def view_service_order(id):
         service_order = ServiceOrder.query.get_or_404(id)
