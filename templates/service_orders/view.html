@@ -317,6 +317,36 @@
                         {% endif %}
                     </div>
                     
+                    <!-- Seção de cálculo de valor por KM -->
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="form-check mb-2">
+                            {{ close_form.include_km_calculation(class="form-check-input", id="include_km_calculation", onchange="toggleKmCalculation()") if close_form }}
+                            <label class="form-check-label" for="include_km_calculation">
+                                <i class="fas fa-road me-1"></i> Incluir cálculo de valor por KM
+                            </label>
+                        </div>
+                        
+                        <div id="km_calculation_fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="distance_km" class="form-label">Distância percorrida (KM)</label>
+                                    {{ close_form.distance_km(class="form-control", id="distance_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="price_per_km" class="form-label">Valor por KM (R$)</label>
+                                    {{ close_form.price_per_km(class="form-control", id="price_per_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
+                                </div>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-calculator me-1"></i> 
+                                Valor calculado: <strong id="km_total">R$ 0,00</strong>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="add_km_value">
+                                    <i class="fas fa-plus-circle"></i> Adicionar ao total
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="service_details" class="form-label">Detalhes do Serviço Executado *</label>
                         {{ close_form.service_details(class="form-control", id="service_details", rows=5) if close_form }}

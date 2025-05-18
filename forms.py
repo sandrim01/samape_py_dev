@@ -178,6 +178,11 @@ class CloseServiceOrderForm(FlaskForm):
     # Removido campo invoice_number que agora será gerado automaticamente
     invoice_amount = DecimalField('Valor Total (R$)', validators=[DataRequired()], places=2)
     service_details = TextAreaField('Detalhes do Serviço Executado', validators=[DataRequired()])
+    
+    # Campos para cálculo de valor por KM
+    include_km_calculation = BooleanField('Incluir cálculo de valor por KM', default=False)
+    distance_km = DecimalField('Distância percorrida (KM)', validators=[Optional()], places=2, default=0)
+    price_per_km = DecimalField('Valor por KM (R$)', validators=[Optional()], places=2, default=0)
 
 class FinancialEntryForm(FlaskForm):
     service_order_id = SelectField('Ordem de Serviço', coerce=int, validators=[Optional()])
