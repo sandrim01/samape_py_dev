@@ -363,8 +363,9 @@ def register_routes(app):
     @login_required
     def view_service_order(id):
         try:
-            # Consulta SQL para obter os dados principais da OS
-            ordem = db.session.execute(db.text("""
+            # Obter os dados da ordem de serviço em duas etapas para evitar problemas com a tabela "user"
+            # 1. Primeiro, obter os dados básicos da ordem e do cliente
+            query_os = """
                 SELECT 
                     so.id, so.client_id, so.responsible_id, so.description, 
                     so.status, so.created_at, so.closed_at, so.invoice_number,
@@ -373,18 +374,27 @@ def register_routes(app):
                     so.total_value,
                     c.name as client_name, c.document as client_document, 
                     c.email as client_email, c.phone as client_phone, 
-                    c.address as client_address,
-                    u.name as responsible_name
+                    c.address as client_address
                 FROM service_order so
                 LEFT JOIN client c ON so.client_id = c.id
-                LEFT JOIN "user" u ON so.responsible_id = u.id
                 WHERE so.id = :id
-            """), {"id": id}).fetchone()
+            """
+            ordem = db.session.execute(db.text(query_os), {"id": id}).fetchone()
             
             if not ordem:
                 flash("Ordem de serviço não encontrada", "danger")
                 return redirect(url_for('service_orders'))
                 
+            # 2. Obter o nome do responsável em uma consulta separada
+            responsible_name = None
+            if ordem.responsible_id:
+                query_responsible = 'SELECT name FROM "user" WHERE id = :responsible_id'
+                responsible = db.session.execute(
+                    db.text(query_responsible), 
+                    {"responsible_id": ordem.responsible_id}
+                ).fetchone()
+                responsible_name = responsible.name if responsible else None
+            
             # Consulta para obter equipamentos associados à OS
             equipamentos = db.session.execute(db.text("""
                 SELECT e.id, e.type, e.brand, e.model, e.serial_number
@@ -416,10 +426,14 @@ def register_routes(app):
             # Verificar se o usuário é admin para controlar permissões
             is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
             
+            # Adicionar o nome do responsável ao objeto da ordem
+            ordem_dict = dict(ordem)
+            ordem_dict['responsible_name'] = responsible_name
+            
             # Renderizar o template com todos os dados
             return render_template(
                 'service_orders/visualizar.html',
-                ordem=ordem,
+                ordem=ordem_dict,
                 cliente=cliente,
                 equipamentos=equipamentos,
                 financeiros=financeiros,
