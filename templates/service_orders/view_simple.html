@@ -14,7 +14,7 @@
             <i class="fas fa-check-circle me-1"></i> Fechar OS
         </button>
         {% endif %}
-        {% if service_order.status.name == 'fechada' %}
+        {% if service_order.status == 'fechada' %}
         <a href="{{ url_for('view_invoice', id=service_order.id) }}" class="btn btn-outline-primary me-2">
             <i class="fas fa-file-invoice me-1"></i> Ver NF-e
         </a>
@@ -41,8 +41,8 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <h6 class="fw-bold">Status</h6>
-                        <span class="status-badge status-{{ service_order.status.name }}">
-                            {{ service_order.status.value }}
+                        <span class="status-badge status-{{ service_order.status }}">
+                            {{ service_order.status.capitalize() if service_order.status else 'Não definido' }}
                         </span>
                     </div>
                     <div class="col-md-6">
@@ -77,7 +77,7 @@
                     <p>{{ format_currency(service_order.estimated_value) if service_order.estimated_value else 'Não definido' }}</p>
                 </div>
                 
-                {% if service_order.status.name == 'fechada' %}
+                {% if service_order.status == 'fechada' %}
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <h6 class="fw-bold">Data de Fechamento</h6>
@@ -218,7 +218,7 @@
 </div>
 
 <!-- Close Service Order Modal -->
-{% if service_order.status.name != 'fechada' %}
+{% if service_order.status != 'fechada' %}
 <div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
