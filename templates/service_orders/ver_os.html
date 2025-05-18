@@ -268,3 +268,20 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicialização manual do modal de fechamento da OS
+        const fecharOSBtn = document.querySelector('button[data-bs-target="#closeOrderModal"]');
+        const closeOrderModal = document.getElementById('closeOrderModal');
+        
+        if (fecharOSBtn && closeOrderModal) {
+            fecharOSBtn.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(closeOrderModal);
+                modal.show();
+            });
+        }
+    });
+</script>
+{% endblock %}
