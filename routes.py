@@ -376,17 +376,15 @@ def register_routes(app):
     @login_required
     def view_service_order_alt(id):
         try:
-            # Usando SQL nativo para evitar problemas com o ORM
+            # Usando SQL nativo adaptado para a estrutura real do banco de dados
             sql = """
-            SELECT o.id, o.client_id, o.description, o.estimated_value, o.created_at, o.closed_at, o.status_id, 
-                   o.responsible_id, o.invoice_number, o.invoice_amount, o.service_details,
+            SELECT o.id, o.client_id, o.description, o.estimated_value, o.created_at, o.closed_at, 
+                   o.status, o.responsible_id, o.invoice_number, o.invoice_amount, o.service_details,
                    c.name as client_name, c.document as client_document, c.email as client_email, 
                    c.phone as client_phone, c.address as client_address,
-                   s.name as status_name, s.value as status_value,
                    u.name as responsible_name
             FROM service_order o
             LEFT JOIN client c ON o.client_id = c.id
-            LEFT JOIN service_order_status s ON o.status_id = s.id
             LEFT JOIN user u ON o.responsible_id = u.id
             WHERE o.id = :order_id
             """
@@ -415,8 +413,8 @@ def register_routes(app):
                     'address': result.client_address
                 },
                 'status': {
-                    'name': result.status_name,
-                    'value': result.status_value
+                    'name': result.status,  # O status agora é uma coluna direta na tabela
+                    'value': result.status.capitalize() if result.status else 'Não definido'
                 },
                 'responsible': {
                     'name': result.responsible_name
@@ -445,9 +443,8 @@ def register_routes(app):
                 
             # Buscar movimentações financeiras associadas
             sql_financial = """
-            SELECT f.id, f.date, f.description, f.amount, f.type_id, ft.name as type_name, ft.value as type_value
+            SELECT f.id, f.date, f.description, f.amount, f.type, f.entry_type
             FROM financial_entry f
-            JOIN financial_entry_type ft ON f.type_id = ft.id
             WHERE f.service_order_id = :order_id
             ORDER BY f.date
             """
@@ -461,8 +458,8 @@ def register_routes(app):
                     'description': fin.description,
                     'amount': fin.amount,
                     'type': {
-                        'name': fin.type_name,
-                        'value': fin.type_value
+                        'name': fin.type,
+                        'value': fin.entry_type if fin.entry_type else fin.type.capitalize()
                     }
                 })
             
