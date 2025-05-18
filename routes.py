@@ -597,7 +597,7 @@ def register_routes(app):
             }
             
             # Verificando se usuário é admin
-            is_admin = current_user.role == 'admin' if hasattr(current_user, 'role') else False
+            is_admin = current_user.role.name == 'admin' if hasattr(current_user, 'role') else False
             
             # Formulário para fechar a OS
             close_form = CloseServiceOrderForm()
