@@ -298,20 +298,19 @@ def register_routes(app):
         
         if form.validate_on_submit():
             try:
-                # Cria objeto de ordem de serviço com os dados do formulário
                 service_order = ServiceOrder(
                     client_id=form.client_id.data,
                     responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
                     description=form.description.data,
                     estimated_value=form.estimated_value.data,
-                    status=ServiceOrderStatus[form.status.data]
+                    status=ServiceOrderStatus[form.status.data],
+                    # Campos para veículo e cálculo de R$/KM
+                    vehicle_type=form.vehicle_type.data if form.vehicle_type.data else None,
+                    vehicle_id=form.vehicle_id.data if form.vehicle_id.data else None,
+                    distance_km=form.distance_km.data if form.distance_km.data else None,
+                    cost_per_km=form.cost_per_km.data if form.cost_per_km.data else None,
+                    total_vehicle_cost=form.total_vehicle_cost.data if form.total_vehicle_cost.data else None
                 )
-                
-                # Processar os campos de cálculo de R$/KM se o checkbox estiver marcado
-                if form.calculate_distance_cost.data:
-                    service_order.distance_km = form.distance_km.data
-                    service_order.cost_per_km = form.cost_per_km.data
-                    service_order.total_distance_cost = form.total_distance_cost.data
                 
                 # Add equipment relationships if selected
                 if form.equipment_ids.data:
@@ -538,19 +537,11 @@ def register_routes(app):
                 # Gerar o número da nota automaticamente
                 from utils import get_next_invoice_number
                 
-                # Calcula o valor total incluindo o custo de deslocamento (R$/KM), se existir
-                total_invoice_amount = form.invoice_amount.data
-                
-                # Se a OS tem custo de deslocamento calculado, adiciona ao valor total
-                if service_order.distance_km and service_order.cost_per_km and service_order.total_distance_cost:
-                    # Valor informado no formulário + valor do deslocamento
-                    total_invoice_amount = form.invoice_amount.data + service_order.total_distance_cost
-                
                 service_order.status = ServiceOrderStatus.fechada
                 service_order.closed_at = datetime.utcnow()
                 service_order.invoice_number = get_next_invoice_number()
                 service_order.invoice_date = datetime.utcnow()
-                service_order.invoice_amount = total_invoice_amount
+                service_order.invoice_amount = form.invoice_amount.data
                 service_order.service_details = form.service_details.data
                 
                 # Verificamos se o cliente existe antes de tentar criar a entrada financeira
@@ -566,7 +557,7 @@ def register_routes(app):
                 
                 # Se já existe, atualiza o valor; senão, cria um novo lançamento
                 if existing_entry:
-                    existing_entry.amount = service_order.invoice_amount
+                    existing_entry.amount = form.invoice_amount.data
                     existing_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
                     db.session.commit()
                     
@@ -574,14 +565,14 @@ def register_routes(app):
                         'Atualização Financeira',
                         'financial',
                         existing_entry.id,
-                        f"Valor da OS #{service_order.id} atualizado para {service_order.invoice_amount}"
+                        f"Valor da OS #{service_order.id} atualizado para {form.invoice_amount.data}"
                     )
                 else:
                     # Create new financial entry
                     financial_entry = FinancialEntry(
                         service_order_id=service_order.id,
                         description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
-                        amount=service_order.invoice_amount,
+                        amount=form.invoice_amount.data,
                         type=FinancialEntryType.entrada,
                         created_by=current_user.id
                     )

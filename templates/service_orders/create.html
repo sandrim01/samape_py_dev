@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block extra_js %}
+<!-- JS para cálculo de veículo R$/KM -->
+<script src="{{ url_for('static', filename='js/vehicle-calculation.js') }}"></script>
+{% endblock %}
+
 {% block title %}Nova Ordem de Serviço - SAMAPE{% endblock %}
 
 {% block content %}
@@ -74,6 +79,84 @@
                 {% endif %}
             </div>
             
+            <!-- Seção para seleção de veículo e cálculo de R$/KM -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-car me-2"></i> Veículo para Atendimento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="vehicle_type" class="form-label">Tipo de Veículo</label>
+                        {{ form.vehicle_type(class="form-control", id="vehicle_type") }}
+                        {% if form.vehicle_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.vehicle_type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div id="fleet-vehicle-section" class="d-none">
+                        <div class="mb-3">
+                            <label for="vehicle_id" class="form-label">Selecione o Veículo da Frota</label>
+                            {{ form.vehicle_id(class="form-control", id="vehicle_id") }}
+                            {% if form.vehicle_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.vehicle_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div id="km-calculation-section" class="d-none">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="distance_km" class="form-label">Distância (KM)</label>
+                                    {{ form.distance_km(class="form-control", id="distance_km") }}
+                                    {% if form.distance_km.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.distance_km.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cost_per_km" class="form-label">Custo por KM (R$)</label>
+                                    {{ form.cost_per_km(class="form-control", id="cost_per_km") }}
+                                    {% if form.cost_per_km.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.cost_per_km.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="total_vehicle_cost" class="form-label">Custo Total Veículo (R$)</label>
+                                    {{ form.total_vehicle_cost(class="form-control", id="total_vehicle_cost", readonly=true) }}
+                                    {% if form.total_vehicle_cost.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.total_vehicle_cost.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="estimated_value" class="form-label">Valor Estimado (R$)</label>
@@ -97,37 +180,6 @@
                             {% endfor %}
                         </div>
                     {% endif %}
-                </div>
-            </div>
-            
-            <!-- Seção de cálculo de custo por quilômetro -->
-            <div class="card mb-3">
-                <div class="card-header bg-light">
-                    <div class="form-check form-switch">
-                        {{ form.calculate_distance_cost(class="form-check-input", id="calculate_distance_cost") }}
-                        <label class="form-check-label" for="calculate_distance_cost">
-                            <i class="fas fa-route me-1"></i> Calcular Custo de Deslocamento (R$/KM)
-                        </label>
-                    </div>
-                </div>
-                <div class="card-body distance-cost-section" id="distance-cost-section" style="display: none;">
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="distance_km" class="form-label">Distância (KM)</label>
-                            {{ form.distance_km(class="form-control", id="distance_km") }}
-                            <div class="form-text">Distância total percorrida em quilômetros</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="cost_per_km" class="form-label">Valor por KM (R$)</label>
-                            {{ form.cost_per_km(class="form-control", id="cost_per_km") }}
-                            <div class="form-text">Custo por quilômetro</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="total_distance_cost" class="form-label">Custo Total (R$)</label>
-                            {{ form.total_distance_cost(class="form-control", id="total_distance_cost", readonly="readonly") }}
-                            <div class="form-text">Valor calculado automaticamente</div>
-                        </div>
-                    </div>
                 </div>
             </div>
             
@@ -201,52 +253,4 @@
         </form>
     </div>
 </div>
-
-<!-- Script para cálculo automático de R$/KM -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Elementos
-    const calculateDistanceCostCheckbox = document.getElementById('calculate_distance_cost');
-    const distanceCostSection = document.getElementById('distance-cost-section');
-    const distanceKmInput = document.getElementById('distance_km');
-    const costPerKmInput = document.getElementById('cost_per_km');
-    const totalDistanceCostInput = document.getElementById('total_distance_cost');
-    
-    // Função para mostrar/ocultar a seção de cálculo de quilometragem
-    function toggleDistanceCostSection() {
-        if (calculateDistanceCostCheckbox.checked) {
-            distanceCostSection.style.display = 'block';
-        } else {
-            distanceCostSection.style.display = 'none';
-            // Limpar os valores quando desativa
-            distanceKmInput.value = '';
-            costPerKmInput.value = '';
-            totalDistanceCostInput.value = '';
-        }
-    }
-    
-    // Função para calcular o custo total de deslocamento
-    function calculateTotalDistanceCost() {
-        const distanceKm = parseFloat(distanceKmInput.value) || 0;
-        const costPerKm = parseFloat(costPerKmInput.value) || 0;
-        
-        // Calcula o total
-        const totalCost = distanceKm * costPerKm;
-        
-        // Formata o valor para 2 casas decimais
-        totalDistanceCostInput.value = totalCost.toFixed(2);
-    }
-    
-    // Event listeners
-    if (calculateDistanceCostCheckbox) {
-        calculateDistanceCostCheckbox.addEventListener('change', toggleDistanceCostSection);
-        toggleDistanceCostSection(); // Inicializa o estado da seção
-    }
-    
-    if (distanceKmInput && costPerKmInput) {
-        distanceKmInput.addEventListener('input', calculateTotalDistanceCost);
-        costPerKmInput.addEventListener('input', calculateTotalDistanceCost);
-    }
-});
-</script>
 {% endblock %}
