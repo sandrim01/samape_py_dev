@@ -2,6 +2,28 @@
 
 {% block title %}Ordens de Serviço - SAMAPE{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Estilos para o modal de visualização de OS */
+    #viewOrderModal .modal-dialog {
+        max-width: 700px;
+    }
+    #viewOrderModal .badge.aberta {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #viewOrderModal .badge.em_andamento {
+        background-color: #0d6efd;
+    }
+    #viewOrderModal .badge.fechada {
+        background-color: #198754;
+    }
+    #viewOrderModal .badge.cancelada {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Ordens de Serviço</h1>
@@ -9,6 +31,21 @@
         <a href="{{ url_for('new_service_order') }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i> Nova OS
         </a>
+    </div>
+</div>
+
+<!-- Modal de Visualização Rápida -->
+<div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Conteúdo do modal será carregado via AJAX -->
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações da OS...</p>
+            </div>
+        </div>
     </div>
 </div>
 

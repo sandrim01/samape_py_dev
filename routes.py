@@ -359,6 +359,95 @@ def register_routes(app):
         )
 
     # Rota super básica para visualizar ordens de serviço (solução emergencial)
+    # Rota para obter dados da OS para o modal
+    @app.route('/os_dados/<int:id>')
+    @login_required
+    def get_service_order_data(id):
+        """Retorna dados básicos de uma OS para exibição em modal"""
+        try:
+            # Consulta direta sem joins para evitar problemas
+            conn = db.engine.raw_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT 
+                    so.id, so.description, so.status, so.created_at, so.closed_at,
+                    so.client_id, so.responsible_id, so.total_value, so.original_amount, so.discount_amount
+                FROM service_order so
+                WHERE so.id = %s
+                """, 
+                (id,)
+            )
+            order = cursor.fetchone()
+            
+            if not order:
+                return jsonify({'error': 'Ordem de serviço não encontrada'}), 404
+                
+            # Dados básicos da OS
+            order_id = order[0]
+            description = order[1]
+            status = order[2]
+            created_at = order[3].strftime('%d/%m/%Y %H:%M') if order[3] else None
+            closed_at = order[4].strftime('%d/%m/%Y %H:%M') if order[4] else None
+            client_id = order[5]
+            responsible_id = order[6]
+            total_value = order[7] or 0
+            original_amount = order[8] or 0
+            discount_amount = order[9] or 0
+            
+            # Recuperar nome do cliente
+            client_name = "Cliente não especificado"
+            try:
+                cursor.execute("SELECT name FROM client WHERE id = %s", (client_id,))
+                client = cursor.fetchone()
+                if client:
+                    client_name = client[0]
+            except:
+                pass
+                
+            # Recuperar nome do responsável
+            responsible_name = "Não definido"
+            try:
+                cursor.execute('SELECT name FROM "user" WHERE id = %s', (responsible_id,))
+                resp = cursor.fetchone()
+                if resp:
+                    responsible_name = resp[0]
+            except:
+                pass
+            
+            cursor.close()
+            conn.close()
+            
+            # Formatando dados para JSON
+            status_labels = {
+                'aberta': 'Em Aberto',
+                'em_andamento': 'Em Andamento',
+                'fechada': 'Concluída',
+                'cancelada': 'Cancelada'
+            }
+            
+            data = {
+                'id': order_id,
+                'description': description,
+                'status': status,
+                'status_label': status_labels.get(status, 'Desconhecido'),
+                'created_at': created_at,
+                'closed_at': closed_at or "Não finalizada",
+                'client_name': client_name,
+                'responsible_name': responsible_name,
+                'total_value': f"{total_value:.2f}",
+                'original_amount': f"{original_amount:.2f}",
+                'discount_amount': f"{discount_amount:.2f}",
+                'view_url': url_for('view_service_order_basic', id=order_id),
+                'edit_url': url_for('edit_service_order', id=order_id)
+            }
+            
+            return jsonify(data)
+            
+        except Exception as e:
+            app.logger.error(f"Erro ao obter dados da OS para modal: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+    
     @app.route('/os_basico/<int:id>')
     @login_required
     def view_service_order_basic(id):
