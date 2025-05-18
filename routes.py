@@ -808,16 +808,6 @@ def register_routes(app):
             app.logger.error(f"Erro ao excluir OS #{id}: {str(e)}")
             flash(f'Erro ao excluir ordem de serviço: {str(e)}', 'danger')
             return redirect(url_for('service_orders'))
-                db.delete(equipment_service_orders).where(
-                    equipment_service_orders.c.service_order_id == id
-                )
-            )
-            
-            # Verificar se há entradas financeiras relacionadas
-            financial_entries = FinancialEntry.query.filter_by(service_order_id=id).all()
-            for entry in financial_entries:
-                db.session.delete(entry)
-            
             # Excluir a ordem de serviço
             order_number = service_order.id
             client_name = service_order.client.name if service_order.client else "Cliente desconhecido"
