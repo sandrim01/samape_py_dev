@@ -363,13 +363,15 @@ def register_routes(app):
     @login_required
     def view_service_order(id):
         try:
-            # Consulta SQL direta e simplificada
+            # Consulta SQL corrigida
             ordem = db.session.execute(db.text("""
                 SELECT 
                     so.id, so.description, so.status, so.created_at,
-                    c.name as client_name
+                    c.name as client_name,
+                    u.name as responsible_name
                 FROM service_order so
                 LEFT JOIN client c ON so.client_id = c.id
+                LEFT JOIN "user" u ON so.responsible_id = u.id
                 WHERE so.id = :id
             """), {"id": id}).fetchone()
             
