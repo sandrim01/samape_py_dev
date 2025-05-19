@@ -1414,21 +1414,12 @@ def register_routes(app):
         
         if form.validate_on_submit():
             try:
-                # Usar o valor do select se estiver preenchido, caso contrário usar o valor do campo texto
-                equipment_type = form.type_select.data if form.type_select.data else form.type.data
-                equipment_brand = form.brand_select.data if form.brand_select.data else form.brand.data
-                equipment_model = form.model_select.data if form.model_select.data else form.model.data
-                
-                # Verificar se todos os campos necessários estão preenchidos
-                if not equipment_type:
-                    flash('Tipo de equipamento é obrigatório. Selecione um tipo ou preencha o campo "Outro Tipo".', 'danger')
-                    return render_template('equipment/create.html', form=form)
-                
+                # Agora usando diretamente os campos de texto livre
                 equipment = Equipment(
                     client_id=form.client_id.data,
-                    type=equipment_type,
-                    brand=equipment_brand,
-                    model=equipment_model,
+                    type=form.type.data,
+                    brand=form.brand.data,
+                    model=form.model.data,
                     serial_number=form.serial_number.data,
                     year=form.year.data
                 )
