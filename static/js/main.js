@@ -11,24 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl)
     });
     
-    // Inicialização específica para o dropdown de perfil de usuário
-    const userDropdown = document.getElementById('userDropdown');
-    if (userDropdown && typeof bootstrap !== 'undefined') {
-        const dropdown = new bootstrap.Dropdown(userDropdown);
-        
-        // Garantir que o dropdown seja fechado ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!userDropdown.contains(e.target) && document.querySelector('.dropdown-menu.show')) {
-                dropdown.hide();
-            }
-        });
-        
-        // Garantir que o dropdown abra ao clicar
-        userDropdown.addEventListener('click', function(e) {
-            e.preventDefault();
-            dropdown.toggle();
-        });
-    }
+    // Removida a inicialização manual para evitar conflitos
+    // A inicialização agora é feita diretamente no base.html
     
     // Inicialização manual para o modal de fechar OS
     const fecharOSBtns = document.querySelectorAll('button[data-bs-target="#closeOrderModal"]');

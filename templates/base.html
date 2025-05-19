@@ -48,7 +48,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button type="button" class="btn nav-link" id="profileMenuBtn">
                             {% if current_user.profile_image %}
                                 <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
                                      alt="Perfil" class="profile-avatar me-1">
@@ -57,29 +57,30 @@
                                      alt="Perfil" class="profile-avatar me-1">
                             {% endif %}
                             {{ current_user.name }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <div class="user-info-header">
-                                    {% if current_user.profile_image %}
-                                        <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
-                                             alt="Perfil" class="profile-image">
-                                    {% else %}
-                                        <img src="{{ url_for('static', filename='images/profiles/default_profile.svg') }}" 
-                                             alt="Perfil" class="profile-image">
-                                    {% endif %}
-                                    <div class="user-name">{{ current_user.name }}</div>
-                                    <div class="user-email">{{ current_user.email }}</div>
-                                    <div class="user-role">{{ current_user.role.value }}</div>
-                                </div>
-                            </li>
-                            <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="fas fa-id-card me-2"></i>Meu Perfil</a></li>
-                            {% if current_user.role == UserRole.admin %}
-                            <li><a class="dropdown-item" href="{{ url_for('system_settings') }}"><i class="fas fa-cogs me-2"></i>Configurações</a></li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
-                        </ul>
+                            <i class="fas fa-caret-down ms-1"></i>
+                        </button>
+                        <div id="profileMenu" class="profile-menu" style="display: none;">
+                            <div class="user-info-header">
+                                {% if current_user.profile_image %}
+                                    <img src="{{ url_for('static', filename='images/profiles/' + current_user.profile_image) }}" 
+                                         alt="Perfil" class="profile-image">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='images/profiles/default_profile.svg') }}" 
+                                         alt="Perfil" class="profile-image">
+                                {% endif %}
+                                <div class="user-name">{{ current_user.name }}</div>
+                                <div class="user-email">{{ current_user.email }}</div>
+                                <div class="user-role">{{ current_user.role.value }}</div>
+                            </div>
+                            <div class="profile-menu-items">
+                                <a href="{{ url_for('profile') }}" class="menu-item"><i class="fas fa-id-card me-2"></i>Meu Perfil</a>
+                                {% if current_user.role == UserRole.admin %}
+                                <a href="{{ url_for('system_settings') }}" class="menu-item"><i class="fas fa-cogs me-2"></i>Configurações</a>
+                                {% endif %}
+                                <hr class="menu-divider">
+                                <a href="{{ url_for('logout') }}" class="menu-item"><i class="fas fa-sign-out-alt me-2"></i>Sair</a>
+                            </div>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -452,16 +453,24 @@
     
     <!-- Inicializar componentes do Bootstrap -->
     <script>
-        // Inicializar tooltips do Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
-        
-        // Inicializar popovers do Bootstrap
-        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar todos os componentes do Bootstrap (dropdowns, tooltips, popovers)
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            dropdownElementList.forEach(function (dropdownToggleEl) {
+                new bootstrap.Dropdown(dropdownToggleEl);
+            });
+            
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Inicializar popovers do Bootstrap
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.forEach(function (popoverTriggerEl) {
+                new bootstrap.Popover(popoverTriggerEl);
+            });
         });
     </script>
 </body>
