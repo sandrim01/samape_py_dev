@@ -11,14 +11,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl)
     });
     
-    // Inicialização dos dropdowns usando Bootstrap
-    const dropdownElements = document.querySelectorAll('.dropdown-toggle');
-    dropdownElements.forEach(el => {
-        // Verifique se o Bootstrap foi carregado
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            new bootstrap.Dropdown(el);
-        }
-    });
+    // Inicialização específica para o dropdown de perfil de usuário
+    const userDropdown = document.getElementById('userDropdown');
+    if (userDropdown && typeof bootstrap !== 'undefined') {
+        const dropdown = new bootstrap.Dropdown(userDropdown);
+        
+        // Garantir que o dropdown seja fechado ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!userDropdown.contains(e.target) && document.querySelector('.dropdown-menu.show')) {
+                dropdown.hide();
+            }
+        });
+        
+        // Garantir que o dropdown abra ao clicar
+        userDropdown.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.toggle();
+        });
+    }
     
     // Inicialização manual para o modal de fechar OS
     const fecharOSBtns = document.querySelectorAll('button[data-bs-target="#closeOrderModal"]');
