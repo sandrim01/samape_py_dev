@@ -11,29 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl)
     });
     
-    // Inicialização manual para dropdowns do perfil de usuário
-    const userDropdownToggle = document.getElementById('userDropdown');
-    if (userDropdownToggle) {
-        userDropdownToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const dropdownMenu = this.nextElementSibling;
-            if (dropdownMenu) {
-                dropdownMenu.classList.toggle('show');
-                this.setAttribute('aria-expanded', dropdownMenu.classList.contains('show'));
-            }
-        });
-        
-        // Fechar ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!userDropdownToggle.contains(e.target)) {
-                const dropdownMenu = userDropdownToggle.nextElementSibling;
-                if (dropdownMenu && dropdownMenu.classList.contains('show')) {
-                    dropdownMenu.classList.remove('show');
-                    userDropdownToggle.setAttribute('aria-expanded', 'false');
-                }
-            }
-        });
-    }
+    // Inicialização dos dropdowns usando Bootstrap
+    const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+    dropdownElements.forEach(el => {
+        // Verifique se o Bootstrap foi carregado
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            new bootstrap.Dropdown(el);
+        }
+    });
     
     // Inicialização manual para o modal de fechar OS
     const fecharOSBtns = document.querySelectorAll('button[data-bs-target="#closeOrderModal"]');
