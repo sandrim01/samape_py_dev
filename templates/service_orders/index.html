@@ -161,9 +161,9 @@
                     </div>
                 </div>
                 <div class="order-actions">
-                    <a href="#" class="action-button view-button modal-trigger" data-id="{{ order.id }}" title="Visualizar OS">
+                    <button class="action-button view-button view-order-modal" data-id="{{ order.id }}" title="Visualizar OS">
                         <i class="fas fa-eye"></i>
-                    </a>
+                    </button>
                     <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="action-button view-button" title="Visualização Básica">
                         <i class="fas fa-list-ul"></i>
                     </a>
@@ -213,6 +213,9 @@
                         <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                         <td>{{ order.closed_at.strftime('%d/%m/%Y') if order.closed_at else '-' }}</td>
                         <td class="table-actions">
+                            <button class="btn btn-sm btn-outline-info view-order-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar OS">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualização Básica">
                                 <i class="fas fa-list-ul"></i>
                             </a>
