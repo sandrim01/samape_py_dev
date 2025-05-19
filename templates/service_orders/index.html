@@ -36,8 +36,12 @@
 
 <!-- Modal de Visualização Rápida -->
 <div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewOrderModalLabel">Detalhes da OS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
             <!-- Conteúdo do modal será carregado via AJAX -->
             <div class="modal-body text-center">
                 <div class="spinner-border text-primary" role="status">
@@ -296,6 +300,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/service_order_modal.js') }}"></script>
 <script>
 $(document).ready(function() {
     // Auto-submit form when select filters change
@@ -389,22 +394,20 @@ $(document).ready(function() {
                                 <a href="/os/${orderId}/editar" class="btn btn-secondary">Editar OS</a>
                             </div>
                         </div>
-                            </div>
-                            
-                            <div style="margin-top: 15px;">
-                                <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Financeiras</h4>
-                                <p><strong>Total:</strong> R$ ${data.total_value}</p>
-                                <p><strong>Valor Original:</strong> R$ ${data.original_amount}</p>
-                                <p><strong>Desconto:</strong> R$ ${data.discount_amount}</p>
-                            </div>
-                            
-                            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                                <a href="${data.view_url}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver Completo</a>
-                                <a href="${data.edit_url}" style="padding: 8px 12px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Editar</a>
-                            </div>
-                        </div>
-                    `;
-                    
+                                // Atualizar o conteúdo do modal com o HTML formatado
+                                modal.find('.modal-body').html(modalContent);
+                            },
+                            error: function() {
+                                // Em caso de erro, mostrar mensagem simplificada
+                                modal.find('.modal-body').html(`
+                                    <div class="alert alert-danger">
+                                        Não foi possível carregar os detalhes da OS #${orderId}.
+                                        <p>Tente acessar a <a href="/os/${orderId}/basico" class="alert-link">página completa</a>.</p>
+                                    </div>
+                                `);
+                            }
+                        });
+    } // Fim da função loadOrderDetails
                     document.getElementById('fallbackContent').innerHTML = htmlContent;
                     
                 } catch (e) {
