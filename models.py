@@ -93,7 +93,7 @@ class Equipment(db.Model):
     type = db.Column(db.String(50), nullable=False)
     brand = db.Column(db.String(50))
     model = db.Column(db.String(50))
-    serial_number = db.Column(db.String(50), unique=True)
+    serial_number = db.Column(db.String(50))  # Removida a restrição unique para permitir número de série repetido
     year = db.Column(db.Integer)
     last_maintenance = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
