@@ -120,44 +120,14 @@ class ClientForm(FlaskForm):
 
 class EquipmentForm(FlaskForm):
     client_id = SelectField('Cliente', coerce=int, validators=[DataRequired()])
-    type_select = SelectField('Tipo', validators=[Optional()], default='')
-    type = StringField('Outro Tipo (se não estiver na lista)', validators=[Optional(), Length(max=50)])
-    brand_select = SelectField('Marca', validators=[Optional()], default='')
-    brand = StringField('Outra Marca (se não estiver na lista)', validators=[Optional(), Length(max=50)])
-    model_select = SelectField('Modelo', validators=[Optional()], default='')
-    model = StringField('Outro Modelo (se não estiver na lista)', validators=[Optional(), Length(max=50)])
+    type = StringField('Tipo', validators=[DataRequired(), Length(max=50)])
+    brand = StringField('Marca', validators=[Optional(), Length(max=50)])
+    model = StringField('Modelo', validators=[Optional(), Length(max=50)])
     serial_number = StringField('Número de Série', validators=[DataRequired(), Length(max=50)])
     year = StringField('Ano', validators=[Optional(), Length(max=4)])
     
     def __init__(self, *args, **kwargs):
         super(EquipmentForm, self).__init__(*args, **kwargs)
-        # Preencher os SelectFields com opções do banco de dados
-        from models import Equipment
-        from sqlalchemy import distinct
-        from app import db
-        
-        # Inicializar os campos de seleção com valores padrão para evitar erros
-        self.type_select.choices = [('', 'Selecione um tipo')]
-        self.brand_select.choices = [('', 'Selecione uma marca')]
-        self.model_select.choices = [('', 'Selecione um modelo')]
-        
-        try:
-            # Obter marcas distintas
-            brands = db.session.query(distinct(Equipment.brand)).order_by(Equipment.brand).all()
-            brand_choices = [(b[0], b[0]) for b in brands if b[0] is not None]
-            if brand_choices:
-                self.brand_select.choices = [('', 'Selecione uma marca')] + brand_choices
-            
-            # Obter tipos distintos
-            types = db.session.query(distinct(Equipment.type)).order_by(Equipment.type).all()
-            type_choices = [(t[0], t[0]) for t in types if t[0] is not None]
-            if type_choices:
-                self.type_select.choices = [('', 'Selecione um tipo')] + type_choices
-        except Exception:
-            # Em caso de erro, manter as opções padrão
-            pass
-        
-        # Modelo será preenchido via AJAX com base na marca selecionada
 
 class ServiceOrderForm(FlaskForm):
     client_id = SelectField('Cliente', coerce=int, validators=[DataRequired()])

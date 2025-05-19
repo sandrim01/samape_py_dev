@@ -29,80 +29,41 @@
             
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="type_select" class="form-label">Tipo *</label>
-                    {{ form.type_select(class="form-select", id="type_select") }}
-                    {% if form.type_select.errors %}
+                    <label for="type" class="form-label">Tipo *</label>
+                    {{ form.type(class="form-control", id="type", placeholder="Informe o tipo") }}
+                    {% if form.type.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.type_select.errors %}
+                            {% for error in form.type.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
-                    
-                    <!-- Campo extra para outro tipo não listado -->
-                    <div class="mt-2" id="other_type_container" style="display: none;">
-                        <label for="type" class="form-label">Outro Tipo</label>
-                        {{ form.type(class="form-control", id="type", placeholder="Informe o tipo") }}
-                        {% if form.type.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.type.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <label for="brand_select" class="form-label">Marca *</label>
-                    {{ form.brand_select(class="form-select", id="brand_select") }}
-                    {% if form.brand_select.errors %}
+                    <label for="brand" class="form-label">Marca</label>
+                    {{ form.brand(class="form-control", id="brand", placeholder="Informe a marca") }}
+                    {% if form.brand.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.brand_select.errors %}
+                            {% for error in form.brand.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
-                    
-                    <!-- Campo extra para outra marca não listada -->
-                    <div class="mt-2" id="other_brand_container" style="display: none;">
-                        <label for="brand" class="form-label">Outra Marca</label>
-                        {{ form.brand(class="form-control", id="brand", placeholder="Informe a marca") }}
-                        {% if form.brand.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.brand.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
             
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="model_select" class="form-label">Modelo</label>
-                    {{ form.model_select(class="form-select", id="model_select") }}
-                    {% if form.model_select.errors %}
+                    <label for="model" class="form-label">Modelo</label>
+                    {{ form.model(class="form-control", id="model", placeholder="Informe o modelo") }}
+                    {% if form.model.errors %}
                         <div class="invalid-feedback d-block">
-                            {% for error in form.model_select.errors %}
+                            {% for error in form.model.errors %}
                                 {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
-                    
-                    <!-- Campo extra para outro modelo não listado -->
-                    <div class="mt-2" id="other_model_container" style="display: none;">
-                        <label for="model" class="form-label">Outro Modelo</label>
-                        {{ form.model(class="form-control", id="model", placeholder="Informe o modelo") }}
-                        {% if form.model.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.model.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
                 </div>
                 
                 <div class="col-md-6">
