@@ -851,6 +851,62 @@ def register_routes(app):
             service_order=service_order
         )
 
+    @app.route('/os_detalhes_modal/<int:id>', methods=['GET'])
+    @login_required
+    def get_service_order_modal_data(id):
+        """Retorna os dados da ordem de serviço em formato JSON para o modal"""
+        from flask import jsonify
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Preparar dados para o JSON
+        data = {
+            'id': service_order.id,
+            'client_name': service_order.client.name if service_order.client else 'Cliente não definido',
+            'responsible_name': service_order.responsible.name if service_order.responsible else 'Não definido',
+            'status': service_order.status.name,
+            'status_label': service_order.status.value,
+            'description': service_order.description,
+            'technical_report': service_order.technical_report,
+            'created_at': service_order.created_at.strftime('%d/%m/%Y %H:%M') if service_order.created_at else 'Data não definida',
+            'closed_at': service_order.closed_at.strftime('%d/%m/%Y %H:%M') if service_order.closed_at else 'Não finalizada',
+            'equipment': []
+        }
+        
+        # Adicionar equipamentos
+        if service_order.equipment:
+            for equip in service_order.equipment:
+                equip_data = {
+                    'id': equip.id,
+                    'type': equip.type,
+                    'brand': equip.brand,
+                    'model': equip.model,
+                    'serial_number': equip.serial_number
+                }
+                data['equipment'].append(equip_data)
+        
+        # Adicionar peças e serviços
+        data['parts'] = []
+        parts = PartUsage.query.filter_by(service_order_id=id).all()
+        for part in parts:
+            part_data = {
+                'description': part.description,
+                'quantity': part.quantity,
+                'unit_price': f"R$ {part.unit_price:.2f}".replace('.', ',') if part.unit_price else 'N/A'
+            }
+            data['parts'].append(part_data)
+        
+        data['services'] = []
+        services = ServicePerformed.query.filter_by(service_order_id=id).all()
+        for service in services:
+            service_data = {
+                'description': service.description,
+                'employee': service.employee.name if service.employee else 'Serviço Externo',
+                'hours': service.hours
+            }
+            data['services'].append(service_data)
+        
+        return jsonify(data)
+        
     @app.route('/os/imagem/<int:image_id>/excluir', methods=['POST'])
     @login_required
     def delete_service_order_image_route(image_id):

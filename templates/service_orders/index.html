@@ -303,53 +303,92 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
+    // Adicionar listener para os botões de visualização de OS
+    $('.view-order-modal').click(function() {
+        let orderId = $(this).data('id');
+        loadOrderDetails(orderId);
+        return false; // prevenir comportamento padrão
+    });
+    
+    // Função para mostrar os detalhes da OS no modal
     function loadOrderDetails(orderId) {
         console.log("Carregando detalhes da OS #" + orderId);
         
-        // Usar o modal de fallback HTML puro, que funciona sem depender de Bootstrap
-        document.getElementById('fallbackModal').style.display = 'block';
-        document.getElementById('fallbackTitle').textContent = 'Detalhes da OS #' + orderId;
-        document.getElementById('fallbackContent').innerHTML = `
-            <div style="text-align: center;">
+        // Usar o modal Bootstrap e o modal de fallback como alternativa
+        var modal = $('#viewOrderModal');
+        modal.modal('show');
+        
+        modal.find('.modal-title').text('Detalhes da OS #' + orderId);
+        modal.find('.modal-body').html(`
+            <div class="text-center p-4">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando...</span>
                 </div>
-                <p>Carregando informações da OS #${orderId}...</p>
+                <p class="mt-2">Carregando informações da OS #${orderId}...</p>
             </div>
-        `;
+        `);
         
-        // Carregar os dados via AJAX utilizando XMLHttpRequest para máxima compatibilidade
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/os_dados/' + orderId, true);
-        
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                var data;
-                try {
-                    data = JSON.parse(xhr.responseText);
-                    console.log("Dados recebidos:", data);
-                    
-                    // Atualizar o conteúdo do modal alternativo
-                    var htmlContent = `
-                        <div style="margin-bottom: 20px;">
-                            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-                                <div style="flex: 1; min-width: 250px;">
-                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Gerais</h4>
-                                    <p><strong>Status:</strong> <span style="padding: 5px 10px; border-radius: 4px; background-color: #007bff; color: white;">${data.status_label}</span></p>
-                                    <p><strong>Cliente:</strong> ${data.client_name}</p>
-                                    <p><strong>Responsável:</strong> ${data.responsible_name}</p>
-                                </div>
-                                <div style="flex: 1; min-width: 250px;">
-                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Datas</h4>
-                                    <p><strong>Abertura:</strong> ${data.created_at}</p>
-                                    <p><strong>Fechamento:</strong> ${data.closed_at}</p>
+        // Buscar os detalhes da OS usando a rota view_service_order_basic e extrair o conteúdo HTML
+        $.ajax({
+            url: `/os/${orderId}/basico`,
+            type: 'GET',
+            success: function(response) {
+                // Extrair o conteúdo principal da página usando jQuery
+                var content = $(response).find('.container');
+                
+                // Criar conteúdo formatado para o modal
+                var modalContent = `
+                    <div class="service-order-details">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>Informações Gerais</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p><strong>Cliente:</strong> ${content.find('.client-name').text() || 'Não definido'}</p>
+                                        <p><strong>Responsável:</strong> ${content.find('.responsible-name').text() || 'Não definido'}</p>
+                                        <p><strong>Status:</strong> ${content.find('.status-badge').text() || 'Não definido'}</p>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div style="margin-top: 15px;">
-                                <h4 style="font-size: 16px; margin-bottom: 10px;">Descrição</h4>
-                                <p>${data.description}</p>
+                            <div class="col-md-6">
+                                <h5>Datas</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p><strong>Abertura:</strong> ${content.find('.created-date').text() || 'Não definida'}</p>
+                                        <p><strong>Fechamento:</strong> ${content.find('.closed-date').text() || 'Não finalizada'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5>Descrição</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <p>${content.find('.service-description').text() || 'Sem descrição'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5>Equipamentos</h5>
+                                <div class="card">
+                                    <div class="card-body">
+                                        ${content.find('.equipment-list').html() || '<p>Nenhum equipamento associado</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 text-end">
+                                <a href="/os/${orderId}" class="btn btn-primary">Ver Detalhes Completos</a>
+                                <a href="/os/${orderId}/editar" class="btn btn-secondary">Editar OS</a>
+                            </div>
+                        </div>
                             </div>
                             
                             <div style="margin-top: 15px;">
