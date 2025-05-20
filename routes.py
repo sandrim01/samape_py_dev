@@ -674,16 +674,18 @@ def register_routes(app):
             # Formulário para fechar a OS
             close_form = CloseServiceOrderForm()
             
-            # Template mais simples e direto
+            # Usando o template disponível
             return render_template(
-                'service_orders/ver_os.html',
-                os=os_data,
-                cliente=cliente,
-                responsavel=ordem.responsible_name,
-                equipamentos=equipamentos,
-                financeiros=financeiros,
-                close_form=close_form,
-                is_admin=is_admin
+                'service_orders/os_simples.html',
+                order_id=ordem.id,
+                description=ordem.description,
+                status=ordem.status,
+                created_at=ordem.created_at,
+                client_name=cliente['name'],
+                cliente_telefone=cliente['phone'],
+                responsavel_nome=ordem.responsible_name,
+                is_admin=is_admin,
+                error=None
             )
         
         except Exception as e:
