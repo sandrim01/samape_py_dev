@@ -443,6 +443,11 @@ class StockMovementForm(FlaskForm):
         ]
 
         
+class CloseServiceOrderForm(FlaskForm):
+    """Formulário para fechar uma ordem de serviço"""
+    invoice_amount = DecimalField('Valor Total (R$)', validators=[DataRequired(), NumberRange(min=0)], places=2)
+    service_details = TextAreaField('Detalhes do Serviço', validators=[DataRequired(), Length(max=2000)])
+    
 class VehicleMaintenanceForm(FlaskForm):
     vehicle_id = SelectField('Veículo', validators=[DataRequired()], coerce=int)
     date = StringField('Data da Manutenção', validators=[DataRequired()], render_kw={"type": "date"})

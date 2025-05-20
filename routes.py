@@ -358,7 +358,79 @@ def register_routes(app):
             form=form
         )
 
-    # Rota super básica para visualizar ordens de serviço (solução emergencial)
+    # Rota para visualizar OS no modal
+    @app.route('/os/<int:id>/modal')
+    @login_required
+    def view_service_order_modal(id):
+        """Retorna os dados da ordem de serviço para exibição no modal"""
+        try:
+            # Consulta para obter os dados da OS
+            query = """
+            SELECT 
+                so.id, so.description, so.status, so.created_at, so.closed_at,
+                so.invoice_number, so.invoice_amount, so.service_details, 
+                so.estimated_value, so.discount_amount, so.original_amount, 
+                so.total_value, so.client_id, so.responsible_id,
+                c.name as client_name, c.document as client_document, 
+                c.email as client_email, c.phone as client_phone, 
+                c.address as client_address,
+                u.name as responsible_name
+            FROM service_order so
+            LEFT JOIN client c ON so.client_id = c.id
+            LEFT JOIN "user" u ON so.responsible_id = u.id
+            WHERE so.id = :id
+            """
+            order = db.session.execute(db.text(query), {'id': id}).fetchone()
+            
+            if not order:
+                return jsonify({'error': 'Ordem de serviço não encontrada'}), 404
+                
+            # Preparando dados do cliente para o template
+            client = {
+                'id': order.client_id,
+                'name': order.client_name,
+                'document': order.client_document,
+                'email': order.client_email,
+                'phone': order.client_phone,
+                'address': order.client_address
+            }
+            
+            # Consulta equipamentos vinculados
+            query_equip = """
+            SELECT e.id, e.type, e.brand, e.model, e.serial_number
+            FROM equipment e
+            JOIN equipment_service_orders eso ON e.id = eso.equipment_id
+            WHERE eso.service_order_id = :id
+            """
+            equipment = db.session.execute(db.text(query_equip), {'id': id}).fetchall()
+            
+            # Consulta entradas financeiras
+            query_fin = """
+            SELECT id, date, description, amount, type, entry_type
+            FROM financial_entry
+            WHERE service_order_id = :id
+            ORDER BY date DESC
+            """
+            financial_entries = db.session.execute(db.text(query_fin), {'id': id}).fetchall()
+            
+            # Verificando se usuário é admin
+            is_admin = current_user.role.name == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Renderizar o template do modal
+            return render_template(
+                'service_orders/view_modal.html',
+                order=order,
+                client=client,
+                equipment=equipment,
+                financial_entries=financial_entries,
+                responsible_name=order.responsible_name,
+                is_admin=is_admin
+            )
+            
+        except Exception as e:
+            app.logger.error(f"Erro ao buscar dados da OS para modal: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+    
     # Rota para obter dados da OS para o modal
     @app.route('/os_dados/<int:id>')
     @login_required

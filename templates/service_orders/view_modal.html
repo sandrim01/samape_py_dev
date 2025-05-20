@@ -1,0 +1,142 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">Ordem de Serviço #{{ order.id }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+    </div>
+    <div class="modal-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2 mb-3">Informações Gerais</h6>
+                <div class="mb-2">
+                    <strong>Status:</strong>
+                    <span class="badge bg-{% if order.status.name == 'aberta' %}warning{% elif order.status.name == 'em_andamento' %}primary{% elif order.status.name == 'fechada' %}success{% else %}danger{% endif %}">
+                        {{ order.status.value }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Cliente:</strong> {{ client.name }}
+                    {% if client.phone %}
+                    <br><small class="text-muted"><i class="fas fa-phone-alt me-1"></i> {{ client.phone }}</small>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <strong>Responsável:</strong> {{ responsible_name if responsible_name else 'Não definido' }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2 mb-3">Datas</h6>
+                <div class="mb-2">
+                    <strong>Abertura:</strong> {{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'Não definida' }}
+                </div>
+                <div class="mb-2">
+                    <strong>Fechamento:</strong> {{ order.closed_at.strftime('%d/%m/%Y %H:%M') if order.closed_at else 'Em aberto' }}
+                </div>
+                {% if order.status.name == 'fechada' and order.invoice_number %}
+                <div class="mb-2">
+                    <strong>Nota Fiscal:</strong> {{ order.invoice_number }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3">Descrição</h6>
+            <p class="text-pre-wrap">{{ order.description }}</p>
+        </div>
+
+        {% if equipment %}
+        <div class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3">Equipamentos</h6>
+            <ul class="list-group">
+                {% for equip in equipment %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ equip.type }}</strong>
+                        {% if equip.brand or equip.model %}
+                        <small class="d-block text-muted">
+                            {{ equip.brand }} {{ equip.model }}
+                            {% if equip.serial_number %}
+                            | NS: {{ equip.serial_number }}
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('view_equipment', id=equip.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-search"></i>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if financial_entries %}
+        <div class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3">Financeiro</h6>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in financial_entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d/%m/%Y') if entry.date else 'N/A' }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td class="{% if entry.type.name == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ "%.2f"|format(entry.amount) }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if entry.type.name == 'entrada' %}success{% else %}danger{% endif %}">
+                                    {{ entry.type.value }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if order.status.name == 'fechada' and order.service_details %}
+        <div class="mb-4">
+            <h6 class="border-bottom pb-2 mb-3">Detalhes do Serviço</h6>
+            <p class="text-pre-wrap">{{ order.service_details }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-footer">
+        <div class="d-flex justify-content-between w-100">
+            <div>
+                {% if is_admin and order.status.name != 'fechada' %}
+                <a href="{{ url_for('delete_service_order', id=order.id) }}" class="btn btn-outline-danger" 
+                   onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')">
+                    <i class="fas fa-trash-alt me-1"></i> Excluir
+                </a>
+                {% endif %}
+            </div>
+            <div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                {% if order.status.name != 'fechada' %}
+                <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
+                <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#closeOrderModal" data-bs-dismiss="modal">
+                    <i class="fas fa-check-circle me-1"></i> Fechar OS
+                </a>
+                {% else %}
+                <a href="{{ url_for('view_invoice', id=order.id) }}" class="btn btn-info">
+                    <i class="fas fa-file-invoice me-1"></i> Ver Nota Fiscal
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
