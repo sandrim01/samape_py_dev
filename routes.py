@@ -541,7 +541,6 @@ def register_routes(app):
             status_filter = request.args.get('status', '')
             client_filter = request.args.get('client', '')
             responsible_filter = request.args.get('responsible', '')
-            date_range = request.args.get('date_range', '')
             search = request.args.get('search', '')
             
             # Construir consulta SQL básica
@@ -614,13 +613,13 @@ def register_routes(app):
             
             # Renderizar o template
             return render_template(
-                'service_orders/index.html',
+                'service_orders/lista_os.html',  # Novo template
                 service_orders=service_orders,
                 clients=clients,
                 users=users,
                 current_user=current_user,
                 is_admin=is_admin,
-                UserRole=UserRole
+                request=request  # Passar o objeto request para o template
             )
             
         except Exception as e:
