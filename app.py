@@ -9,7 +9,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value, format_datetime
+from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value
 
 
 # Configure logging
@@ -40,7 +40,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Configure session
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = False  # Desativado para desenvolvimento
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
@@ -80,7 +80,6 @@ app.jinja_env.filters['format_document'] = format_document
 app.jinja_env.filters['format_currency'] = format_currency
 app.jinja_env.filters['status_color'] = status_color
 app.jinja_env.filters['abs'] = absolute_value
-app.jinja_env.filters['format_datetime'] = format_datetime
 
 # Import and register routes
 from routes import register_routes

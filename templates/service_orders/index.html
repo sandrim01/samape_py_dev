@@ -1,162 +1,292 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Ordens de Serviço{% endblock %}
+{% block title %}Ordens de Serviço - SAMAPE{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para o modal de visualização de OS */
+    #viewOrderModal .modal-dialog {
+        max-width: 700px;
+    }
+    #viewOrderModal .badge.aberta {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #viewOrderModal .badge.em_andamento {
+        background-color: #0d6efd;
+    }
+    #viewOrderModal .badge.fechada {
+        background-color: #198754;
+    }
+    #viewOrderModal .badge.cancelada {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Ordens de Serviço</h2>
-        <div>
-            <a href="{{ url_for('create_service_order') }}" class="btn btn-primary">
-                <i class="fas fa-plus-circle"></i> Nova OS
-            </a>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Ordens de Serviço</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('new_service_order') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Nova OS
+        </a>
+    </div>
+</div>
+
+<!-- Modal de Visualização Rápida -->
+<div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Conteúdo do modal será carregado via AJAX -->
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações da OS...</p>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Filtros</h5>
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header py-3 bg-gradient-primary">
+        <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-filter me-1"></i> Filtros</h6>
+    </div>
+    <div class="card-body">
+        <form id="searchForm" method="get" action="{{ url_for('service_orders') }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for status in ServiceOrderStatus %}
+                        <option value="{{ status.name }}" {% if status_filter == status.name %}selected{% endif %}>
+                            {{ status.value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="client" class="form-label">Cliente</label>
+                    <select class="form-select" id="client" name="client">
+                        <option value="">Todos</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}" {% if client_filter == client.id|string %}selected{% endif %}>
+                            {{ client.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="responsible" class="form-label">Responsável</label>
+                    <select class="form-select" id="responsible" name="responsible">
+                        <option value="">Todos</option>
+                        {% for employee in employees %}
+                        <option value="{{ employee.id }}" {% if responsible_filter == employee.id|string %}selected{% endif %}>
+                            {{ employee.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">De</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Até</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filtrar</button>
+                    <a href="{{ url_for('service_orders') }}" class="btn btn-secondary">Limpar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Service Orders Table -->
+<div class="card">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-gradient-primary">
+        <h6 class="m-0 font-weight-bold text-white">Lista de Ordens de Serviço</h6>
+        <div class="dropdown d-lg-none">
+            <a class="text-white" href="#" role="button" id="osFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-filter"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="osFilterDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('service_orders') }}?status=aberta">Em Aberto</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('service_orders') }}?status=em_andamento">Em Andamento</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('service_orders') }}?status=fechada">Concluídas</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('service_orders') }}?status=cancelada">Canceladas</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('service_orders') }}">Todas</a></li>
+            </ul>
         </div>
-        <div class="card-body">
-            <form action="{{ url_for('service_orders') }}" method="get" id="searchForm">
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">Todos</option>
-                            <option value="aberta" {% if request.args.get('status') == 'aberta' %}selected{% endif %}>Aberta</option>
-                            <option value="em_andamento" {% if request.args.get('status') == 'em_andamento' %}selected{% endif %}>Em andamento</option>
-                            <option value="concluida" {% if request.args.get('status') == 'concluida' %}selected{% endif %}>Concluída</option>
-                            <option value="fechada" {% if request.args.get('status') == 'fechada' %}selected{% endif %}>Fechada</option>
-                        </select>
+    </div>
+    <div class="card-body">
+        <!-- Tabs para Mobile -->
+        <div class="mobile-tabs d-lg-none mb-3 text-center">
+            <a href="{{ url_for('service_orders') }}" class="mobile-tab {% if not status_filter %}active{% endif %}">Todas</a>
+            <a href="{{ url_for('service_orders', status='aberta') }}" class="mobile-tab {% if status_filter == 'aberta' %}active{% endif %}">Em Aberto</a>
+            <a href="{{ url_for('service_orders', status='em_andamento') }}" class="mobile-tab {% if status_filter == 'em_andamento' %}active{% endif %}">Em Andamento</a>
+        </div>
+        
+        {% if service_orders %}
+        <!-- Versão Mobile: Cards Interativos (estilo inspirado na screenshot) -->
+        <div class="d-lg-none">
+            {% for order in service_orders %}
+            <div class="mobile-order-card mb-3" data-status="{{ order.status.name }}">
+                <div class="order-header d-flex justify-content-between align-items-start">
+                    <h5 class="order-id mb-0">OS #{{ order.id }}</h5>
+                    <span class="status-badge {% if order.status.name == 'aberta' %}pending{% elif order.status.name == 'em_andamento' %}pending{% elif order.status.name == 'fechada' %}completed{% else %}cancelled{% endif %}">
+                        {{ order.status.value }}
+                    </span>
+                </div>
+                <div class="client-name mb-2">{{ order.client.name }}</div>
+                <div class="order-details d-flex align-items-center mb-2">
+                    <div class="me-3">
+                        <i class="fas fa-calendar-day me-1 text-muted"></i>
+                        <span>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</span>
                     </div>
-                    <div class="col-md-3">
-                        <label for="client" class="form-label">Cliente</label>
-                        <select class="form-select" id="client" name="client">
-                            <option value="">Todos</option>
-                            {% for client_id, client_name in clients %}
-                            <option value="{{ client_id }}" {% if request.args.get('client')|int == client_id %}selected{% endif %}>{{ client_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="responsible" class="form-label">Responsável</label>
-                        <select class="form-select" id="responsible" name="responsible">
-                            <option value="">Todos</option>
-                            {% for user_id, user_name in users %}
-                            <option value="{{ user_id }}" {% if request.args.get('responsible')|int == user_id %}selected{% endif %}>{{ user_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="date_range" class="form-label">Período</label>
-                        <select class="form-select" id="date_range" name="date_range">
-                            <option value="">Todos</option>
-                            <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Hoje</option>
-                            <option value="yesterday" {% if request.args.get('date_range') == 'yesterday' %}selected{% endif %}>Ontem</option>
-                            <option value="this_week" {% if request.args.get('date_range') == 'this_week' %}selected{% endif %}>Esta semana</option>
-                            <option value="last_week" {% if request.args.get('date_range') == 'last_week' %}selected{% endif %}>Semana passada</option>
-                            <option value="this_month" {% if request.args.get('date_range') == 'this_month' %}selected{% endif %}>Este mês</option>
-                            <option value="last_month" {% if request.args.get('date_range') == 'last_month' %}selected{% endif %}>Mês passado</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="search" class="form-label">Busca</label>
-                        <input type="text" class="form-control" id="search" name="search" placeholder="Número, descrição..." value="{{ request.args.get('search', '') }}">
+                    <div>
+                        <i class="fas fa-user me-1 text-muted"></i>
+                        <span>{{ order.responsible.name if order.responsible else 'Não definido' }}</span>
                     </div>
                 </div>
-            </form>
+                <div class="order-actions">
+                    <a href="#" class="action-button view-button modal-trigger" data-id="{{ order.id }}" title="Visualizar OS">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="action-button view-button" title="Visualização Básica">
+                        <i class="fas fa-list-ul"></i>
+                    </a>
+                    <a href="{{ url_for('edit_service_order', id=order.id) }}" class="action-button edit-button">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% if order.status.name == 'fechada' %}
+                    <a href="{{ url_for('view_invoice', id=order.id) }}" class="action-button invoice-button">
+                        <i class="fas fa-file-invoice"></i>
+                    </a>
+                    {% endif %}
+                    {% if current_user.role.name == 'admin' %}
+                    <a href="{{ url_for('delete_service_order', id=order.id) }}" class="action-button delete-button" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço e todos seus registros financeiros? Esta ação não pode ser desfeita.')">
+                        <i class="fas fa-trash-alt"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Versão Desktop: Tabela -->
+        <div class="table-responsive d-none d-lg-block">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Responsável</th>
+                        <th>Status</th>
+                        <th>Data de Abertura</th>
+                        <th>Data de Fechamento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in service_orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.client.name }}</td>
+                        <td>{{ order.responsible.name if order.responsible else 'Não definido' }}</td>
+                        <td>
+                            <span class="badge bg-{% if order.status.name == 'aberta' %}warning{% elif order.status.name == 'em_andamento' %}primary{% elif order.status.name == 'fechada' %}success{% else %}danger{% endif %}">
+                                {{ order.status.value }}
+                            </span>
+                        </td>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
+                        <td>{{ order.closed_at.strftime('%d/%m/%Y') if order.closed_at else '-' }}</td>
+                        <td class="table-actions">
+                            <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualização Básica">
+                                <i class="fas fa-list-ul"></i>
+                            </a>
+                            <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if order.status.name != 'fechada' %}
+                            <a href="#" class="btn btn-sm btn-outline-success show-close-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Fechar OS">
+                                <i class="fas fa-check-circle"></i>
+                            </a>
+                            {% endif %}
+                            {% if order.status.name == 'fechada' %}
+                            <a href="{{ url_for('view_invoice', id=order.id) }}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver NF-e">
+                                <i class="fas fa-file-invoice"></i>
+                            </a>
+                            {% endif %}
+                            {% if current_user.role.name == 'admin' %}
+                            <a href="{{ url_for('delete_service_order', id=order.id) }}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir OS" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço e todos seus registros financeiros? Esta ação não pode ser desfeita.')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <div class="mb-3">
+                <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+            </div>
+            <p class="text-muted">Nenhuma ordem de serviço encontrada com os filtros selecionados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para visualização rápida de OS (versão simplificada) -->
+<div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewOrderModalLabel">Detalhes da OS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações da OS...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Resultado</h5>
-            <span class="text-muted">{{ service_orders|length }} ordens encontradas</span>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>OS #</th>
-                            <th>Cliente</th>
-                            <th>Equipamento</th>
-                            <th>Serviço</th>
-                            <th>Status</th>
-                            <th>Abertura</th>
-                            <th>Responsável</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in service_orders %}
-                        <tr>
-                            <td><strong>{{ order.id }}</strong></td>
-                            <td>{{ order.client.name }}</td>
-                            <td>
-                                {% if order.equipment %}
-                                    {{ order.equipment.brand }} {{ order.equipment.model }}
-                                {% else %}
-                                    <span class="text-muted">Não definido</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-truncate" style="max-width: 200px;" title="{{ order.description }}">
-                                {{ order.description|truncate(50) }}
-                            </td>
-                            <td>
-                                {% if order.status == 'aberta' %}
-                                <span class="badge bg-info">Aberta</span>
-                                {% elif order.status == 'em_andamento' %}
-                                <span class="badge bg-warning">Em andamento</span>
-                                {% elif order.status == 'concluida' %}
-                                <span class="badge bg-success">Concluída</span>
-                                {% elif order.status == 'fechada' %}
-                                <span class="badge bg-secondary">Fechada</span>
-                                {% else %}
-                                <span class="badge bg-light text-dark">{{ order.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ order.created_at|format_datetime }}</td>
-                            <td>
-                                {% if order.responsible %}
-                                    {{ order.responsible.name }}
-                                {% else %}
-                                    <span class="text-muted">Não atribuído</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ url_for('view_service_order_basic', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary view-order-modal" data-id="{{ order.id }}">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ url_for('view_service_order', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
-                                    <a href="{{ url_for('edit_service_order', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    {% if current_user.role == 'admin' %}
-                                    <a href="{{ url_for('delete_service_order', order_id=order.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir esta OS? Esta ação não pode ser desfeita.');">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-search fa-2x mb-3"></i>
-                                    <p>Nenhuma ordem de serviço encontrada com os filtros selecionados.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Vamos adicionar um modal alternativo usando HTML/CSS puro para garantir -->
+<div id="fallbackModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 9999;">
+    <div style="position: relative; width: 80%; max-width: 700px; margin: 10% auto; background-color: white; padding: 20px; border-radius: 5px; color: #333;">
+        <button onclick="document.getElementById('fallbackModal').style.display='none'" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        <h3 id="fallbackTitle">Detalhes da OS</h3>
+        <div id="fallbackContent" style="margin: 20px 0;">
+            <div style="text-align: center;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações...</p>
             </div>
+        </div>
+        <div style="text-align: right;">
+            <button onclick="document.getElementById('fallbackModal').style.display='none'" style="padding: 8px 15px; background-color: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">Fechar</button>
         </div>
     </div>
 </div>
@@ -164,26 +294,338 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     // Auto-submit form when select filters change
-    document.querySelectorAll('#status, #client, #responsible, #date_range').forEach(function(elem) {
-        elem.addEventListener('change', function() {
-            document.getElementById('searchForm').submit();
-        });
+    $('#status, #client, #responsible, #date_range, #search').change(function() {
+        $('#searchForm').submit();
     });
     
-    // Busca com atraso para não submeter a cada tecla
-    let searchTimeout;
-    const searchInput = document.getElementById('search');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function() {
-                document.getElementById('searchForm').submit();
-            }, 500);
-        });
+    // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
+    function loadOrderDetails(orderId) {
+        console.log("Carregando detalhes da OS #" + orderId);
+        
+        // Usar o modal de fallback HTML puro, que funciona sem depender de Bootstrap
+        document.getElementById('fallbackModal').style.display = 'block';
+        document.getElementById('fallbackTitle').textContent = 'Detalhes da OS #' + orderId;
+        document.getElementById('fallbackContent').innerHTML = `
+            <div style="text-align: center;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p>Carregando informações da OS #${orderId}...</p>
+            </div>
+        `;
+        
+        // Carregar os dados via AJAX utilizando XMLHttpRequest para máxima compatibilidade
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/os_dados/' + orderId, true);
+        
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                var data;
+                try {
+                    data = JSON.parse(xhr.responseText);
+                    console.log("Dados recebidos:", data);
+                    
+                    // Atualizar o conteúdo do modal alternativo
+                    var htmlContent = `
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Gerais</h4>
+                                    <p><strong>Status:</strong> <span style="padding: 5px 10px; border-radius: 4px; background-color: #007bff; color: white;">${data.status_label}</span></p>
+                                    <p><strong>Cliente:</strong> ${data.client_name}</p>
+                                    <p><strong>Responsável:</strong> ${data.responsible_name}</p>
+                                </div>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <h4 style="font-size: 16px; margin-bottom: 10px;">Datas</h4>
+                                    <p><strong>Abertura:</strong> ${data.created_at}</p>
+                                    <p><strong>Fechamento:</strong> ${data.closed_at}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <h4 style="font-size: 16px; margin-bottom: 10px;">Descrição</h4>
+                                <p>${data.description}</p>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <h4 style="font-size: 16px; margin-bottom: 10px;">Informações Financeiras</h4>
+                                <p><strong>Total:</strong> R$ ${data.total_value}</p>
+                                <p><strong>Valor Original:</strong> R$ ${data.original_amount}</p>
+                                <p><strong>Desconto:</strong> R$ ${data.discount_amount}</p>
+                            </div>
+                            
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <a href="${data.view_url}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver Completo</a>
+                                <a href="${data.edit_url}" style="padding: 8px 12px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Editar</a>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('fallbackContent').innerHTML = htmlContent;
+                    
+                } catch (e) {
+                    console.error("Erro ao fazer parse da resposta JSON:", e);
+                    document.getElementById('fallbackContent').innerHTML = `
+                        <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                            <p><strong>Erro ao processar os dados da OS.</strong></p>
+                            <p>Ocorreu um erro inesperado.</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
+                        </div>
+                    `;
+                }
+            } else {
+                console.error("Erro ao carregar dados. Status:", xhr.status);
+                document.getElementById('fallbackContent').innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                        <p><strong>Erro ao carregar os dados da OS #${orderId}</strong></p>
+                        <p>Status: ${xhr.status}</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
+                    </div>
+                `;
+            }
+        };
+        
+        xhr.onerror = function() {
+            console.error("Erro de rede ao tentar obter os dados da OS");
+            document.getElementById('fallbackContent').innerHTML = `
+                <div style="color: #721c24; background-color: #f8d7da; padding: 20px; border-radius: 5px; margin-bottom: 15px;">
+                    <p><strong>Erro de conexão</strong></p>
+                    <p>Não foi possível conectar ao servidor para obter os dados da OS.</p>
+                </div>
+                <div style="text-align: center;">
+                    <a href="/os_basico/${orderId}" style="padding: 8px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Ver na Visualização Básica</a>
+                </div>
+            `;
+        };
+        
+        xhr.send();
     }
+    
+    // Configurar cliques nos botões de visualização com a classe modal-trigger
+    $(document).on('click', '.modal-trigger', function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        console.log("Clicou no botão de visualização, ID:", orderId);
+        loadOrderDetails(orderId);
+    });
+    
+    // Filtrar cards mobile via tabs
+    $('.mobile-tab').click(function() {
+        // Se já estiver usando URL parameters, redirecionar
+        const filterValue = $(this).data('filter');
+        if (filterValue !== 'all') {
+            window.location.href = "{{ url_for('service_orders') }}?status=" + filterValue;
+            return;
+        } else {
+            window.location.href = "{{ url_for('service_orders') }}";
+            return;
+        }
+    });
+    
+    // Feedback tátil em cards mobile
+    $('.mobile-order-card').click(function(e) {
+        // Ignora clique em botões ou links
+        if (!$(e.target).closest('a, button').length) {
+            // Simula um feedback tátil no card
+            $(this).css('transform', 'scale(0.98)');
+            setTimeout(() => {
+                $(this).css('transform', '');
+            }, 150);
+            
+            // Pega o id da primeira tag <a> dentro do card (a de visualização)
+            const viewUrl = $(this).find('a:first').attr('href');
+            if (viewUrl) {
+                window.location.href = viewUrl;
+            }
+        }
+    });
+    
+    // Mostrar notificação ao fazer ações
+    $('.btn-danger').click(function() {
+        if (typeof showSnack === 'function') {
+            showSnack('Excluindo ordem de serviço...');
+        }
+    });
+    
+    // Botões para mostrar o modal de fechamento
+    $('.show-close-modal').click(function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        
+        // Configurar o formulário
+        const form = $('#closeOrderForm');
+        form.attr('action', `/os/${orderId}/fechar`);
+        
+        // Atualizar o título do modal
+        $('#closeOrderModalLabel').text(`Fechar Ordem de Serviço #${orderId}`);
+        
+        // Buscar os dados da OS via AJAX para preencher o modal
+        $.get(`/api/service-orders/${orderId}`, function(data) {
+            if (data.success) {
+                // Preencher o formulário com os dados da OS
+                $('#invoice_amount').val(data.service_order.estimated_value || '');
+                $('#service_details').val('Serviço realizado conforme solicitado.');
+            } else {
+                console.error('Erro ao buscar dados da OS:', data.message);
+            }
+        }).fail(function(error) {
+            console.error('Erro na requisição:', error);
+        });
+        
+        // Mostrar o modal
+        $('#closeOrderModal').modal('show');
+    });
+});
+</script>
+
+<!-- Modal para fechar OS -->
+<div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeOrderModalLabel">Fechar Ordem de Serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="closeOrderForm" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <!-- O número da NF-e agora é gerado automaticamente -->
+                    <div class="mb-3">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O número da nota fiscal será gerado automaticamente.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Total (R$) *</label>
+                        <input type="number" class="form-control" id="invoice_amount" name="invoice_amount" step="0.01" required>
+                    </div>
+                    
+                    <!-- Seção de cálculo de valor por KM -->
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="include_km_calculation" name="include_km_calculation" onchange="toggleKmCalculation()">
+                            <label class="form-check-label" for="include_km_calculation">
+                                <i class="fas fa-road me-1"></i> Incluir cálculo de valor por KM
+                            </label>
+                        </div>
+                        
+                        <div id="km_calculation_fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="distance_km" class="form-label">Distância percorrida (KM)</label>
+                                    <input type="number" class="form-control" id="distance_km" name="distance_km" step="0.01" onchange="calculateKmTotal()">
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="price_per_km" class="form-label">Valor por KM (R$)</label>
+                                    <input type="number" class="form-control" id="price_per_km" name="price_per_km" step="0.01" onchange="calculateKmTotal()">
+                                </div>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-calculator me-1"></i> 
+                                Valor calculado: <strong id="km_total">R$ 0,00</strong>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="add_km_value">
+                                    <i class="fas fa-plus-circle"></i> Adicionar ao total
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_details" class="form-label">Detalhes do Serviço Executado *</label>
+                        <textarea class="form-control" id="service_details" name="service_details" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i> Fechar OS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para mostrar/esconder os campos de cálculo de KM
+function toggleKmCalculation() {
+    const kmCalcFields = document.getElementById('km_calculation_fields');
+    const includeKmCalc = document.getElementById('include_km_calculation');
+    
+    if (kmCalcFields && includeKmCalc) {
+        kmCalcFields.style.display = includeKmCalc.checked ? 'block' : 'none';
+        
+        // Se desmarcar, limpar os valores
+        if (!includeKmCalc.checked) {
+            document.getElementById('distance_km').value = '';
+            document.getElementById('price_per_km').value = '';
+            document.getElementById('km_total').textContent = 'R$ 0,00';
+        }
+    }
+}
+
+// Função para calcular o total do valor por KM
+function calculateKmTotal() {
+    const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+    const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+    
+    const total = distanceKm * pricePerKm;
+    
+    // Formatar valor para moeda brasileira
+    const formattedTotal = total.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+    
+    document.getElementById('km_total').textContent = formattedTotal;
+}
+
+// Função para adicionar o valor calculado ao total da OS
+function addKmValueToTotal() {
+    const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+    const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+    
+    if (distanceKm <= 0 || pricePerKm <= 0) {
+        alert('Informe valores válidos para distância e preço por KM.');
+        return;
+    }
+    
+    const kmValue = distanceKm * pricePerKm;
+    
+    // Obter o valor atual do campo de valor total
+    const invoiceAmountField = document.getElementById('invoice_amount');
+    const currentTotal = parseFloat(invoiceAmountField.value) || 0;
+    
+    // Atualizar o valor total
+    const newTotal = currentTotal + kmValue;
+    invoiceAmountField.value = newTotal.toFixed(2);
+    
+    // Adicionar informação nos detalhes do serviço
+    const serviceDetailsField = document.getElementById('service_details');
+    const kmInfo = `\n\nValor de deslocamento: ${distanceKm.toFixed(2)} KM x R$ ${pricePerKm.toFixed(2)} = R$ ${kmValue.toFixed(2)}`;
+    
+    if (serviceDetailsField.value) {
+        serviceDetailsField.value += kmInfo;
+    } else {
+        serviceDetailsField.value = `Detalhes do serviço executado:${kmInfo}`;
+    }
+    
+    // Notificar o usuário
+    alert(`Valor de R$ ${kmValue.toFixed(2)} adicionado ao total da OS.`);
+}
+
+// Configurar o botão para adicionar valor calculado ao total quando o documento estiver pronto
+$(document).ready(function() {
+    $('#add_km_value').click(function() {
+        addKmValueToTotal();
+    });
 });
 </script>
 {% endblock %}

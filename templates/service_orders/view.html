@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Ordem de Serviço #{{ service_order.id }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Ordem de Serviço #{{ service_order.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('edit_service_order', id=service_order.id) }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-edit me-1"></i> Editar
+        </a>
+        {% if service_order.status.name != 'fechada' %}
+        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#closeOrderModal">
+            <i class="fas fa-check-circle me-1"></i> Fechar OS
+        </button>
+        {% endif %}
+        {% if service_order.status.name == 'fechada' %}
+        <a href="{{ url_for('view_invoice', id=service_order.id) }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-file-invoice me-1"></i> Ver NF-e
+        </a>
+        {% endif %}
+        {% if current_user.role.name == 'admin' %}
+        <a href="{{ url_for('delete_service_order', id=service_order.id) }}" class="btn btn-danger me-2" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')">
+            <i class="fas fa-trash-alt me-1"></i> Excluir OS
+        </a>
+        {% endif %}
+        <a href="{{ url_for('service_orders') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Service Order Details -->
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-clipboard-list me-1"></i> Detalhes da OS</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Status</h6>
+                        <span class="status-badge status-{{ service_order.status.name }}">
+                            {{ service_order.status.value }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Data de Abertura</h6>
+                        <p>{{ service_order.created_at.strftime('%d/%m/%Y %H:%M') if service_order.created_at else 'Data não definida' }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Cliente</h6>
+                        <p>
+                            <a href="{{ url_for('view_client', id=service_order.client.id) }}">
+                                {{ service_order.client.name }}
+                            </a><br>
+                            <small class="text-muted">{{ format_document(service_order.client.document) }}</small>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Responsável</h6>
+                        <p>{{ service_order.responsible.name if service_order.responsible else 'Não definido' }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Descrição do Serviço</h6>
+                    <p>{{ service_order.description }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Valor Estimado</h6>
+                    <p>{{ format_currency(service_order.estimated_value) if service_order.estimated_value else 'Não definido' }}</p>
+                </div>
+                
+                {% if service_order.status.name == 'fechada' %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Data de Fechamento</h6>
+                        <p>{{ service_order.closed_at.strftime('%d/%m/%Y %H:%M') if service_order.closed_at else 'Não fechada' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Número NF-e</h6>
+                        <p>{{ service_order.invoice_number }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Valor Total</h6>
+                        <p class="text-success fw-bold">{{ format_currency(service_order.invoice_amount) }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="fw-bold">Detalhes do Serviço Executado</h6>
+                    <p>{{ service_order.service_details }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Financial Entries for this Service Order -->
+        {% if service_order.financial_entries %}
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-money-bill-wave me-1"></i> Movimentações Financeiras</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in service_order.financial_entries %}
+                            <tr>
+                                <td>{{ entry.date.strftime('%d/%m/%Y') if entry.date else 'Data não definida' }}</td>
+                                <td>{{ entry.description }}</td>
+                                <td>
+                                    <span class="badge {% if entry.type.name == 'entrada' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ entry.type.value }}
+                                    </span>
+                                </td>
+                                <td class="{% if entry.type.name == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ format_currency(entry.amount) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Equipment -->
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-tools me-1"></i> Equipamentos</h6>
+            </div>
+            <div class="card-body">
+                {% if service_order.equipment %}
+                <ul class="list-group list-group-flush">
+                    {% for eq in service_order.equipment %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ eq.type }}</h6>
+                                <small class="text-muted">
+                                    {% if eq.brand %}{{ eq.brand }}{% endif %}
+                                    {% if eq.model %} - {{ eq.model }}{% endif %}
+                                </small><br>
+                                {% if eq.serial_number %}
+                                <small class="text-muted">Nº Série: {{ eq.serial_number }}</small>
+                                {% endif %}
+                            </div>
+                            <a href="{{ url_for('view_equipment', id=eq.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center">Nenhum equipamento associado a esta OS.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Images -->
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-images me-1"></i> Imagens do Equipamento</h6>
+            </div>
+            <div class="card-body">
+                {% if service_order.images %}
+                <div class="row g-3">
+                    <div class="col-12 mb-2 d-lg-none">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Toque nas imagens para ampliá-las
+                        </div>
+                    </div>
+                    
+                    {% for image in service_order.images %}
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                <a href="{{ url_for('static', filename='img/image-not-found.svg') }}" 
+                                   data-fancybox="gallery" 
+                                   data-caption="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                   target="_blank">
+                                    <img src="{{ url_for('static', filename='img/image-not-found.svg') }}" 
+                                         alt="{{ image.description or 'Imagem ' ~ loop.index }}" 
+                                         class="card-img-top" 
+                                         style="height: 150px; object-fit: cover;">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" 
+                                         style="background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease; border-radius: 4px;">
+                                        <i class="fas fa-search-plus text-white fa-2x"></i>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="card-body p-2">
+                                {% if image.description %}
+                                <p class="card-text small text-truncate">{{ image.description }}</p>
+                                {% else %}
+                                <p class="card-text small text-muted">Imagem {{ loop.index }}</p>
+                                {% endif %}
+                                
+                                <form action="{{ url_for('delete_service_order_image_route', image_id=image.id) }}" 
+                                      method="post" 
+                                      class="d-flex justify-content-end"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir esta imagem?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-images fa-3x text-muted"></i>
+                    </div>
+                    <p class="text-muted">Não há imagens disponíveis para esta OS.</p>
+                    
+                    <a href="{{ url_for('edit_service_order', id=service_order.id) }}" class="btn btn-primary mt-2">
+                        <i class="fas fa-upload me-1"></i> Adicionar Imagens
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Client Info -->
+        <div class="card mb-4">
+            <div class="card-header py-3 bg-gradient-primary">
+                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-user me-1"></i> Dados do Cliente</h6>
+            </div>
+            <div class="card-body">
+                <h5>{{ service_order.client.name }}</h5>
+                <p>{{ format_document(service_order.client.document) }}</p>
+                
+                {% if service_order.client.email %}
+                <p>
+                    <strong><i class="fas fa-envelope me-1"></i> Email:</strong><br>
+                    {{ service_order.client.email }}
+                </p>
+                {% endif %}
+                
+                {% if service_order.client.phone %}
+                <p>
+                    <strong><i class="fas fa-phone me-1"></i> Telefone:</strong><br>
+                    {{ service_order.client.phone }}
+                </p>
+                {% endif %}
+                
+                {% if service_order.client.address %}
+                <p>
+                    <strong><i class="fas fa-map-marker-alt me-1"></i> Endereço:</strong><br>
+                    {{ service_order.client.address }}
+                </p>
+                {% endif %}
+                
+                <a href="{{ url_for('view_client', id=service_order.client.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-user me-1"></i> Ver Cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Service Order Modal -->
+{% if service_order.status.name != 'fechada' %}
+<div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeOrderModalLabel">Fechar Ordem de Serviço #{{ service_order.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('close_service_order', id=service_order.id) }}">
+                {{ close_form.hidden_tag() if close_form }}
+                <div class="modal-body">
+                    <!-- O número da NF-e agora é gerado automaticamente -->
+                    <div class="mb-3">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O número da nota fiscal será gerado automaticamente.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Total (R$) *</label>
+                        {{ close_form.invoice_amount(class="form-control", id="invoice_amount", type="number", step="0.01") if close_form }}
+                        {% if close_form and close_form.invoice_amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.invoice_amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Seção de cálculo de valor por KM -->
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="form-check mb-2">
+                            {{ close_form.include_km_calculation(class="form-check-input", id="include_km_calculation", onchange="toggleKmCalculation()") if close_form }}
+                            <label class="form-check-label" for="include_km_calculation">
+                                <i class="fas fa-road me-1"></i> Incluir cálculo de valor por KM
+                            </label>
+                        </div>
+                        
+                        <div id="km_calculation_fields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="distance_km" class="form-label">Distância percorrida (KM)</label>
+                                    {{ close_form.distance_km(class="form-control", id="distance_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="price_per_km" class="form-label">Valor por KM (R$)</label>
+                                    {{ close_form.price_per_km(class="form-control", id="price_per_km", type="number", step="0.01", onchange="calculateKmTotal()") if close_form }}
+                                </div>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-calculator me-1"></i> 
+                                Valor calculado: <strong id="km_total">R$ 0,00</strong>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="add_km_value">
+                                    <i class="fas fa-plus-circle"></i> Adicionar ao total
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_details" class="form-label">Detalhes do Serviço Executado *</label>
+                        {{ close_form.service_details(class="form-control", id="service_details", rows=5) if close_form }}
+                        {% if close_form and close_form.service_details.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in close_form.service_details.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Fechar OS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Funções para o cálculo de valor por KM
+        const includeKmCalcCheckbox = document.getElementById('include_km_calculation');
+        if (includeKmCalcCheckbox) {
+            // Inicializa o estado dos campos de cálculo KM ao carregar
+            toggleKmCalculation();
+            
+            // Configura o botão para adicionar valor calculado ao total
+            const addKmValueBtn = document.getElementById('add_km_value');
+            if (addKmValueBtn) {
+                addKmValueBtn.addEventListener('click', function() {
+                    addKmValueToTotal();
+                });
+            }
+        }
+    });
+    
+    // Função para mostrar/esconder os campos de cálculo de KM
+    function toggleKmCalculation() {
+        const kmCalcFields = document.getElementById('km_calculation_fields');
+        const includeKmCalc = document.getElementById('include_km_calculation');
+        
+        if (kmCalcFields && includeKmCalc) {
+            kmCalcFields.style.display = includeKmCalc.checked ? 'block' : 'none';
+            
+            // Se desmarcar, limpar os valores
+            if (!includeKmCalc.checked) {
+                document.getElementById('distance_km').value = '';
+                document.getElementById('price_per_km').value = '';
+                document.getElementById('km_total').textContent = 'R$ 0,00';
+            }
+        }
+    }
+    
+    // Função para calcular o total do valor por KM
+    function calculateKmTotal() {
+        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+        
+        const total = distanceKm * pricePerKm;
+        
+        // Formatar valor para moeda brasileira
+        const formattedTotal = total.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        
+        document.getElementById('km_total').textContent = formattedTotal;
+    }
+    
+    // Função para adicionar o valor calculado ao total da OS
+    function addKmValueToTotal() {
+        const distanceKm = parseFloat(document.getElementById('distance_km').value) || 0;
+        const pricePerKm = parseFloat(document.getElementById('price_per_km').value) || 0;
+        
+        if (distanceKm <= 0 || pricePerKm <= 0) {
+            alert('Informe valores válidos para distância e preço por KM.');
+            return;
+        }
+        
+        const kmValue = distanceKm * pricePerKm;
+        
+        // Obter o valor atual do campo de valor total
+        const invoiceAmountField = document.getElementById('invoice_amount');
+        const currentTotal = parseFloat(invoiceAmountField.value) || 0;
+        
+        // Atualizar o valor total
+        const newTotal = currentTotal + kmValue;
+        invoiceAmountField.value = newTotal.toFixed(2);
+        
+        // Adicionar informação nos detalhes do serviço
+        const serviceDetailsField = document.getElementById('service_details');
+        const kmInfo = `\n\nValor de deslocamento: ${distanceKm.toFixed(2)} KM x R$ ${pricePerKm.toFixed(2)} = R$ ${kmValue.toFixed(2)}`;
+        
+        if (serviceDetailsField.value) {
+            serviceDetailsField.value += kmInfo;
+        } else {
+            serviceDetailsField.value = `Detalhes do serviço executado:${kmInfo}`;
+        }
+        
+        // Notificar o usuário
+        alert(`Valor de R$ ${kmValue.toFixed(2)} adicionado ao total da OS.`);
+    }
+</script>
+{% endblock %}

@@ -1,6 +1,5 @@
 from markupsafe import Markup
 from decimal import Decimal
-from datetime import datetime
 
 def nl2br(value):
     """Convert newlines to <br> tags"""
@@ -71,20 +70,3 @@ def status_color(status):
         'cancelada': 'danger'
     }
     return status_colors.get(status.name if hasattr(status, 'name') else status, 'secondary')
-
-def format_datetime(value, format='%d/%m/%Y %H:%M'):
-    """Format a datetime object to a string with the specified format"""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        try:
-            value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            try:
-                value = datetime.strptime(value, '%Y-%m-%d')
-            except ValueError:
-                return value
-    try:
-        return value.strftime(format)
-    except (ValueError, AttributeError):
-        return str(value)
