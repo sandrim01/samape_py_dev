@@ -7,7 +7,8 @@ $(document).ready(function() {
         
         // Mostrar o modal Bootstrap
         var modal = $('#viewOrderModal');
-        modal.modal('show');
+        var bsModal = new bootstrap.Modal(document.getElementById('viewOrderModal'));
+        bsModal.show();
         
         // Atualizar título e mostrar loading
         modal.find('.modal-title').text('Detalhes da OS #' + orderId);
