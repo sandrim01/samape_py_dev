@@ -9,7 +9,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value
+from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value, format_datetime
 
 
 # Configure logging
