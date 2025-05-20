@@ -40,7 +40,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Configure session
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # Desativado para desenvolvimento
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
