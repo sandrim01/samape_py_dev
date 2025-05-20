@@ -251,9 +251,9 @@
                         <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                         <td>{{ order.closed_at.strftime('%d/%m/%Y') if order.closed_at else '-' }}</td>
                         <td class="table-actions">
-                            <a href="#" class="btn btn-sm btn-outline-primary view-os-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar OS">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-id="{{ order.id }}" data-bs-toggle="modal" data-bs-target="#viewOrderModal" title="Visualizar OS">
                                 <i class="fas fa-eye"></i>
-                            </a>
+                            </button>
                             <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualização Básica">
                                 <i class="fas fa-list-ul"></i>
                             </a>
@@ -341,51 +341,54 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Carregar o modal de visualização de OS com AJAX - tanto para a versão desktop quanto mobile
-    $('.view-os-modal, .modal-trigger').click(function(e) {
-        e.preventDefault();
-        
-        // Obter o ID da OS
-        var orderId = $(this).data('id');
-        console.log('Clicou no botão de visualizar OS com ID:', orderId);
-        
-        // Mostrar o modal com Bootstrap 5
-        var modalElement = document.getElementById('viewOrderModal');
-        var bootstrapModal = new bootstrap.Modal(modalElement);
-        bootstrapModal.show();
-        
-        // Exibir o carregamento
-        $('#viewOrderModal .modal-content').html(`
-            <div class="modal-body text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Carregando...</span>
-                </div>
-                <p class="mt-2">Carregando informações da OS #${orderId}...</p>
-            </div>
-        `);
-        
-        // Carregar o conteúdo via AJAX
-        $.get('/os/' + orderId + '/modal', function(data) {
-            $('#viewOrderModal .modal-content').html(data);
-        })
-        .fail(function(error) {
-            $('#viewOrderModal .modal-content').html(`
-                <div class="modal-header">
-                    <h5 class="modal-title">Erro</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i> 
-                        Erro ao carregar os dados da OS #${orderId}. Tente novamente.
+    // Handler para o botão de visualização de OS
+    document.addEventListener('click', function(e) {
+        // Procura por qualquer botão de visualização (tanto na versão mobile quanto desktop)
+        if (e.target.closest('button[data-bs-target="#viewOrderModal"]')) {
+            const button = e.target.closest('button[data-bs-target="#viewOrderModal"]');
+            const orderId = button.getAttribute('data-id');
+            console.log('Clicou no botão de visualizar OS com ID:', orderId);
+            
+            // Exibir o carregamento
+            document.querySelector('#viewOrderModal .modal-content').innerHTML = `
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
                     </div>
+                    <p class="mt-2">Carregando informações da OS #${orderId}...</p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            `);
-            console.error('Erro ao carregar dados da OS:', error);
-        });
+            `;
+            
+            // Carregar o conteúdo via AJAX quando o modal for mostrado
+            fetch('/os/' + orderId + '/modal')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar os dados');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    document.querySelector('#viewOrderModal .modal-content').innerHTML = data;
+                })
+                .catch(error => {
+                    document.querySelector('#viewOrderModal .modal-content').innerHTML = `
+                        <div class="modal-header">
+                            <h5 class="modal-title">Erro</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i> 
+                                Erro ao carregar os dados da OS #${orderId}. Tente novamente.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    `;
+                    console.error('Erro ao carregar dados da OS:', error);
+                });
+        }
     });
     
     // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
