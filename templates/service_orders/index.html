@@ -34,9 +34,9 @@
     </div>
 </div>
 
-<!-- Modal de Visualização Rápida -->
+<!-- Modal de Visualização da OS -->
 <div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <!-- Conteúdo do modal será carregado via AJAX -->
             <div class="modal-body text-center">
@@ -45,6 +45,44 @@
                 </div>
                 <p class="mt-2">Carregando informações da OS...</p>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para fechar a OS -->
+<div class="modal fade" id="closeOrderModal" tabindex="-1" aria-labelledby="closeOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeOrderModalLabel">Fechar Ordem de Serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="closeOrderForm" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> O número da nota fiscal será gerado automaticamente.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_amount" class="form-label">Valor Total (R$) *</label>
+                        <input type="number" class="form-control" id="invoice_amount" name="invoice_amount" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_details" class="form-label">Detalhes do Serviço *</label>
+                        <textarea class="form-control" id="service_details" name="service_details" rows="4" required>Serviço realizado conforme solicitado.</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i> Confirmar Fechamento
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -213,7 +251,10 @@
                         <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'Data não definida' }}</td>
                         <td>{{ order.closed_at.strftime('%d/%m/%Y') if order.closed_at else '-' }}</td>
                         <td class="table-actions">
-                            <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualização Básica">
+                            <a href="#" class="btn btn-sm btn-outline-primary view-os-modal" data-id="{{ order.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualizar OS">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('view_service_order_basic', id=order.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Visualização Básica">
                                 <i class="fas fa-list-ul"></i>
                             </a>
                             <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar">
@@ -298,6 +339,51 @@ $(document).ready(function() {
     // Auto-submit form when select filters change
     $('#status, #client, #responsible, #date_range, #search').change(function() {
         $('#searchForm').submit();
+    });
+    
+    // Carregar o modal de visualização de OS com AJAX
+    $('.view-os-modal').click(function(e) {
+        e.preventDefault();
+        
+        // Obter o ID da OS
+        var orderId = $(this).data('id');
+        
+        // Mostrar o modal
+        var modal = $('#viewOrderModal');
+        modal.modal('show');
+        
+        // Exibir o carregamento
+        modal.find('.modal-content').html(`
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações da OS #${orderId}...</p>
+            </div>
+        `);
+        
+        // Carregar o conteúdo via AJAX
+        $.get('/os/' + orderId + '/modal', function(data) {
+            modal.find('.modal-content').html(data);
+        })
+        .fail(function(error) {
+            modal.find('.modal-content').html(`
+                <div class="modal-header">
+                    <h5 class="modal-title">Erro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i> 
+                        Erro ao carregar os dados da OS #${orderId}. Tente novamente.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            `);
+            console.error('Erro ao carregar dados da OS:', error);
+        });
     });
     
     // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
@@ -453,9 +539,14 @@ $(document).ready(function() {
         }
     });
     
-    // Botões para mostrar o modal de fechamento
-    $('.show-close-modal').click(function(e) {
+    // Configurar o modal de fechamento de OS quando o botão for clicado no modal de visualização
+    $(document).on('click', '.btn-close-os', function(e) {
         e.preventDefault();
+        
+        // Fechar o modal de visualização
+        $('#viewOrderModal').modal('hide');
+        
+        // Recuperar o ID da OS
         const orderId = $(this).data('id');
         
         // Configurar o formulário
@@ -466,14 +557,13 @@ $(document).ready(function() {
         $('#closeOrderModalLabel').text(`Fechar Ordem de Serviço #${orderId}`);
         
         // Buscar os dados da OS via AJAX para preencher o modal
-        $.get(`/api/service-orders/${orderId}`, function(data) {
-            if (data.success) {
-                // Preencher o formulário com os dados da OS
-                $('#invoice_amount').val(data.service_order.estimated_value || '');
-                $('#service_details').val('Serviço realizado conforme solicitado.');
-            } else {
-                console.error('Erro ao buscar dados da OS:', data.message);
-            }
+        $.get(`/os_dados/${orderId}`, function(data) {
+            // Preencher o formulário com os dados da OS
+            $('#invoice_amount').val(data.total_value || data.original_amount || '');
+            $('#service_details').val('Serviço realizado conforme solicitado.');
+            
+            // Mostrar o modal
+            $('#closeOrderModal').modal('show');
         }).fail(function(error) {
             console.error('Erro na requisição:', error);
         });
