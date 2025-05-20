@@ -300,38 +300,15 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/service_order_modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view_modal.js') }}"></script>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form when select filters change
-    $('#status, #client, #responsible, #date_range, #search').change(function() {
-        $('#searchForm').submit();
+    document.querySelectorAll('#status, #client, #responsible, #date_range, #search').forEach(function(elem) {
+        elem.addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+        });
     });
-    
-    // Adicionar listener para os botões de visualização de OS
-    $('.view-order-modal').click(function() {
-        let orderId = $(this).data('id');
-        loadOrderDetails(orderId);
-        return false; // prevenir comportamento padrão
-    });
-    
-    // Função para mostrar os detalhes da OS no modal
-    function loadOrderDetails(orderId) {
-        console.log("Carregando detalhes da OS #" + orderId);
-        
-        // Usar o modal Bootstrap e o modal de fallback como alternativa
-        var modal = $('#viewOrderModal');
-        modal.modal('show');
-        
-        modal.find('.modal-title').text('Detalhes da OS #' + orderId);
-        modal.find('.modal-body').html(`
-            <div class="text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Carregando...</span>
-                </div>
-                <p class="mt-2">Carregando informações da OS #${orderId}...</p>
-            </div>
-        `);
         
         // Buscar os detalhes da OS usando a rota view_service_order_basic e extrair o conteúdo HTML
         $.ajax({
