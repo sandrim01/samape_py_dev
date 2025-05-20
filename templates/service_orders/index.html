@@ -300,7 +300,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/view_modal.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form when select filters change
@@ -309,17 +308,17 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('searchForm').submit();
         });
     });
-        
-        // Buscar os detalhes da OS usando a rota view_service_order_basic e extrair o conteúdo HTML
-        $.ajax({
-            url: `/os/${orderId}/basico`,
-            type: 'GET',
-            success: function(response) {
-                // Extrair o conteúdo principal da página usando jQuery
-                var content = $(response).find('.container');
-                
-                // Criar conteúdo formatado para o modal
-                var modalContent = `
+    
+    // Adicionar event listener para os botões de visualização rápida
+    document.querySelectorAll('.view-order-modal').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Obter o ID da OS
+            var orderId = this.getAttribute('data-id');
+            window.location.href = '/os/' + orderId + '/basico';
+        });
+    });
+});
                     <div class="service-order-details">
                         <div class="row mb-4">
                             <div class="col-md-6">
