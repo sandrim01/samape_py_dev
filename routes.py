@@ -527,6 +527,108 @@ def register_routes(app):
                 error=f"Não foi possível carregar os detalhes completos. Erro: {str(e)}"
             )
             
+    # Rota alternativa para listar todas as ordens de serviço
+    @app.route('/os_lista')
+    @login_required
+    def os_lista():
+        """Versão simplificada e robusta da página de ordens de serviço"""
+        try:
+            # Consulta direta ao banco para evitar problemas com SQLAlchemy
+            conn = db.engine.raw_connection()
+            cursor = conn.cursor()
+            
+            # Obter filtros da URL
+            status_filter = request.args.get('status', '')
+            client_filter = request.args.get('client', '')
+            responsible_filter = request.args.get('responsible', '')
+            date_range = request.args.get('date_range', '')
+            search = request.args.get('search', '')
+            
+            # Construir consulta SQL básica
+            query = """
+            SELECT 
+                so.id, so.description, so.status, so.created_at, so.closed_at,
+                c.name as client_name, 
+                e.type as equipment_type, e.brand as equipment_brand, e.model as equipment_model,
+                u.name as responsible_name
+            FROM service_order so
+            LEFT JOIN client c ON so.client_id = c.id
+            LEFT JOIN service_order_equipment soe ON so.id = soe.service_order_id
+            LEFT JOIN equipment e ON soe.equipment_id = e.id
+            LEFT JOIN "user" u ON so.responsible_id = u.id
+            WHERE 1=1
+            """
+            
+            # Parâmetros para a consulta
+            params = []
+            
+            # Adicionar filtros à consulta
+            if status_filter:
+                query += " AND so.status = %s"
+                params.append(status_filter)
+                
+            if client_filter and client_filter.isdigit():
+                query += " AND so.client_id = %s"
+                params.append(int(client_filter))
+                
+            if responsible_filter and responsible_filter.isdigit():
+                query += " AND so.responsible_id = %s"
+                params.append(int(responsible_filter))
+                
+            if search:
+                query += " AND (so.description ILIKE %s OR c.name ILIKE %s OR CAST(so.id AS TEXT) = %s)"
+                search_pattern = f"%{search}%"
+                params.extend([search_pattern, search_pattern, search])
+                
+            # Adicionar ordenação
+            query += " ORDER BY so.created_at DESC"
+            
+            # Executar a consulta
+            cursor.execute(query, tuple(params))
+            results = cursor.fetchall()
+            
+            # Transformar resultados em uma lista de dicionários
+            service_orders = []
+            for row in results:
+                service_orders.append({
+                    'id': row[0],
+                    'description': row[1],
+                    'status': row[2],
+                    'created_at': row[3],
+                    'closed_at': row[4],
+                    'client_name': row[5] or 'Cliente não especificado',
+                    'equipment': f"{row[6] or ''} {row[7] or ''} {row[8] or ''}".strip() or None,
+                    'responsible_name': row[9]
+                })
+            
+            # Obter lista de clientes para o filtro
+            cursor.execute("SELECT id, name FROM client ORDER BY name")
+            clients = cursor.fetchall()
+            
+            # Obter lista de usuários responsáveis para o filtro
+            cursor.execute("SELECT id, name FROM \"user\" WHERE active = TRUE ORDER BY name")
+            users = cursor.fetchall()
+            
+            # Verificar se o usuário atual é admin
+            is_admin = current_user.role.name == 'admin' if hasattr(current_user, 'role') else False
+            
+            # Renderizar o template
+            return render_template(
+                'service_orders/index.html',
+                service_orders=service_orders,
+                clients=clients,
+                users=users,
+                current_user=current_user,
+                is_admin=is_admin,
+                UserRole=UserRole
+            )
+            
+        except Exception as e:
+            app.logger.error(f"Erro ao listar ordens de serviço: {str(e)}")
+            flash(f"Erro ao listar ordens de serviço: {str(e)}", "danger")
+            # Em caso de erro, retornar uma página simples
+            return render_template('errors/generic.html', error=str(e))
+            
     # Rota para visualizar detalhes de uma Ordem de Serviço específica
     @app.route('/os/<int:id>')
     @login_required
