@@ -80,6 +80,7 @@ app.jinja_env.filters['format_document'] = format_document
 app.jinja_env.filters['format_currency'] = format_currency
 app.jinja_env.filters['status_color'] = status_color
 app.jinja_env.filters['abs'] = absolute_value
+app.jinja_env.filters['format_datetime'] = format_datetime
 
 # Import and register routes
 from routes import register_routes
