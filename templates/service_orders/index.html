@@ -341,8 +341,8 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Carregar o modal de visualização de OS com AJAX
-    $('.view-os-modal').click(function(e) {
+    // Carregar o modal de visualização de OS com AJAX - tanto para a versão desktop quanto mobile
+    $('.view-os-modal, .modal-trigger').click(function(e) {
         e.preventDefault();
         
         // Obter o ID da OS
