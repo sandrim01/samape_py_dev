@@ -343,18 +343,15 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // Substituímos o modal por navegação direta - mais simples e evita problemas com AJAX
-    document.addEventListener('click', function(e) {
-        // Procura por qualquer botão de visualização (tanto na versão mobile quanto desktop)
-        if (e.target.closest('button[data-bs-target="#viewOrderModal"]')) {
-            const button = e.target.closest('button[data-bs-target="#viewOrderModal"]');
-            const orderId = button.getAttribute('data-id');
-            console.log('Navegando para a visualização da OS com ID:', orderId);
-            
-            // Redirecionamos diretamente para a página completa de visualização da OS
-            window.location.href = '/os/' + orderId;
-        }
-    });
+    // REMOVIDO: Substituímos o modal por navegação direta - mais simples e evita problemas com AJAX
+    // document.addEventListener('click', function(e) {
+    //     if (e.target.closest('button[data-bs-target="#viewOrderModal"]')) {
+    //         const button = e.target.closest('button[data-bs-target="#viewOrderModal"]');
+    //         const orderId = button.getAttribute('data-id');
+    //         console.log('Navegando para a visualização da OS com ID:', orderId);
+    //         window.location.href = '/os/' + orderId;
+    //     }
+    // });
     
     // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
     function loadOrderDetails(orderId) {
