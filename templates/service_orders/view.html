@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Ordem de Serviço #{{ order.id }} - SAMAPE{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Ordem de Serviço #{{ order.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('edit_service_order', id=order.id) }}" class="btn btn-primary me-2">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if current_user.role.name == 'admin' %}
+        <a href="{{ url_for('delete_service_order', id=order.id) }}" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.')">
+            <i class="fas fa-trash-alt"></i> Excluir
+        </a>
+        {% endif %}
+        <a href="{{ url_for('service_orders') }}" class="btn btn-secondary ms-2">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informações Gerais</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong> <span class="badge bg-{% if order.status.name == 'aberta' %}warning{% elif order.status.name == 'em_andamento' %}primary{% elif order.status.name == 'fechada' %}success{% else %}danger{% endif %}">{{ order.status.value }}</span></p>
+                <p><strong>Cliente:</strong> <a href="{{ url_for('view_client', id=order.client.id) }}">{{ order.client.name }}</a></p>
+                <p><strong>Responsável:</strong> {{ order.responsible.name if order.responsible else 'Não definido' }}</p>
+                <p><strong>Data de Abertura:</strong> {{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '-' }}</p>
+                <p><strong>Data de Fechamento:</strong> {{ order.closed_at.strftime('%d/%m/%Y %H:%M') if order.closed_at else '-' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-cogs me-1"></i> Equipamentos</h6>
+            </div>
+            <div class="card-body">
+                {% if order.equipment %}
+                <ul class="list-group">
+                    {% for equip in order.equipment %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ equip.type }}</strong>
+                            {% if equip.brand or equip.model %}
+                            <small class="d-block text-muted">
+                                {{ equip.brand }} {{ equip.model }}
+                                {% if equip.serial_number %}| NS: {{ equip.serial_number }}{% endif %}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('view_equipment', id=equip.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Nenhum equipamento vinculado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7 mb-4">
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-align-left me-1"></i> Descrição do Serviço</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-pre-wrap">{{ order.description or order.service_details or '-' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5 mb-4">
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-coins me-1"></i> Informações Financeiras</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Valor Total:</strong> R$ {{ '%.2f'|format(order.total_value or order.original_amount or 0) }}</p>
+                <p><strong>Desconto:</strong> R$ {{ '%.2f'|format(order.discount_amount or 0) }}</p>
+                {% if order.status.name == 'fechada' and order.invoice_number %}
+                <p><strong>Nota Fiscal:</strong> <a href="{{ url_for('view_invoice', id=order.id) }}">{{ order.invoice_number }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if order.financial_entries %}
+<div class="card mb-4">
+    <div class="card-header bg-gradient-primary text-white">
+        <h6 class="mb-0"><i class="fas fa-cash-register me-1"></i> Lançamentos Financeiros</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in order.financial_entries %}
+                    <tr>
+                        <td>{{ entry.date.strftime('%d/%m/%Y') if entry.date else 'N/A' }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td class="{% if entry.type.name == 'entrada' %}text-success{% else %}text-danger{% endif %}">R$ {{ '%.2f'|format(entry.amount) }}</td>
+                        <td><span class="badge bg-{% if entry.type.name == 'entrada' %}success{% else %}danger{% endif %}">{{ entry.type.value }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
