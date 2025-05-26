@@ -343,15 +343,14 @@ $(document).ready(function() {
         $('#searchForm').submit();
     });
     
-    // REMOVIDO: Substituímos o modal por navegação direta - mais simples e evita problemas com AJAX
-    // document.addEventListener('click', function(e) {
-    //     if (e.target.closest('button[data-bs-target="#viewOrderModal"]')) {
-    //         const button = e.target.closest('button[data-bs-target="#viewOrderModal"]');
-    //         const orderId = button.getAttribute('data-id');
-    //         console.log('Navegando para a visualização da OS com ID:', orderId);
-    //         window.location.href = '/os/' + orderId;
-    //     }
-    // });
+    // Configurar cliques nos botões de visualização com a classe modal-trigger
+    $(document).on('click', '.modal-trigger', function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        if (orderId) {
+            loadOrderDetails(orderId);
+        }
+    });
     
     // Função ultra simplificada para mostrar o modal de fallback HTML puro (vai funcionar 100%)
     function loadOrderDetails(orderId) {
@@ -459,14 +458,6 @@ $(document).ready(function() {
         
         xhr.send();
     }
-    
-    // Configurar cliques nos botões de visualização com a classe modal-trigger
-    $(document).on('click', '.modal-trigger', function(e) {
-        e.preventDefault();
-        const orderId = $(this).data('id');
-        console.log("Clicou no botão de visualização, ID:", orderId);
-        loadOrderDetails(orderId);
-    });
     
     // Filtrar cards mobile via tabs
     $('.mobile-tab').click(function() {
