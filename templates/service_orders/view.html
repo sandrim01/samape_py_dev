@@ -86,7 +86,9 @@
             </div>
             <div class="card-body">
                 <p><strong>Valor Total:</strong> R$ {{ '%.2f'|format(order.total_value or order.original_amount or 0) }}</p>
+                {% if order.discount_amount is defined %}
                 <p><strong>Desconto:</strong> R$ {{ '%.2f'|format(order.discount_amount or 0) }}</p>
+                {% endif %}
                 {% if order.status.name == 'fechada' and order.invoice_number %}
                 <p><strong>Nota Fiscal:</strong> <a href="{{ url_for('view_invoice', id=order.id) }}">{{ order.invoice_number }}</a></p>
                 {% endif %}
