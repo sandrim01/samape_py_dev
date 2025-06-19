@@ -369,8 +369,8 @@ def register_routes(app):
             SELECT 
                 so.id, so.description, so.status, so.created_at, so.closed_at,
                 so.invoice_number, so.invoice_amount, so.service_details, 
-                so.estimated_value, so.discount_amount, so.original_amount, so.total_value,
-                so.client_id, so.responsible_id,
+                so.estimated_value, so.discount_amount, so.original_amount, 
+                so.total_value, so.client_id, so.responsible_id,
                 c.name as client_name, c.document as client_document, 
                 c.email as client_email, c.phone as client_phone, 
                 c.address as client_address,
@@ -609,9 +609,11 @@ def register_routes(app):
             SELECT 
                 so.id, so.description, so.status, so.created_at, so.closed_at,
                 so.invoice_number, so.invoice_amount, so.service_details, 
-                so.estimated_value, so.discount_amount, so.original_amount, so.total_value,
-                c.id as client_id, c.name as client_name, c.document as client_document,
-                c.email as client_email, c.phone as client_phone, c.address as client_address,
+                so.estimated_value, so.discount_amount, so.original_amount, 
+                so.total_value, so.client_id, so.responsible_id,
+                c.name as client_name, c.document as client_document, 
+                c.email as client_email, c.phone as client_phone, 
+                c.address as client_address,
                 u.name as responsible_name
             FROM service_order so
             LEFT JOIN client c ON so.client_id = c.id
@@ -809,6 +811,315 @@ def register_routes(app):
             flash(f"Erro ao carregar a ordem de serviço: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
 
+    @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    def edit_service_order(id):
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Removida restrição de edição para OS fechadas
+        form = ServiceOrderForm(obj=service_order)
+        
+        # Load clients for dropdown
+        form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
+        
+        # Load employees for dropdown
+        form.responsible_id.choices = [(0, 'A ser definido')] + [
+            (u.id, u.name) for u in User.query.filter_by(active=True).order_by(User.name).all()
+        ]
+        
+        # Set initial selection for equipment
+        if request.method == 'GET':
+            form.equipment_ids.data = ','.join([str(eq.id) for eq in service_order.equipment])
+            
+            # Handle case where responsible_id is None
+            if service_order.responsible_id is None:
+                form.responsible_id.data = 0
+                
+            # Set invoice_amount if OS is closed
+            if service_order.status.name == 'fechada' and service_order.invoice_amount:
+                form.invoice_amount.data = service_order.invoice_amount
+                
+        if form.validate_on_submit():
+            try:
+                # Verifique se estamos alterando o valor da nota de uma OS fechada
+                # e armazene o valor antigo para comparação
+                old_invoice_amount = None
+                if service_order.status.name == 'fechada' and service_order.invoice_amount:
+                    old_invoice_amount = service_order.invoice_amount
+                
+                service_order.client_id = form.client_id.data
+                service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
+                service_order.description = form.description.data
+                service_order.estimated_value = form.estimated_value.data
+                service_order.status = ServiceOrderStatus[form.status.data]
+                
+                # Se a OS está fechada, atualize o valor total da nota
+                if service_order.status.name == 'fechada' and form.invoice_amount.data:
+                    service_order.invoice_amount = form.invoice_amount.data
+                
+                # Update equipment relationships
+                service_order.equipment = []
+                if form.equipment_ids.data:
+                    equipment_ids = form.equipment_ids.data.split(',')
+                    for eq_id in equipment_ids:
+                        equipment = Equipment.query.get(int(eq_id))
+                        if equipment and equipment.client_id == service_order.client_id:
+                            service_order.equipment.append(equipment)
+                
+                # Salve as alterações na OS
+                db.session.commit()
+                
+                # Se alteramos o valor da nota e existem lançamentos financeiros relacionados
+                # devemos atualizar esses lançamentos
+                if (old_invoice_amount is not None and 
+                    form.invoice_amount.data is not None and 
+                    old_invoice_amount != form.invoice_amount.data):
+                    
+                    # Busque o lançamento financeiro associado à OS
+                    financial_entry = FinancialEntry.query.filter_by(
+                        service_order_id=service_order.id,
+                        type=FinancialEntryType.entrada
+                    ).first()
+                    
+                    if financial_entry:
+                        financial_entry.amount = form.invoice_amount.data
+                        financial_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
+                        db.session.commit()
+                        
+                        log_action(
+                            'Atualização Financeira',
+                            'financial',
+                            financial_entry.id,
+                            f"Valor da OS #{service_order.id} atualizado de {old_invoice_amount} para {form.invoice_amount.data}"
+                        )
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao atualizar OS: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao atualizar OS {id}: {str(e)}")
+                return redirect(url_for('view_service_order', id=service_order.id))
+            
+            # Processar imagens - verificar se há arquivos enviados
+            image_files = request.files.getlist('images')
+            if image_files and any(f.filename for f in image_files):
+                saved_images = save_service_order_images(
+                    service_order, 
+                    image_files, 
+                    form.image_descriptions.data
+                )
+                if saved_images:
+                    flash(f'{len(saved_images)} imagem(ns) adicional(is) anexada(s) com sucesso!', 'info')
+            
+            log_action(
+                'Edição de OS',
+                'service_order',
+                service_order.id,
+                f"OS {id} atualizada"
+            )
+            
+            flash('Ordem de serviço atualizada com sucesso!', 'success')
+            return redirect(url_for('view_service_order', id=service_order.id))
+            
+        return render_template(
+            'service_orders/edit.html',
+            form=form,
+            service_order=service_order
+        )
+
+    @app.route('/os/imagem/<int:image_id>/excluir', methods=['POST'])
+    @login_required
+    def delete_service_order_image_route(image_id):
+        """Rota para excluir uma imagem de ordem de serviço"""
+        # Criar instância do formulário para validação CSRF
+        from forms import DeleteImageForm
+        form = DeleteImageForm()
+        
+        # Buscar imagem para obter o service_order_id antes de qualquer validação
+        image = ServiceOrderImage.query.get_or_404(image_id)
+        service_order_id = image.service_order_id
+        
+        if form.validate_on_submit():
+            # Removida restrição para exclusão de imagens em OS fechadas
+            service_order = ServiceOrder.query.get(service_order_id)
+            
+            # Excluir a imagem
+            success, message = delete_service_order_image(image_id)
+            
+            if success:
+                flash('Imagem excluída com sucesso!', 'success')
+                log_action(
+                    'Exclusão de imagem',
+                    'service_order_image',
+                    image_id,
+                    f"Imagem removida da OS #{service_order_id}"
+                )
+            else:
+                flash(f'Erro ao excluir imagem: {message}', 'danger')
+        else:
+            # Se falhou na validação CSRF
+            flash('Erro de validação do formulário. Tente novamente.', 'danger')
+            
+        return redirect(url_for('view_service_order', id=service_order_id))
+    
+    @app.route('/os/fechar_rapido/<int:id>', methods=['GET'])
+    @login_required
+    def quick_close_service_order(id):
+        """Rota para fechar rapidamente uma ordem de serviço sem formulário adicional"""
+        if not (current_user.role.name == 'admin' or current_user.role.name == 'gerente'):
+            flash('Você não tem permissão para fechar ordens de serviço.', 'danger')
+            return redirect(url_for('service_orders'))
+        
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Verificar se já está fechada
+        if service_order.status == ServiceOrderStatus.fechada:
+            flash('Esta OS já está fechada.', 'info')
+            return redirect(url_for('service_orders'))
+        
+        try:
+            # Gerar o número da nota automaticamente
+            from utils import get_next_invoice_number
+            
+            # Atualizar status e datas
+            service_order.status = ServiceOrderStatus.fechada
+            service_order.closed_at = datetime.utcnow()
+            service_order.invoice_number = get_next_invoice_number()
+            service_order.invoice_date = datetime.utcnow()
+            
+            # Se tiver valor estimado, usá-lo como valor final
+            # Caso contrário, usar o valor 0 (o usuário poderá editar depois)
+            invoice_amount = service_order.estimated_value or 0
+            service_order.invoice_amount = invoice_amount
+            
+            # Verificamos se o cliente existe antes de tentar criar a entrada financeira
+            if not service_order.client:
+                flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
+                return redirect(url_for('service_orders'))
+                
+            # Verifica se já existe um lançamento financeiro para esta OS
+            existing_entry = FinancialEntry.query.filter_by(
+                service_order_id=service_order.id,
+                type=FinancialEntryType.entrada
+            ).first()
+            
+            # Se não existir entrada financeira e houver valor, criar uma
+            if not existing_entry and invoice_amount and invoice_amount > 0:
+                financial_entry = FinancialEntry(
+                    service_order_id=service_order.id,
+                    description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
+                    amount=invoice_amount,
+                    type=FinancialEntryType.entrada,
+                    date=datetime.utcnow(),
+                    created_by=current_user.id
+                )
+                db.session.add(financial_entry)
+            
+            db.session.commit()
+            
+            flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
+            log_action(
+                'Fechamento de OS',
+                'service_order',
+                service_order.id,
+                f"OS fechada rapidamente - Valor: R${invoice_amount}"
+            )
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao fechar OS: {str(e)}', 'danger')
+            app.logger.error(f"Erro ao fechar OS {id}: {str(e)}")
+        
+        return redirect(url_for('service_orders'))
+    
+    @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
+    @login_required
+    def close_service_order(id):
+        service_order = ServiceOrder.query.get_or_404(id)
+        
+        # Check if order is already closed
+        if service_order.status == ServiceOrderStatus.fechada:
+            flash('Esta OS já está fechada.', 'warning')
+            return redirect(url_for('view_service_order', id=id))
+            
+        form = CloseServiceOrderForm()
+        
+        if form.validate_on_submit():
+            try:
+                # Gerar o número da nota automaticamente
+                from utils import get_next_invoice_number
+                
+                service_order.status = ServiceOrderStatus.fechada
+                service_order.closed_at = datetime.utcnow()
+                service_order.invoice_number = get_next_invoice_number()
+                service_order.invoice_date = datetime.utcnow()
+                service_order.invoice_amount = form.invoice_amount.data
+                service_order.service_details = form.service_details.data
+                
+                # Informações sobre cálculo de KM (se incluídas)
+                km_info = ""
+                if form.include_km_calculation.data and form.distance_km.data and form.price_per_km.data:
+                    distance_km = form.distance_km.data
+                    price_per_km = form.price_per_km.data
+                    km_total = distance_km * price_per_km
+                    km_info = f" (Inclui deslocamento: {distance_km} KM x R$ {price_per_km} = R$ {km_total})"
+                
+                # Verificamos se o cliente existe antes de tentar criar a entrada financeira
+                if not service_order.client:
+                    flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
+                    return redirect(url_for('view_service_order', id=id))
+                
+                # Verificar se já existe um lançamento financeiro para esta OS
+                existing_entry = FinancialEntry.query.filter_by(
+                    service_order_id=service_order.id,
+                    type=FinancialEntryType.entrada
+                ).first()
+                
+                # Se já existe, atualiza o valor; senão, cria um novo lançamento
+                if existing_entry:
+                    existing_entry.amount = form.invoice_amount.data
+                    existing_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
+                    db.session.commit()
+                    
+                    log_action(
+                        'Atualização Financeira',
+                        'financial',
+                        existing_entry.id,
+                        f"Valor da OS #{service_order.id} atualizado para {form.invoice_amount.data}{km_info}"
+                    )
+                else:
+                    # Create new financial entry
+                    financial_entry = FinancialEntry(
+                        service_order_id=service_order.id,
+                        description=f"Pagamento OS #{service_order.id} - {service_order.client.name}{km_info}",
+                        amount=form.invoice_amount.data,
+                        type=FinancialEntryType.entrada,
+                        created_by=current_user.id
+                    )
+                    
+                    db.session.add(financial_entry)
+                    db.session.commit()
+                
+                flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
+                log_action(
+                    'Fechamento de OS',
+                    'service_order',
+                    service_order.id,
+                    f"OS fechada - Valor: R${form.invoice_amount.data}{km_info}"
+                )
+                
+                return redirect(url_for('view_service_order', id=id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao fechar OS: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao fechar OS {id}: {str(e)}")
+                return redirect(url_for('view_service_order', id=id))
+            
+        return render_template(
+            'service_orders/close.html',
+            service_order=service_order,
+            form=form
+        )
+        
     @app.route('/ordem/<int:id>/excluir')
     @login_required
     def delete_service_order(id):
@@ -2339,13 +2650,13 @@ def register_routes(app):
                 
                 try:
                     log_action(
-                        'Criação de Peça',
+                        'Cadastro de Peça',
                         'part',
                         part.id,
                         f'Peça {part.name} cadastrada'
                     )
                 except Exception:
-                    # Se falhar ao registrar o log, não interromper o fluxo principal
+                    # Se falhar ao registrar log, não interromper o fluxo principal
                     app.logger.error(f"Erro ao registrar log de criação da peça {part.id}")
                     
                 flash('Peça cadastrada com sucesso!', 'success')
@@ -2353,7 +2664,7 @@ def register_routes(app):
                 
             except IntegrityError:
                 db.session.rollback()
-                flash('Erro de integridade ao criar a peça. Verifique se já existe uma peça com o mesmo número.', 'danger')
+                flash('Erro de integridade ao cadastrar peça. Verifique se já existe uma peça com o mesmo número.', 'danger')
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao cadastrar peça: {str(e)}', 'danger')
@@ -2397,7 +2708,17 @@ def register_routes(app):
             form.location.data = part.location
         
         if form.validate_on_submit():
-            # Atualizar a peça
+            # Processar upload de imagem, se houver
+            if form.image.data:
+                image = form.image.data
+                # Gerar nome de arquivo único
+                from werkzeug.utils import secure_filename
+                filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
+                image_path = os.path.join('static', 'uploads', 'parts', filename)
+                os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
+                image.save(image_path)
+                part.image = filename
+            
             part.name = form.name.data
             part.description = form.description.data
             part.part_number = form.part_number.data
@@ -2435,13 +2756,13 @@ def register_routes(app):
             flash('Não é possível excluir uma peça com vendas registradas!', 'danger')
             return redirect(url_for('view_part', id=part.id))
         
+        name = part.name
+        
         # Remover a imagem, se existir
         if part.image:
             image_path = os.path.join('static', 'uploads', 'parts', part.image)
             if os.path.exists(image_path):
                 os.remove(image_path)
-        
-        name = part.name
         
         db.session.delete(part)
         db.session.commit()
@@ -2551,10 +2872,10 @@ def register_routes(app):
             sale = PartSale(
                 part_id=form.part_id.data,
                 client_id=form.client_id.data if form.client_id.data else None,
-                service_order_id=form.service_order_id.data if form.service_order_id.data != 0 else None,
+                service_order_id=form.service_order_id.data if form.service_order_id.data else None,
                 quantity=form.quantity.data,
-                unit_price=form.unit_price.data or 0,
-                total_price=form.total_price.data or 0,
+                unit_price=form.unit_price.data,
+                total_price=form.total_price.data,
                 invoice_number=form.invoice_number.data,
                 notes=form.notes.data,
                 created_by=current_user.id
@@ -2687,7 +3008,7 @@ def register_routes(app):
                 'Ajuste de Estoque',
                 'part',
                 part.id,
-                f"Estoque ajustado de {old_quantity} para {quantity} unidades. Motivo: {reason}"
+                f'Estoque ajustado de {old_quantity} para {quantity} unidades. Motivo: {reason}'
             )
             
             flash('Estoque ajustado com sucesso!', 'success')
@@ -2695,7 +3016,7 @@ def register_routes(app):
         
         return render_template('parts/adjust_stock.html', part=part, form=form)
 
-    # Rotas para Pedidos a Fornecedores
+    # Rotas de Pedidos a Fornecedores
     @app.route('/pedidos-fornecedor')
     @login_required
     def supplier_orders():
@@ -2936,12 +3257,13 @@ def register_routes(app):
             # Adicionar novo item ao pedido
             item = OrderItem(
                 order_id=order.id,
-                part_id=form.part_id.data,
+                stock_item_id=form.stock_item_id.data if form.stock_item_id.data else None,
                 description=form.description.data,
                 quantity=form.quantity.data,
-                unit_price=form.unit_price.data,
-                total_price=form.total_price.data,
-                status=OrderStatus.pendente
+                unit_price=form.unit_price.data or 0,
+                total_price=form.total_price.data or 0,
+                status=form.status.data,
+                notes=form.notes.data
             )
             
             db.session.add(item)
@@ -2987,6 +3309,11 @@ def register_routes(app):
             
             flash('Item atualizado com sucesso!', 'success')
             return redirect(url_for('view_supplier_order', id=order_id))
+        
+        elif request.method == 'POST':
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'Erro no campo {getattr(form, field).label.text}: {error}', 'danger')
         
         return render_template('supplier_orders/edit_item.html', form=form, item=item)
     
@@ -3192,7 +3519,7 @@ def register_routes(app):
                     # Gerar nome único com uuid
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     # Diretório para salvar as imagens
-                    upload_folder = os.path.join('static', 'uploads', 'stock')
+                    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'stock')
                     os.makedirs(upload_folder, exist_ok=True)
                     # Caminho completo do arquivo
                     filepath = os.path.join(upload_folder, unique_filename)
@@ -3293,18 +3620,15 @@ def register_routes(app):
                 if form.image.data and form.image.data.filename:
                     # Remover imagem anterior se existir
                     if item.image:
-                        try:
-                            old_image_path = os.path.join('static', 'uploads', 'stock', item.image)
-                            if os.path.exists(old_image_path):
-                                os.remove(old_image_path)
-                        except Exception as e:
-                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
+                        old_image_path = os.path.join(current_app.static_folder, item.image)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
                     
                     filename = secure_filename(form.image.data.filename)
                     # Gerar nome único com uuid
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     # Diretório para salvar as imagens
-                    upload_folder = os.path.join('static', 'uploads', 'stock')
+                    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'stock')
                     os.makedirs(upload_folder, exist_ok=True)
                     # Caminho completo do arquivo
                     filepath = os.path.join(upload_folder, unique_filename)
@@ -3330,8 +3654,8 @@ def register_routes(app):
                 
             except Exception as e:
                 db.session.rollback()
-                flash(f'Erro ao editar item de estoque: {str(e)}', 'danger')
-                app.logger.error(f"Erro ao editar item de estoque {id}: {str(e)}")
+                app.logger.error(f"Erro ao editar item de estoque: {str(e)}")
+                flash(f'Erro ao editar item: {str(e)}', 'danger')
         
         # Preencher o campo de data de validade no formato correto
         if request.method == 'GET' and item.expiration_date:
@@ -3523,3 +3847,804 @@ def register_routes(app):
                 'success': False,
                 'message': f'Erro ao processar: {str(e)}'
             })
+
+    # Initialize the first admin user if no users exist
+    def create_initial_admin():
+        # Verificar se a tabela de usuários existe
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if not inspector.has_table('user'):
+            return
+
+        # Verificar se a coluna username existe
+        columns = [c['name'] for c in inspector.get_columns('user')]
+        if 'username' not in columns:
+            print("Coluna username não existe. Migrando o banco de dados...")
+            # A coluna username não existe, então precisamos criar o esquema do zero
+            db.drop_all()
+            db.create_all()
+            
+        # Criar o admin se não houver usuários
+        if User.query.count() == 0:
+            admin = User(
+                username='admin',
+                name='Administrador',
+                email='admin@samape.com',
+                role=UserRole.admin,
+                active=True
+            )
+            admin.set_password('admin123')
+            
+            db.session.add(admin)
+            db.session.commit()
+            
+            print("Admin user created: username=admin, password=admin123")
+            
+    # Register function to be called with app context in app.py
+    app.create_initial_admin = create_initial_admin
+    
+    @app.route('/criar_dados_teste')
+    @login_required
+    def criar_dados_teste():
+        """Rota temporária para criar dados de teste no sistema."""
+        from create_test_data import create_test_data
+        
+        try:
+            result = create_test_data()
+            if result:
+                flash('Dados de teste criados com sucesso!', 'success')
+            else:
+                flash('Falha ao criar dados de teste.', 'danger')
+        except Exception as e:
+            app.logger.error(f'Erro ao criar dados de teste: {str(e)}')
+            flash(f'Erro ao criar dados de teste: {str(e)}', 'danger')
+            
+        return redirect(url_for('dashboard'))
+        
+    # Rotas para Controle de Frota
+    @app.route('/frota')
+    @login_required
+    def fleet():
+        """Lista de veículos da frota"""
+        try:
+            # Adicionar logging
+            app.logger.info("Acessando página de frota")
+            
+            # Contador de estatísticas
+            stats = {
+                'active': Vehicle.query.filter_by(status=VehicleStatus.ativo).count(),
+                'maintenance': Vehicle.query.filter_by(status=VehicleStatus.em_manutencao).count(),
+                'inactive': Vehicle.query.filter_by(status=VehicleStatus.inativo).count(),
+                'total': Vehicle.query.count()
+            }
+            
+            # Inicializar variáveis com valores padrão
+            page = request.args.get('page', 1, type=int)
+            per_page = int(get_system_setting('items_per_page', '20'))
+            
+            today = datetime.now().date()
+            
+            app.logger.info("Preparando query para lista de veículos")
+            
+            # Query base
+            query = Vehicle.query
+            
+            # Aplicar filtros
+            status_filter = request.args.get('status')
+            tipo_filter = request.args.get('tipo')
+            busca = request.args.get('busca')
+            
+            if status_filter:
+                app.logger.info(f"Aplicando filtro por status: {status_filter}")
+                query = query.filter(Vehicle.status == VehicleStatus[status_filter])
+                
+            if tipo_filter:
+                # Filtro de tipo removido - campo não existe na tabela
+                app.logger.info(f"Filtro por tipo ignorado (campo não existe): {tipo_filter}")
+                pass
+                
+            if busca:
+                app.logger.info(f"Aplicando busca: {busca}")
+                query = query.filter(
+                    or_(
+                        Vehicle.plate.ilike(f'%{busca}%'),
+                        Vehicle.brand.ilike(f'%{busca}%'),
+                        Vehicle.model.ilike(f'%{busca}%'),
+                        Vehicle.chassis.ilike(f'%{busca}%')
+                    )
+                )
+            
+            # Ordenação
+            order_by = request.args.get('order_by', 'plate')
+            order_dir = request.args.get('order_dir', 'asc')
+            app.logger.info(f"Ordenando por: {order_by} ({order_dir})")
+            
+            if order_by == 'plate':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.plate)
+                else:
+                    query = query.order_by(Vehicle.plate.desc())
+            elif order_by == 'type':
+                if order_dir == 'asc':
+                    # Ordenação por tipo removida - campo não existe na tabela
+                    query = query.order_by(Vehicle.brand)
+                else:
+                    # Ordenação por tipo removida - campo não existe na tabela
+                    query = query.order_by(Vehicle.brand.desc())
+            elif order_by == 'status':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.status)
+                else:
+                    query = query.order_by(Vehicle.status.desc())
+            elif order_by == 'brand':
+                if order_dir == 'asc':
+                    query = query.order_by(Vehicle.brand)
+                else:
+                    query = query.order_by(Vehicle.brand.desc())
+            else:
+                query = query.order_by(Vehicle.plate)
+            
+            # Paginação
+            app.logger.info(f"Aplicando paginação: página {page}, {per_page} itens por página")
+            vehicles = query.paginate(page=page, per_page=per_page)
+            
+            # Obter as últimas movimentações (manutenções e abastecimentos)
+            app.logger.info("Buscando últimas movimentações (manutenções e abastecimentos)")
+            
+            try:
+                # Consulta para manutenções
+                maintenance_records = db.session.query(
+                    VehicleMaintenance.id.label('record_id'),
+                    VehicleMaintenance.vehicle_id,
+                    VehicleMaintenance.date,
+                    VehicleMaintenance.description,
+                    VehicleMaintenance.cost,
+                    VehicleMaintenance.created_at,
+                    db.literal('maintenance').label('record_type')
+                ).order_by(VehicleMaintenance.created_at.desc()).limit(5).all()
+                
+                # Consulta para abastecimentos
+                refueling_records = db.session.query(
+                    Refueling.id.label('record_id'),
+                    Refueling.vehicle_id,
+                    Refueling.date,
+                    db.literal('Abastecimento').label('description'),
+                    Refueling.total_cost.label('cost'),
+                    Refueling.created_at,
+                    db.literal('refueling').label('record_type')
+                ).order_by(Refueling.created_at.desc()).limit(5).all()
+                
+                # Combinar resultados e ordenar por data de criação
+                latest_records = sorted(
+                    maintenance_records + refueling_records,
+                    key=lambda x: x.created_at,
+                    reverse=True
+                )[:10]  # Limitar a 10 registros
+                
+                # Obter informações dos veículos associados
+                for record in latest_records:
+                    vehicle = Vehicle.query.get(record.vehicle_id)
+                    if vehicle:
+                        setattr(record, 'vehicle', vehicle)
+            except Exception as e:
+                app.logger.error(f"Erro ao buscar movimentações recentes: {str(e)}")
+                latest_records = []
+            
+            app.logger.info(f"Renderizando template com {vehicles.total} veículos e {len(latest_records)} movimentações recentes")
+            
+            return render_template(
+                'fleet/index.html',
+                vehicles=vehicles,
+                status_filter=status_filter,
+                tipo_filter=tipo_filter,
+                busca=busca,
+                order_by=order_by,
+                order_dir=order_dir,
+                vehicle_statuses=VehicleStatus,
+                today=today,
+                stats=stats,
+                latest_records=latest_records
+            )
+        except Exception as e:
+            app.logger.error(f"Erro ao acessar página de frota: {str(e)}")
+            import traceback
+            app.logger.error(traceback.format_exc())
+            flash(f"Erro ao carregar página de frota: {str(e)}", "danger")
+            return redirect(url_for('dashboard'))
+        
+    @app.route('/frota/novo', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def new_vehicle():
+        """Adicionar novo veículo à frota"""
+        form = VehicleForm()
+        
+        if form.validate_on_submit():
+            try:
+                # Tratar datas
+                acquisition_date = None
+                if form.acquisition_date.data:
+                    acquisition_date = datetime.strptime(form.acquisition_date.data, '%Y-%m-%d').date()
+                
+                insurance_expiry = None
+                if form.insurance_expiry.data:
+                    insurance_expiry = datetime.strptime(form.insurance_expiry.data, '%Y-%m-%d').date()
+                
+                next_maintenance_date = None
+                if form.next_maintenance_date.data:
+                    next_maintenance_date = datetime.strptime(form.next_maintenance_date.data, '%Y-%m-%d').date()
+                
+                # Processar imagem, se houver
+                image_filename = None
+                if form.image.data:
+                    image = form.image.data
+                    
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    image_filename = filename
+                
+                # Criar objeto de veículo
+                vehicle = Vehicle(
+                    # Não adicionar campo type - não existe no banco de dados
+                    plate=form.plate.data,
+                    brand=form.brand.data,
+                    model=form.model.data,
+                    year=form.year.data,
+                    color=form.color.data,
+                    chassis=form.chassis.data,
+                    renavam=form.renavam.data,
+                    fuel_type=FuelType.flex if not form.fuel_type.data else 
+                       FuelType[form.fuel_type.data] if form.fuel_type.data in [fuel_type.name for fuel_type in FuelType] else FuelType.flex,
+                    acquisition_date=acquisition_date,
+                    insurance_policy=form.insurance_policy.data,
+                    insurance_expiry=insurance_expiry,
+                    current_km=form.current_km.data,
+                    next_maintenance_date=next_maintenance_date,
+                    next_maintenance_km=form.next_maintenance_km.data,
+                    responsible_id=form.responsible_id.data if form.responsible_id.data != 0 else None,
+                    status=VehicleStatus[form.status.data],
+                    image=image_filename,
+                    notes=form.notes.data
+                )
+                
+                db.session.add(vehicle)
+                db.session.commit()
+                
+                flash('Veículo adicionado com sucesso!', 'success')
+                log_action(
+                    'Cadastro de Veículo',
+                    'vehicle',
+                    vehicle.id,
+                    f"Veículo placa {vehicle.plate} cadastrado"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao adicionar veículo: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao cadastrar veículo: {str(e)}")
+        
+        return render_template('fleet/new.html', form=form)
+        
+    @app.route('/frota/<int:id>')
+    @login_required
+    def view_vehicle(id):
+        """Visualizar detalhes de um veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        # Obter histórico de manutenção
+        maintenance_history = VehicleMaintenance.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleMaintenance.date.desc()).all()
+        
+        # Obter histórico de abastecimento
+        refueling_history = Refueling.query.filter_by(vehicle_id=vehicle.id).order_by(Refueling.date.desc()).all()
+        
+        # Data atual para o modal de abastecimento
+        now_date = datetime.now().strftime('%Y-%m-%d')
+        
+        return render_template(
+            'fleet/view.html',
+            vehicle=vehicle,
+            maintenance_history=maintenance_history,
+            refueling_history=refueling_history,
+            now_date=now_date
+        )
+        
+    @app.route('/frota/<int:id>/editar', methods=['GET', 'POST'])
+    @login_required
+    @manager_required
+    def edit_vehicle(id):
+        """Editar veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        form = VehicleForm(obj=vehicle)
+        
+        if request.method == 'GET':
+            # Converter datas para o formato correto para o formulário
+            if vehicle.acquisition_date:
+                form.acquisition_date.data = vehicle.acquisition_date.strftime('%Y-%m-%d')
+            if vehicle.insurance_expiry:
+                form.insurance_expiry.data = vehicle.insurance_expiry.strftime('%Y-%m-%d')
+            if vehicle.next_maintenance_date:
+                form.next_maintenance_date.data = vehicle.next_maintenance_date.strftime('%Y-%m-%d')
+                
+            # Lidar com dados do enum
+            # type removido - campo não existe no banco de dados
+            form.status.data = vehicle.status.name
+            
+            # Definir responsável
+            if vehicle.responsible_id is None:
+                form.responsible_id.data = 0
+        
+        if form.validate_on_submit():
+            try:
+                # Tratar datas
+                acquisition_date = None
+                if form.acquisition_date.data:
+                    acquisition_date = datetime.strptime(form.acquisition_date.data, '%Y-%m-%d').date()
+                
+                insurance_expiry = None
+                if form.insurance_expiry.data:
+                    insurance_expiry = datetime.strptime(form.insurance_expiry.data, '%Y-%m-%d').date()
+                
+                next_maintenance_date = None
+                if form.next_maintenance_date.data:
+                    next_maintenance_date = datetime.strptime(form.next_maintenance_date.data, '%Y-%m-%d').date()
+                
+                # Processar imagem, se houver
+                if form.image.data:
+                    # Remover imagem anterior se existir
+                    if vehicle.image:
+                        try:
+                            old_image_path = os.path.join('static', 'uploads', 'vehicles', vehicle.image)
+                            if os.path.exists(old_image_path):
+                                os.remove(old_image_path)
+                        except Exception as e:
+                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
+                    
+                    image = form.image.data
+                    
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    image.save(os.path.join(upload_folder, filename))
+                    vehicle.image = filename
+                
+                # Atualizar campos do veículo
+                # type removido - campo não existe no banco de dados
+                vehicle.plate = form.plate.data
+                vehicle.brand = form.brand.data
+                vehicle.model = form.model.data
+                vehicle.year = form.year.data
+                vehicle.color = form.color.data
+                vehicle.chassis = form.chassis.data
+                vehicle.renavam = form.renavam.data
+                vehicle.acquisition_date = acquisition_date
+                # Tratar o tipo de combustível corretamente
+                try:
+                    if form.fuel_type.data:
+                        # Verificar se o valor está entre os valores válidos do enum
+                        valid_fuel_types = [fuel_type.name for fuel_type in FuelType]
+                        if form.fuel_type.data in valid_fuel_types:
+                            vehicle.fuel_type = FuelType[form.fuel_type.data]
+                        else:
+                            # Valor padrão se não for um tipo válido
+                            vehicle.fuel_type = FuelType.flex
+                    else:
+                        vehicle.fuel_type = FuelType.flex
+                except Exception as e:
+                    # Em caso de erro, use um valor padrão
+                    app.logger.error(f"Erro ao definir tipo de combustível: {str(e)}")
+                    vehicle.fuel_type = FuelType.flex
+                vehicle.insurance_policy = form.insurance_policy.data
+                vehicle.insurance_expiry = insurance_expiry
+                vehicle.current_km = form.current_km.data
+                vehicle.next_maintenance_km = form.next_maintenance_km.data
+                vehicle.next_maintenance_date = next_maintenance_date
+                vehicle.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
+                vehicle.status = VehicleStatus[form.status.data]
+                vehicle.notes = form.notes.data
+                
+                db.session.commit()
+                
+                flash('Veículo atualizado com sucesso!', 'success')
+                log_action(
+                    'Edição de Veículo',
+                    'vehicle',
+                    vehicle.id,
+                    f"Veículo placa {vehicle.plate} atualizado"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao atualizar veículo: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao atualizar veículo {id}: {str(e)}")
+        
+        return render_template('fleet/edit.html', form=form, vehicle=vehicle)
+        
+    @app.route('/frota/<int:id>/excluir', methods=['GET', 'POST'])
+    @login_required
+    # Removida restrição @role_required para permitir acesso a todos os usuários logados
+    def delete_vehicle(id):
+        """Excluir veículo - redirecionar para a versão correta"""
+        # Redirecionar para a nova rota de exclusão de veículos
+        return redirect(url_for('delete_fleet_vehicle', id=id))
+        
+    @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
+    @login_required
+    # Removida restrição @manager_required para permitir acesso a todos os usuários logados
+    def new_vehicle_maintenance(id):
+        """Registrar nova manutenção para um veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        form = VehicleMaintenanceForm()
+        
+        # Pré-selecionar o veículo
+        form.vehicle_id.data = vehicle.id
+        
+        # Passar o veículo para o template
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Adicionar log para debug
+        app.logger.info(f"Nova manutenção - método: {request.method}")
+        
+        if request.method == 'POST':
+            app.logger.info(f"Form data: {request.form}")
+            app.logger.info(f"Form errors: {form.errors}")
+            app.logger.info(f"Form válido: {form.validate()}")
+        
+        if form.validate_on_submit():
+            app.logger.info("Formulário válido, iniciando processamento")
+            try:
+                # Garantir que a data seja um objeto datetime
+                maintenance_date = datetime.now()
+                if form.date.data:
+                    try:
+                        if isinstance(form.date.data, str):
+                            maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d')
+                        else:
+                            maintenance_date = form.date.data
+                        app.logger.info(f"Data de manutenção: {maintenance_date}")
+                    except Exception as err:
+                        app.logger.error(f"Erro ao converter data: {err}, usando data atual")
+                
+                # Garantir que performed_by_id seja um inteiro ou None
+                performed_by = current_user.id
+                if form.performed_by_id.data and form.performed_by_id.data != "0":
+                    try:
+                        performed_by = int(form.performed_by_id.data)
+                    except (ValueError, TypeError):
+                        pass
+                app.logger.info(f"Responsável pela manutenção: {performed_by}")
+                
+                # Extrair e validar campos do formulário
+                description = form.description.data or "Manutenção não especificada"
+                mileage = form.mileage.data or 0
+                cost = form.cost.data or 0.0
+                workshop = form.service_provider.data or ""
+                invoice_number = form.invoice_number.data or ""
+                
+                app.logger.info(f"Dados do formulário processados: descrição='{description}', km={mileage}, custo={cost}")
+                
+                # Criar objeto de manutenção
+                maintenance = VehicleMaintenance()
+                maintenance.vehicle_id = vehicle.id
+                maintenance.date = maintenance_date
+                maintenance.odometer = mileage
+                maintenance.description = description
+                maintenance.cost = cost
+                maintenance.workshop = workshop
+                maintenance.invoice_number = invoice_number
+                maintenance.created_by = performed_by
+                
+                app.logger.info(f"Objeto manutenção pronto para inserção: {maintenance}")
+                db.session.add(maintenance)
+                
+                # Atualizar hodômetro do veículo se o valor informado é maior que o atual
+                if mileage > 0 and (vehicle.current_km is None or mileage > vehicle.current_km):
+                    vehicle.current_km = mileage
+                    app.logger.info(f"Atualizando hodômetro do veículo para: {mileage}")
+                
+                # Usar flush para obter o ID da manutenção sem confirmar a transação
+                db.session.flush()
+                app.logger.info(f"Manutenção ID após flush: {maintenance.id}")
+                
+                # Criar entrada financeira se houver custo
+                if cost > 0:
+                    financial_entry = FinancialEntry()
+                    financial_entry.description = f"Manutenção do veículo placa {vehicle.plate} - {description[:50]}"
+                    financial_entry.amount = cost
+                    financial_entry.type = FinancialEntryType.saida
+                    financial_entry.date = maintenance_date
+                    financial_entry.created_by = current_user.id
+                    financial_entry.entry_type = 'vehicle_maintenance'
+                    financial_entry.reference_id = maintenance.id
+                    
+                    db.session.add(financial_entry)
+                    app.logger.info(f"Entrada financeira criada: {financial_entry}")
+                
+                # Confirmar toda a transação de uma vez
+                db.session.commit()
+                app.logger.info("Transação confirmada com sucesso!")
+                
+                flash('Manutenção registrada com sucesso!', 'success')
+                log_action(
+                    'Registro de Manutenção',
+                    'vehicle_maintenance',
+                    maintenance.id,
+                    f"Manutenção registrada para o veículo placa {vehicle.plate}"
+                )
+                
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                app.logger.error(f"Erro ao registrar manutenção: {str(e)}")
+                app.logger.exception(e)  # Log do traceback completo
+                flash(f'Erro ao registrar manutenção: {str(e)}', 'danger')
+        
+        return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle, today=today)
+        
+    @app.route('/frota/veiculos/<int:id>/excluir', methods=['GET', 'POST'])
+    @login_required
+    def delete_fleet_vehicle(id):
+        """Rota para excluir um veículo da frota (método legado)"""
+        # Verificar se o usuário é administrador
+        if current_user.role.value != 'admin':
+            flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
+            return redirect(url_for('fleet'))
+            
+        app.logger.info(f"Tentando excluir veículo ID: {id} via método legado {request.method}")
+        
+        # Redirecionar para o novo método de exclusão
+        if request.method == 'POST':
+            return redirect(url_for('excluir_veiculo_direct', id=id))
+        else:
+            # Para solicitações GET, apenas redirecionar para a página de frota
+            return redirect(url_for('fleet'))
+            
+    @app.route('/excluir-veiculo/<int:id>', methods=['POST'])
+    @login_required
+    def excluir_veiculo_direct(id):
+        """Rota para excluir veículo - apenas para administradores"""
+        # Verificar se o usuário é administrador 
+        if current_user.role.value != 'admin':
+            flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
+            return redirect(url_for('fleet'))
+            
+        app.logger.info(f"Tentando excluir veículo ID: {id}, usuário: {current_user.username}")
+        
+        try:
+            # Buscar o veículo
+            vehicle = Vehicle.query.get_or_404(id)
+            vehicle_info = f"{vehicle.plate} ({vehicle.brand} {vehicle.model})"
+            
+            # Excluir registros relacionados primeiro
+            # Manutenções
+            VehicleMaintenance.query.filter_by(vehicle_id=id).delete()
+            # Abastecimentos
+            Refueling.query.filter_by(vehicle_id=id).delete()
+            
+            # Excluir o veículo
+            db.session.delete(vehicle)
+            db.session.commit()
+            
+            # Log da ação
+            app.logger.info(f"Veículo {vehicle_info} excluído com sucesso por {current_user.username}")
+            flash(f'Veículo {vehicle_info} excluído com sucesso!', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Erro ao excluir veículo {id}: {str(e)}")
+            flash(f'Erro ao excluir o veículo: {str(e)}', 'danger')
+            
+        return redirect(url_for('fleet'))
+    
+    @app.route('/frota/veiculos/<int:id>/abastecimento', methods=['GET', 'POST'])
+    @login_required
+    # Removida a restrição @manager_required para permitir que todos os usuários registrem abastecimentos
+    def register_refueling(id):
+        """Rota para registrar abastecimento de veículo"""
+        vehicle = Vehicle.query.get_or_404(id)
+        
+        # Estamos usando o formulário diretamente no template ao invés do objeto forms.RefuelingForm
+        
+        if request.method == 'GET':
+            # Pré-preencher o formulário com valores padrão
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            return render_template('fleet/refueling.html', vehicle=vehicle, today=current_date)
+        
+        if request.method == 'POST':
+            try:
+                # Processar dados do formulário
+                date_str = request.form.get('date')
+                odometer = request.form.get('odometer')
+                fuel_type = request.form.get('fuel_type')
+                liters = request.form.get('liters')
+                price_per_liter = request.form.get('price_per_liter')
+                total_cost = request.form.get('total_cost')
+                gas_station = request.form.get('gas_station')
+                full_tank = 'full_tank' in request.form
+                
+                # Validar campos obrigatórios
+                if not all([date_str, odometer, fuel_type, liters, price_per_liter, total_cost]):
+                    flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
+                    return render_template('fleet/refueling.html', 
+                                          vehicle=vehicle, 
+                                          today=date_str or datetime.now().strftime('%Y-%m-%d'))
+                
+                try:
+                    # Converter valores
+                    refueling_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    odometer = int(odometer)
+                    liters = float(liters)
+                    price_per_liter = float(price_per_liter)
+                    total_cost = float(total_cost)
+                except ValueError as e:
+                    flash(f'Erro ao converter valores: {str(e)}', 'danger')
+                    return render_template('fleet/refueling.html', 
+                                          vehicle=vehicle, 
+                                          today=date_str or datetime.now().strftime('%Y-%m-%d'))
+                
+                # Criar o registro de abastecimento
+                # Determinar o tipo de combustível correto
+                try:
+                    # Converter o tipo de combustível para o enum correto
+                    fuel_type_enum = FuelType[fuel_type] if fuel_type in [ft.name for ft in FuelType] else FuelType.flex
+                except (KeyError, ValueError):
+                    # Fallback para o tipo padrão se houver erro
+                    fuel_type_enum = FuelType.flex
+                
+                refueling = Refueling(
+                    vehicle_id=vehicle.id,
+                    date=refueling_date,
+                    odometer=odometer,
+                    fuel_type=fuel_type_enum,  # Usando o enum correto
+                    liters=liters,
+                    price_per_liter=price_per_liter,
+                    total_cost=total_cost,
+                    gas_station=gas_station,
+                    full_tank=full_tank,
+                    created_by=current_user.id
+                )
+                
+                # Atualizar a quilometragem atual do veículo
+                if odometer > (vehicle.current_km or 0):
+                    vehicle.current_km = odometer
+                
+                # Primeiro, salvar o registro de abastecimento para obter um ID válido
+                db.session.add(refueling)
+                db.session.flush()  # Isso gera um ID sem confirmar a transação
+                
+                # Agora criar lançamento financeiro com o ID correto do abastecimento
+                financial_entry = FinancialEntry(
+                    date=refueling_date,
+                    amount=total_cost,
+                    description=f"Abastecimento - {vehicle.brand} {vehicle.model} ({vehicle.plate}) - Combustível",
+                    type=FinancialEntryType.saida,
+                    created_by=current_user.id,
+                    entry_type='vehicle_refueling',
+                    reference_id=refueling.id  # Agora o ID é válido
+                )
+                
+                # Adicionar e confirmar a transação
+                db.session.add(financial_entry)
+                db.session.commit()
+                
+                # Registrar ação no log
+                log_action(
+                    'Registro de Abastecimento',
+                    'vehicle_refueling',
+                    refueling.id,
+                    f"Abastecimento registrado para o veículo {vehicle.plate}"
+                )
+                
+                flash(f'Abastecimento registrado com sucesso! Custo total: R$ {total_cost:.2f}', 'success')
+                return redirect(url_for('view_vehicle', id=vehicle.id))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao registrar abastecimento: {str(e)}', 'danger')
+                app.logger.error(f"Erro ao registrar abastecimento para veículo {id}: {str(e)}")
+                return redirect(url_for('view_vehicle', id=id))
+        
+        return redirect(url_for('view_vehicle', id=id))
+    
+    @app.route('/frota/manutencoes')
+    @login_required
+    def vehicle_maintenance_history():
+        """Histórico de manutenções e abastecimentos de todos os veículos"""
+        page = request.args.get('page', 1, type=int)
+        per_page = int(get_system_setting('items_per_page', '20'))
+        view_type = request.args.get('view', 'maintenance')  # 'maintenance' ou 'refueling'
+        
+        # Obter lista de veículos para o filtro
+        vehicles = Vehicle.query.order_by(Vehicle.plate).all()
+        
+        # Aplicar filtros
+        vehicle_id = request.args.get('vehicle_id', type=int)
+        data_inicio = request.args.get('data_inicio')
+        data_fim = request.args.get('data_fim')
+        
+        # Converter datas se fornecidas
+        inicio_date = None
+        fim_date = None
+        
+        if data_inicio:
+            try:
+                inicio_date = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            except ValueError:
+                flash('Data inicial inválida.', 'warning')
+                
+        if data_fim:
+            try:
+                fim_date = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            except ValueError:
+                flash('Data final inválida.', 'warning')
+        
+        # Variáveis para os resultados
+        maintenance_history = None
+        refuelings = None
+        
+        # Dependendo do tipo de visualização, obtemos manutenções ou abastecimentos
+        if view_type != 'refueling':  # Padrão: manutenções
+            # Query para manutenções
+            query = VehicleMaintenance.query
+            
+            if vehicle_id:
+                query = query.filter(VehicleMaintenance.vehicle_id == vehicle_id)
+                
+            if inicio_date:
+                query = query.filter(VehicleMaintenance.date >= inicio_date)
+                
+            if fim_date:
+                query = query.filter(VehicleMaintenance.date <= fim_date)
+            
+            # Ordenação por data (coluna real, não propriedade)
+            query = query.order_by(VehicleMaintenance.date.desc())
+            
+            # Paginação
+            maintenance_history = query.paginate(page=page, per_page=per_page)
+            
+        else:  # 'refueling'
+            # Query para abastecimentos
+            query = Refueling.query
+            
+            if vehicle_id:
+                query = query.filter(Refueling.vehicle_id == vehicle_id)
+                
+            if inicio_date:
+                query = query.filter(Refueling.date >= inicio_date)
+                
+            if fim_date:
+                query = query.filter(Refueling.date <= fim_date)
+            
+            # Ordenação
+            query = query.order_by(Refueling.date.desc())
+            
+            # Paginação
+            refuelings = query.paginate(page=page, per_page=per_page)
+        
+        # Formatação das datas para o template
+        data_inicio_str = data_inicio
+        data_fim_str = data_fim
+        
+        if isinstance(inicio_date, date):
+            data_inicio_str = inicio_date.strftime('%Y-%m-%d')
+            
+        if isinstance(fim_date, date):
+            data_fim_str = fim_date.strftime('%Y-%m-%d')
+        
+        return render_template(
+            'fleet/maintenance_history.html',
+            maintenance_history=maintenance_history,
+            refuelings=refuelings,
+            vehicles=vehicles,
+            vehicle_id=vehicle_id,
+            data_inicio=data_inicio_str,
+            data_fim=data_fim_str,
+            view_type=view_type
+        )
