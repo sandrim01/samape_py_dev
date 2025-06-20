@@ -92,34 +92,34 @@ def register_routes(app):
     def login():
         if current_user.is_authenticated:
             return redirect(url_for('dashboard'))
-        
         form = LoginForm()
-        
         if form.validate_on_submit():
             username = form.username.data
-            
+            print(f"[DEBUG] Username recebido: '{username}'")
+            print(f"[DEBUG] Senha recebida: '{form.password.data}'")
             # Check if user is rate limited
             if check_login_attempts(username):
                 flash('Muitas tentativas de login. Tente novamente mais tarde.', 'danger')
                 return render_template('login.html', form=form)
-            
             user = User.query.filter_by(username=username).first()
-            
+            if user:
+                print(f"[DEBUG] Usuário encontrado: {user.username} | Ativo: {user.active}")
+                print(f"[DEBUG] Hash no banco: {user.password_hash}")
+                senha_ok = user.check_password(form.password.data)
+                print(f"[DEBUG] Resultado check_password: {senha_ok}")
+            else:
+                print("[DEBUG] Usuário não encontrado!")
             if user and user.check_password(form.password.data) and user.active:
                 try:
                     login_user(user, remember=form.remember_me.data)
                     record_login_attempt(username, True)
-                    
                     try:
                         log_action('Login', 'user', user.id)
                     except Exception:
-                        # Se falhar o registro de log, continuar sem interferir no fluxo
                         db.session.rollback()
-                    
                     next_page = request.args.get('next')
                     if not next_page or not next_page.startswith('/'):
                         next_page = url_for('dashboard')
-                    
                     return redirect(next_page)
                 except Exception:
                     db.session.rollback()
@@ -131,7 +131,6 @@ def register_routes(app):
                 except Exception:
                     db.session.rollback()
                 flash('Nome de usuário ou senha inválidos.', 'danger')
-        
         return render_template('login.html', form=form)
 
     @app.route('/logout')
@@ -811,226 +810,7 @@ def register_routes(app):
             flash(f"Erro ao carregar a ordem de serviço: {str(e)}", "danger")
             return redirect(url_for('service_orders'))
 
-    @app.route('/os/<int:id>/editar', methods=['GET', 'POST'])
-    @login_required
-    def edit_service_order(id):
-        service_order = ServiceOrder.query.get_or_404(id)
-        
-        # Removida restrição de edição para OS fechadas
-        form = ServiceOrderForm(obj=service_order)
-        
-        # Load clients for dropdown
-        form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
-        
-        # Load employees for dropdown
-        form.responsible_id.choices = [(0, 'A ser definido')] + [
-            (u.id, u.name) for u in User.query.filter_by(active=True).order_by(User.name).all()
-        ]
-        
-        # Set initial selection for equipment
-        if request.method == 'GET':
-            form.equipment_ids.data = ','.join([str(eq.id) for eq in service_order.equipment])
-            
-            # Handle case where responsible_id is None
-            if service_order.responsible_id is None:
-                form.responsible_id.data = 0
-                
-            # Set invoice_amount if OS is closed
-            if service_order.status.name == 'fechada' and service_order.invoice_amount:
-                form.invoice_amount.data = service_order.invoice_amount
-                
-        if form.validate_on_submit():
-            try:
-                # Verifique se estamos alterando o valor da nota de uma OS fechada
-                # e armazene o valor antigo para comparação
-                old_invoice_amount = None
-                if service_order.status.name == 'fechada' and service_order.invoice_amount:
-                    old_invoice_amount = service_order.invoice_amount
-                
-                service_order.client_id = form.client_id.data
-                service_order.responsible_id = form.responsible_id.data if form.responsible_id.data != 0 else None
-                service_order.description = form.description.data
-                service_order.estimated_value = form.estimated_value.data
-                service_order.status = ServiceOrderStatus[form.status.data]
-                
-                # Se a OS está fechada, atualize o valor total da nota
-                if service_order.status.name == 'fechada' and form.invoice_amount.data:
-                    service_order.invoice_amount = form.invoice_amount.data
-                
-                # Update equipment relationships
-                service_order.equipment = []
-                if form.equipment_ids.data:
-                    equipment_ids = form.equipment_ids.data.split(',')
-                    for eq_id in equipment_ids:
-                        equipment = Equipment.query.get(int(eq_id))
-                        if equipment and equipment.client_id == service_order.client_id:
-                            service_order.equipment.append(equipment)
-                
-                # Salve as alterações na OS
-                db.session.commit()
-                
-                # Se alteramos o valor da nota e existem lançamentos financeiros relacionados
-                # devemos atualizar esses lançamentos
-                if (old_invoice_amount is not None and 
-                    form.invoice_amount.data is not None and 
-                    old_invoice_amount != form.invoice_amount.data):
-                    
-                    # Busque o lançamento financeiro associado à OS
-                    financial_entry = FinancialEntry.query.filter_by(
-                        service_order_id=service_order.id,
-                        type=FinancialEntryType.entrada
-                    ).first()
-                    
-                    if financial_entry:
-                        financial_entry.amount = form.invoice_amount.data
-                        financial_entry.description = f"Pagamento OS #{service_order.id} - {service_order.client.name} (Atualizado)"
-                        db.session.commit()
-                        
-                        log_action(
-                            'Atualização Financeira',
-                            'financial',
-                            financial_entry.id,
-                            f"Valor da OS #{service_order.id} atualizado de {old_invoice_amount} para {form.invoice_amount.data}"
-                        )
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao atualizar OS: {str(e)}', 'danger')
-                app.logger.error(f"Erro ao atualizar OS {id}: {str(e)}")
-                return redirect(url_for('view_service_order', id=service_order.id))
-            
-            # Processar imagens - verificar se há arquivos enviados
-            image_files = request.files.getlist('images')
-            if image_files and any(f.filename for f in image_files):
-                saved_images = save_service_order_images(
-                    service_order, 
-                    image_files, 
-                    form.image_descriptions.data
-                )
-                if saved_images:
-                    flash(f'{len(saved_images)} imagem(ns) adicional(is) anexada(s) com sucesso!', 'info')
-            
-            log_action(
-                'Edição de OS',
-                'service_order',
-                service_order.id,
-                f"OS {id} atualizada"
-            )
-            
-            flash('Ordem de serviço atualizada com sucesso!', 'success')
-            return redirect(url_for('view_service_order', id=service_order.id))
-            
-        return render_template(
-            'service_orders/edit.html',
-            form=form,
-            service_order=service_order
-        )
-
-    @app.route('/os/imagem/<int:image_id>/excluir', methods=['POST'])
-    @login_required
-    def delete_service_order_image_route(image_id):
-        """Rota para excluir uma imagem de ordem de serviço"""
-        # Criar instância do formulário para validação CSRF
-        from forms import DeleteImageForm
-        form = DeleteImageForm()
-        
-        # Buscar imagem para obter o service_order_id antes de qualquer validação
-        image = ServiceOrderImage.query.get_or_404(image_id)
-        service_order_id = image.service_order_id
-        
-        if form.validate_on_submit():
-            # Removida restrição para exclusão de imagens em OS fechadas
-            service_order = ServiceOrder.query.get(service_order_id)
-            
-            # Excluir a imagem
-            success, message = delete_service_order_image(image_id)
-            
-            if success:
-                flash('Imagem excluída com sucesso!', 'success')
-                log_action(
-                    'Exclusão de imagem',
-                    'service_order_image',
-                    image_id,
-                    f"Imagem removida da OS #{service_order_id}"
-                )
-            else:
-                flash(f'Erro ao excluir imagem: {message}', 'danger')
-        else:
-            # Se falhou na validação CSRF
-            flash('Erro de validação do formulário. Tente novamente.', 'danger')
-            
-        return redirect(url_for('view_service_order', id=service_order_id))
-    
-    @app.route('/os/fechar_rapido/<int:id>', methods=['GET'])
-    @login_required
-    def quick_close_service_order(id):
-        """Rota para fechar rapidamente uma ordem de serviço sem formulário adicional"""
-        if not (current_user.role.name == 'admin' or current_user.role.name == 'gerente'):
-            flash('Você não tem permissão para fechar ordens de serviço.', 'danger')
-            return redirect(url_for('service_orders'))
-        
-        service_order = ServiceOrder.query.get_or_404(id)
-        
-        # Verificar se já está fechada
-        if service_order.status == ServiceOrderStatus.fechada:
-            flash('Esta OS já está fechada.', 'info')
-            return redirect(url_for('service_orders'))
-        
-        try:
-            # Gerar o número da nota automaticamente
-            from utils import get_next_invoice_number
-            
-            # Atualizar status e datas
-            service_order.status = ServiceOrderStatus.fechada
-            service_order.closed_at = datetime.utcnow()
-            service_order.invoice_number = get_next_invoice_number()
-            service_order.invoice_date = datetime.utcnow()
-            
-            # Se tiver valor estimado, usá-lo como valor final
-            # Caso contrário, usar o valor 0 (o usuário poderá editar depois)
-            invoice_amount = service_order.estimated_value or 0
-            service_order.invoice_amount = invoice_amount
-            
-            # Verificamos se o cliente existe antes de tentar criar a entrada financeira
-            if not service_order.client:
-                flash('Erro: Cliente não encontrado. Não é possível fechar a OS.', 'danger')
-                return redirect(url_for('service_orders'))
-                
-            # Verifica se já existe um lançamento financeiro para esta OS
-            existing_entry = FinancialEntry.query.filter_by(
-                service_order_id=service_order.id,
-                type=FinancialEntryType.entrada
-            ).first()
-            
-            # Se não existir entrada financeira e houver valor, criar uma
-            if not existing_entry and invoice_amount and invoice_amount > 0:
-                financial_entry = FinancialEntry(
-                    service_order_id=service_order.id,
-                    description=f"Pagamento OS #{service_order.id} - {service_order.client.name}",
-                    amount=invoice_amount,
-                    type=FinancialEntryType.entrada,
-                    date=datetime.utcnow(),
-                    created_by=current_user.id
-                )
-                db.session.add(financial_entry)
-            
-            db.session.commit()
-            
-            flash(f'OS #{service_order.id} fechada com sucesso!', 'success')
-            log_action(
-                'Fechamento de OS',
-                'service_order',
-                service_order.id,
-                f"OS fechada rapidamente - Valor: R${invoice_amount}"
-            )
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erro ao fechar OS: {str(e)}', 'danger')
-            app.logger.error(f"Erro ao fechar OS {id}: {str(e)}")
-        
-        return redirect(url_for('service_orders'))
-    
-    @app.route('/os/<int:id>/fechar', methods=['GET', 'POST'])
+    @app.route('/ordem/<int:id>/fechar', methods=['GET', 'POST'])
     @login_required
     def close_service_order(id):
         service_order = ServiceOrder.query.get_or_404(id)
@@ -2300,6 +2080,7 @@ def register_routes(app):
             app.logger.error(f"Erro ao gerar nota fiscal: {str(e)}")
             return redirect(url_for('view_service_order', id=id))
     
+       
     @app.route('/os/<int:id>/nfe/exportar')
     @login_required
     def export_invoice(id):
@@ -2634,7 +2415,7 @@ def register_routes(app):
                     name=form.name.data,
                     description=form.description.data,
                     part_number=form.part_number.data,
-                    supplier_id=form.supplier_id.data if form.supplier_id.data else None,
+                    supplier_id=form.supplier_id.data,
                     category=form.category.data,
                     subcategory=form.subcategory.data,
                     cost_price=form.cost_price.data,
@@ -2706,552 +2487,6 @@ def register_routes(app):
             form.stock_quantity.data = part.stock_quantity
             form.minimum_stock.data = part.minimum_stock
             form.location.data = part.location
-        
-        if form.validate_on_submit():
-            # Processar upload de imagem, se houver
-            if form.image.data:
-                image = form.image.data
-                # Gerar nome de arquivo único
-                from werkzeug.utils import secure_filename
-                filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
-                image_path = os.path.join('static', 'uploads', 'parts', filename)
-                os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
-                image.save(image_path)
-                part.image = filename
-            
-            part.name = form.name.data
-            part.description = form.description.data
-            part.part_number = form.part_number.data
-            part.supplier_id = form.supplier_id.data if form.supplier_id.data else None
-            part.category = form.category.data
-            part.subcategory = form.subcategory.data
-            part.cost_price = form.cost_price.data
-            part.selling_price = form.selling_price.data
-            part.stock_quantity = form.stock_quantity.data
-            part.minimum_stock = form.minimum_stock.data
-            part.location = form.location.data
-            
-            db.session.commit()
-            
-            log_action(
-                'Edição de Peça',
-                'part',
-                part.id,
-                f'Peça {part.name} atualizada'
-            )
-            
-            flash('Peça atualizada com sucesso!', 'success')
-            return redirect(url_for('view_part', id=part.id))
-        
-        return render_template('parts/edit.html', form=form, part=part)
-    
-    @app.route('/pecas/<int:id>/excluir', methods=['POST'])
-    @login_required
-    @admin_required
-    def delete_part(id):
-        part = Part.query.get_or_404(id)
-        
-        # Verificar se a peça tem vendas registradas
-        if part.sales:
-            flash('Não é possível excluir uma peça com vendas registradas!', 'danger')
-            return redirect(url_for('view_part', id=part.id))
-        
-        name = part.name
-        
-        # Remover a imagem, se existir
-        if part.image:
-            image_path = os.path.join('static', 'uploads', 'parts', part.image)
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        
-        db.session.delete(part)
-        db.session.commit()
-        
-        log_action(
-            'Exclusão de Peça',
-            'part',
-            id,
-            f'Peça {name} excluída'
-        )
-        
-        flash('Peça excluída com sucesso!', 'success')
-        return redirect(url_for('parts'))
-    
-    @app.route('/vendas-pecas')
-    @login_required
-    def part_sales():
-        page = request.args.get('page', 1, type=int)
-        search = request.args.get('search', '')
-        client_id = request.args.get('client_id', None, type=int)
-        service_order_id = request.args.get('service_order_id', None, type=int)
-        
-        query = PartSale.query
-        
-        # Filtrar por pesquisa
-        if search:
-            query = query.join(Part).filter(
-                or_(
-                    Part.name.ilike(f'%{search}%'),
-                    Part.part_number.ilike(f'%{search}%'),
-                    PartSale.invoice_number.ilike(f'%{search}%')
-                )
-            )
-        
-        # Filtrar por cliente
-        if client_id:
-            query = query.filter(PartSale.client_id == client_id)
-        
-        # Filtrar por ordem de serviço
-        if service_order_id:
-            query = query.filter(PartSale.service_order_id == service_order_id)
-        
-        # Ordenar vendas
-        query = query.order_by(PartSale.sale_date.desc())
-        
-        # Paginação
-        from utils import get_system_setting
-        pagination = query.paginate(
-            page=page,
-            per_page=int(get_system_setting('items_per_page', '20')),
-            error_out=False
-        )
-        
-        sales = pagination.items
-        
-        # Obter clientes para filtro
-        clients = Client.query.order_by(Client.name).all()
-        
-        # Obter ordens de serviço para filtro
-        service_orders = ServiceOrder.query.order_by(ServiceOrder.id.desc()).all()
-        
-        return render_template(
-            'part_sales/index.html',
-            sales=sales,
-            pagination=pagination,
-            search=search,
-            client_id=client_id,
-            service_order_id=service_order_id,
-            clients=clients,
-            service_orders=service_orders
-        )
-    
-    @app.route('/vendas-pecas/nova', methods=['GET', 'POST'])
-    @login_required
-    def new_part_sale():
-        form = PartSaleForm()
-        
-        # Pré-preencher dados se vier de uma ordem de serviço
-        service_order_id = request.args.get('service_order_id', None, type=int)
-        if service_order_id:
-            form.service_order_id.data = service_order_id
-            service_order = ServiceOrder.query.get(service_order_id)
-            if service_order:
-                form.client_id.data = service_order.client_id
-        
-        # Pré-preencher dados se vier de uma peça específica
-        part_id = request.args.get('part_id', None, type=int)
-        if part_id:
-            form.part_id.data = part_id
-            part = Part.query.get(part_id)
-            if part:
-                form.unit_price.data = part.selling_price
-                form.total_price.data = part.selling_price
-        
-        if form.validate_on_submit():
-            # Obter a peça e verificar estoque
-            part = Part.query.get(form.part_id.data)
-            if not part:
-                flash('Peça não encontrada!', 'danger')
-                return redirect(url_for('new_part_sale'))
-            
-            if part.stock_quantity < form.quantity.data:
-                flash(f'Estoque insuficiente! Disponível: {part.stock_quantity}', 'danger')
-                return render_template('part_sales/create.html', form=form)
-            
-            # Criar a venda
-            sale = PartSale(
-                part_id=form.part_id.data,
-                client_id=form.client_id.data if form.client_id.data else None,
-                service_order_id=form.service_order_id.data if form.service_order_id.data else None,
-                quantity=form.quantity.data,
-                unit_price=form.unit_price.data,
-                total_price=form.total_price.data,
-                invoice_number=form.invoice_number.data,
-                notes=form.notes.data,
-                created_by=current_user.id
-            )
-            
-            # Atualizar o estoque da peça
-            part.stock_quantity -= form.quantity.data
-            
-            # Adicionar entrada financeira sempre, independentemente de estar associada a uma OS
-            description = f"Venda de peça: {part.name} (x{sale.quantity})"
-            if sale.client_id:
-                client = Client.query.get(sale.client_id)
-                if client:
-                    description += f" - Cliente: {client.name}"
-            
-            if sale.invoice_number:
-                description += f" - NF-e: {sale.invoice_number}"
-                
-            financial_entry = FinancialEntry(
-                service_order_id=sale.service_order_id if sale.service_order_id else None,
-                description=description,
-                amount=sale.total_price,
-                type=FinancialEntryType.entrada,
-                date=datetime.now(),
-                created_by=current_user.id
-            )
-            db.session.add(financial_entry)
-            
-            db.session.add(sale)
-            db.session.commit()
-            
-            log_action(
-                'Venda de Peça',
-                'part_sale',
-                sale.id,
-                f'Venda de {sale.quantity}x {part.name} realizada'
-            )
-            
-            flash('Venda registrada com sucesso!', 'success')
-            
-            # Redirecionar para a ordem de serviço, se associada
-            if sale.service_order_id:
-                return redirect(url_for('view_service_order', id=sale.service_order_id))
-            return redirect(url_for('part_sales'))
-        
-        return render_template('part_sales/create.html', form=form)
-    
-    @app.route('/vendas-pecas/<int:id>')
-    @login_required
-    def view_part_sale(id):
-        sale = PartSale.query.get_or_404(id)
-        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
-        return render_template('part_sales/view.html', sale=sale, form=form)
-    
-    @app.route('/vendas-pecas/<int:id>/cancelar', methods=['POST'])
-    @login_required
-    @admin_required
-    def cancel_part_sale(id):
-        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
-        if not form.validate_on_submit():
-            flash('Erro de segurança: Token CSRF inválido. Tente novamente.', 'danger')
-            return redirect(url_for('view_part_sale', id=id))
-            
-        sale = PartSale.query.get_or_404(id)
-        
-        # Restaurar estoque
-        part = Part.query.get(sale.part_id)
-        if part:
-            part.stock_quantity += sale.quantity
-        
-        # Remover entrada financeira associada, sempre
-        # Primeiro tenta buscar pela ordem de serviço, se tiver
-        financial_entry = None
-        if sale.service_order_id:
-            financial_entry = FinancialEntry.query.filter_by(
-                service_order_id=sale.service_order_id,
-                amount=sale.total_price,
-                type=FinancialEntryType.entrada
-            ).first()
-        
-        # Se não encontrou, tenta buscar pela descrição contendo o nome da peça e quantidade
-        if not financial_entry:
-            description_pattern = f"Venda de peça: {part.name} (x{sale.quantity})"
-            financial_entry = FinancialEntry.query.filter(
-                FinancialEntry.description.like(f"%{description_pattern}%"),
-                FinancialEntry.amount == sale.total_price,
-                FinancialEntry.type == FinancialEntryType.entrada
-            ).first()
-        
-        # Remove a entrada financeira, se encontrada
-        if financial_entry:
-            db.session.delete(financial_entry)
-        
-        # Registrar o cancelamento no log
-        log_action(
-            'Cancelamento de Venda',
-            'part_sale',
-            id,
-            f'Venda de {sale.quantity}x {part.name} cancelada'
-        )
-        
-        db.session.delete(sale)
-        db.session.commit()
-        
-        flash('Venda cancelada com sucesso!', 'success')
-        return redirect(url_for('part_sales'))
-    
-    # Rota de ajuste de estoque
-    @app.route('/pecas/<int:id>/ajustar-estoque', methods=['GET', 'POST'])
-    @login_required
-    @manager_required
-    def adjust_stock(id):
-        part = Part.query.get_or_404(id)
-        form = FlaskForm()  # Formulário vazio apenas para o token CSRF
-        
-        if request.method == 'POST' and form.validate_on_submit():
-            quantity = request.form.get('quantity', type=int)
-            reason = request.form.get('reason')
-            
-            if not quantity:
-                flash('Quantidade inválida!', 'danger')
-                return redirect(url_for('view_part', id=part.id))
-            
-            old_quantity = part.stock_quantity
-            part.stock_quantity = quantity
-            
-            db.session.commit()
-            
-            log_action(
-                'Ajuste de Estoque',
-                'part',
-                part.id,
-                f'Estoque ajustado de {old_quantity} para {quantity} unidades. Motivo: {reason}'
-            )
-            
-            flash('Estoque ajustado com sucesso!', 'success')
-            return redirect(url_for('view_part', id=part.id))
-        
-        return render_template('parts/adjust_stock.html', part=part, form=form)
-
-    # Rotas de Pedidos a Fornecedores
-    @app.route('/pedidos-fornecedor')
-    @login_required
-    def supplier_orders():
-        page = request.args.get('page', 1, type=int)
-        per_page = 20  # Itens por página
-        
-        query = SupplierOrder.query
-        
-        # Filtros
-        supplier_id = request.args.get('supplier_id', type=int)
-        status = request.args.get('status')
-        
-        if supplier_id:
-            query = query.filter(SupplierOrder.supplier_id == supplier_id)
-        
-        if status:
-            query = query.filter(SupplierOrder.status == status)
-        
-        orders = query.order_by(SupplierOrder.created_at.desc()).paginate(page=page, per_page=per_page)
-        
-        # Fornecedores para o filtro
-        suppliers = Supplier.query.order_by(Supplier.name).all()
-        
-        return render_template(
-            'supplier_orders/index.html', 
-            orders=orders,
-            suppliers=suppliers,
-            order_statuses=OrderStatus,
-            current_supplier=supplier_id,
-            current_status=status
-        )
-    
-    @app.route('/pedidos-fornecedor/novo', methods=['GET', 'POST'])
-    @login_required
-    def new_supplier_order():
-        form = SupplierOrderForm()
-        
-        # Buscar peças para o dropdown no modal de adicionar item
-        parts = Part.query.order_by(Part.name).all()
-        
-        if form.validate_on_submit():
-            try:
-                # Formatar as datas
-                expected_delivery_date = None
-                if form.expected_delivery_date.data:
-                    try:
-                        expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
-                    except ValueError:
-                        flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                        return render_template('supplier_orders/create.html', form=form, parts=parts)
-                
-                delivery_date = None
-                if form.delivery_date.data:
-                    try:
-                        delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
-                    except ValueError:
-                        flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                        return render_template('supplier_orders/create.html', form=form, parts=parts)
-                
-                # Criar o pedido
-                order = SupplierOrder(
-                    supplier_id=form.supplier_id.data,
-                    order_number=form.order_number.data,
-                    total_value=0,  # Inicialmente zero, será calculado ao adicionar itens
-                    status=form.status.data,
-                    expected_delivery_date=expected_delivery_date,
-                    delivery_date=delivery_date,
-                    notes=form.notes.data,
-                    created_by=current_user.id
-                )
-                
-                db.session.add(order)
-                db.session.commit()
-                
-                # Processar itens do pedido (enviados como JSON)
-                items_json = request.form.get('items_json', '[]')
-                try:
-                    items_data = json.loads(items_json)
-                    for item_data in items_data:
-                        # Criar item de pedido
-                        item = OrderItem(
-                            order_id=order.id,
-                            part_id=item_data.get('part_id') if item_data.get('part_id') else None,
-                            description=item_data.get('description', ''),
-                            quantity=item_data.get('quantity', 1),
-                            unit_price=item_data.get('unit_price', 0),
-                            total_price=item_data.get('total_price', 0),
-                            status=OrderStatus.pendente
-                        )
-                        db.session.add(item)
-                    
-                    db.session.commit()
-                    
-                    try:
-                        # Registrar log apenas após confirmação do commit de todos os itens
-                        log_action(
-                            'Criação de Pedido',
-                            'supplier_order',
-                            order.id,
-                            f'Pedido para {order.supplier.name} criado'
-                        )
-                    except Exception as log_error:
-                        app.logger.error(f"Erro ao registrar log de pedido: {str(log_error)}")
-                        
-                    flash('Pedido criado com sucesso!', 'success')
-                    return redirect(url_for('view_supplier_order', id=order.id))
-                    
-                except Exception as item_error:
-                    # Erro ao processar itens do pedido, reverter a transação e mostrar mensagem de erro
-                    db.session.rollback()
-                    app.logger.error(f"Erro ao processar itens do pedido: {str(item_error)}")
-                    flash(f'Erro ao processar itens do pedido: {str(item_error)}', 'danger')
-                    return render_template('supplier_orders/create.html', form=form, parts=parts)
-                
-            except IntegrityError:
-                db.session.rollback()
-                flash('Erro de integridade ao criar pedido. Verifique se já existe um pedido com o mesmo número.', 'danger')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao criar pedido: {str(e)}', 'danger')
-                app.logger.error(f"Erro ao criar pedido: {str(e)}")
-        
-        return render_template('supplier_orders/create.html', form=form, parts=parts)
-    
-    @app.route('/pedidos-fornecedor/<int:id>')
-    @login_required
-    def view_supplier_order(id):
-        from utils import is_order_paid
-        
-        order = SupplierOrder.query.get_or_404(id)
-        item_form = OrderItemForm()
-        is_paid = is_order_paid(id)
-        
-        return render_template(
-            'supplier_orders/view.html', 
-            order=order,
-            item_form=item_form,
-            order_statuses=OrderStatus,
-            is_paid=is_paid
-        )
-    
-    @app.route('/pedidos-fornecedor/<int:id>/editar', methods=['GET', 'POST'])
-    @login_required
-    def edit_supplier_order(id):
-        order = SupplierOrder.query.get_or_404(id)
-        form = SupplierOrderForm(obj=order)
-        
-        # Formatar datas para exibição no formulário
-        if order.expected_delivery_date:
-            form.expected_delivery_date.data = order.expected_delivery_date.strftime('%d/%m/%Y')
-        
-        if order.delivery_date:
-            form.delivery_date.data = order.delivery_date.strftime('%d/%m/%Y')
-        
-        if form.validate_on_submit():
-            # Formatar as datas
-            expected_delivery_date = None
-            if form.expected_delivery_date.data:
-                try:
-                    expected_delivery_date = datetime.strptime(form.expected_delivery_date.data, '%d/%m/%Y').date()
-                except ValueError:
-                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                    return render_template('supplier_orders/edit.html', form=form, order=order)
-            
-            delivery_date = None
-            if form.delivery_date.data:
-                try:
-                    delivery_date = datetime.strptime(form.delivery_date.data, '%d/%m/%Y').date()
-                except ValueError:
-                    flash('Formato de data inválido. Use DD/MM/AAAA', 'danger')
-                    return render_template('supplier_orders/edit.html', form=form, order=order)
-            
-            # Atualizar os campos do pedido
-            order.supplier_id = form.supplier_id.data
-            order.order_number = form.order_number.data
-            
-            # Calcular o valor total automaticamente com base nos itens
-            total = db.session.query(func.sum(OrderItem.total_price)).filter(OrderItem.order_id == order.id).scalar() or 0
-            order.total_value = total
-            
-            order.status = form.status.data
-            order.expected_delivery_date = expected_delivery_date
-            order.delivery_date = delivery_date
-            order.notes = form.notes.data
-            
-            db.session.commit()
-            
-            log_action(
-                'Edição de Pedido',
-                'supplier_order',
-                order.id,
-                f'Pedido para {order.supplier.name} atualizado'
-            )
-            
-            flash('Pedido atualizado com sucesso!', 'success')
-            return redirect(url_for('view_supplier_order', id=order.id))
-        
-        # Formulário para adicionar novos itens
-        item_form = OrderItemForm()
-        return render_template('supplier_orders/edit.html', form=form, order=order, item_form=item_form)
-    
-    @app.route('/pedidos-fornecedor/<int:id>/excluir', methods=['POST'])
-    @login_required
-    def delete_supplier_order(id):
-        order = SupplierOrder.query.get_or_404(id)
-        supplier_name = order.supplier.name
-        
-        # Registrar a ação antes de excluir
-        log_action(
-            'Exclusão de Pedido',
-            'supplier_order',
-            order.id,
-            f'Pedido {order.order_number or "#" + str(order.id)} para {supplier_name} excluído'
-        )
-        
-        db.session.delete(order)
-        db.session.commit()
-        
-        flash('Pedido excluído com sucesso!', 'success')
-        return redirect(url_for('supplier_orders'))
-    
-    # Função para recalcular o valor total do pedido
-    def recalculate_supplier_order_total(order_id):
-        # Somar todos os itens
-        total = db.session.query(func.sum(OrderItem.total_price)).filter(OrderItem.order_id == order_id).scalar() or 0
-        order = SupplierOrder.query.get(order_id)
-        if order:
-            order.total_value = total
-            db.session.commit()
-    
-    @app.route('/pedidos-fornecedor/item/<int:id>/adicionar', methods=['POST'])
-    @login_required
-    def add_order_item(id):
-        order = SupplierOrder.query.get_or_404(id)
-        form = OrderItemForm()
         
         if form.validate_on_submit():
             # Adicionar novo item ao pedido
@@ -3332,7 +2567,7 @@ def register_routes(app):
         flash('Item excluído com sucesso!', 'success')
         return redirect(url_for('view_supplier_order', id=order_id))
     
-# Registro de pagamento de pedido a fornecedor
+    # Registro de pagamento de pedido a fornecedor
     @app.route('/pedidos-fornecedor/<int:id>/registrar-pagamento', methods=['POST'])
     @login_required
     def register_supplier_order_payment(id):
@@ -3620,22 +2855,21 @@ def register_routes(app):
                 if form.image.data and form.image.data.filename:
                     # Remover imagem anterior se existir
                     if item.image:
-                        old_image_path = os.path.join(current_app.static_folder, item.image)
-                        if os.path.exists(old_image_path):
-                            os.remove(old_image_path)
+                        try:
+                            old_image_path = os.path.join(current_app.static_folder, item.image)
+                            if os.path.exists(old_image_path):
+                                os.remove(old_image_path)
+                        except Exception as e:
+                            app.logger.warning(f"Erro ao remover imagem antiga: {str(e)}")
                     
-                    filename = secure_filename(form.image.data.filename)
-                    # Gerar nome único com uuid
-                    unique_filename = f"{uuid.uuid4()}_{filename}"
-                    # Diretório para salvar as imagens
-                    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'stock')
+                    image = form.image.data
+                    
+                    # Gerar nome de arquivo único
+                    filename = secure_filename(f"vehicle_{uuid.uuid4().hex}.{image.filename.split('.')[-1]}")
+                    upload_folder = os.path.join('static', 'uploads', 'vehicles')
                     os.makedirs(upload_folder, exist_ok=True)
-                    # Caminho completo do arquivo
-                    filepath = os.path.join(upload_folder, unique_filename)
-                    # Salvar o arquivo
-                    form.image.data.save(filepath)
-                    # Armazenar o caminho relativo no banco de dados
-                    item.image = f'uploads/stock/{unique_filename}'
+                    image.save(os.path.join(upload_folder, filename))
+                    item.image = filename
                 
                 # Atualizar status do item
                 item.update_status()
@@ -4225,20 +3459,13 @@ def register_routes(app):
                 vehicle.acquisition_date = acquisition_date
                 # Tratar o tipo de combustível corretamente
                 try:
-                    if form.fuel_type.data:
-                        # Verificar se o valor está entre os valores válidos do enum
-                        valid_fuel_types = [fuel_type.name for fuel_type in FuelType]
-                        if form.fuel_type.data in valid_fuel_types:
-                            vehicle.fuel_type = FuelType[form.fuel_type.data]
-                        else:
-                            # Valor padrão se não for um tipo válido
-                            vehicle.fuel_type = FuelType.flex
-                    else:
-                        vehicle.fuel_type = FuelType.flex
-                except Exception as e:
-                    # Em caso de erro, use um valor padrão
-                    app.logger.error(f"Erro ao definir tipo de combustível: {str(e)}")
-                    vehicle.fuel_type = FuelType.flex
+                    # Converter o tipo de combustível para o enum correto
+                    fuel_type_enum = FuelType[fuel_type] if fuel_type in [ft.name for ft in FuelType] else FuelType.flex
+                except (KeyError, ValueError):
+                    # Fallback para o tipo padrão se houver erro
+                    fuel_type_enum = FuelType.flex
+                
+                vehicle.fuel_type = fuel_type_enum
                 vehicle.insurance_policy = form.insurance_policy.data
                 vehicle.insurance_expiry = insurance_expiry
                 vehicle.current_km = form.current_km.data
@@ -4273,140 +3500,8 @@ def register_routes(app):
     def delete_vehicle(id):
         """Excluir veículo - redirecionar para a versão correta"""
         # Redirecionar para a nova rota de exclusão de veículos
-        return redirect(url_for('delete_fleet_vehicle', id=id))
+        return redirect(url_for('excluir_veiculo_direct', id=id))
         
-    @app.route('/frota/<int:id>/manutencao/nova', methods=['GET', 'POST'])
-    @login_required
-    # Removida restrição @manager_required para permitir acesso a todos os usuários logados
-    def new_vehicle_maintenance(id):
-        """Registrar nova manutenção para um veículo"""
-        vehicle = Vehicle.query.get_or_404(id)
-        form = VehicleMaintenanceForm()
-        
-        # Pré-selecionar o veículo
-        form.vehicle_id.data = vehicle.id
-        
-        # Passar o veículo para o template
-        today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Adicionar log para debug
-        app.logger.info(f"Nova manutenção - método: {request.method}")
-        
-        if request.method == 'POST':
-            app.logger.info(f"Form data: {request.form}")
-            app.logger.info(f"Form errors: {form.errors}")
-            app.logger.info(f"Form válido: {form.validate()}")
-        
-        if form.validate_on_submit():
-            app.logger.info("Formulário válido, iniciando processamento")
-            try:
-                # Garantir que a data seja um objeto datetime
-                maintenance_date = datetime.now()
-                if form.date.data:
-                    try:
-                        if isinstance(form.date.data, str):
-                            maintenance_date = datetime.strptime(form.date.data, '%Y-%m-%d')
-                        else:
-                            maintenance_date = form.date.data
-                        app.logger.info(f"Data de manutenção: {maintenance_date}")
-                    except Exception as err:
-                        app.logger.error(f"Erro ao converter data: {err}, usando data atual")
-                
-                # Garantir que performed_by_id seja um inteiro ou None
-                performed_by = current_user.id
-                if form.performed_by_id.data and form.performed_by_id.data != "0":
-                    try:
-                        performed_by = int(form.performed_by_id.data)
-                    except (ValueError, TypeError):
-                        pass
-                app.logger.info(f"Responsável pela manutenção: {performed_by}")
-                
-                # Extrair e validar campos do formulário
-                description = form.description.data or "Manutenção não especificada"
-                mileage = form.mileage.data or 0
-                cost = form.cost.data or 0.0
-                workshop = form.service_provider.data or ""
-                invoice_number = form.invoice_number.data or ""
-                
-                app.logger.info(f"Dados do formulário processados: descrição='{description}', km={mileage}, custo={cost}")
-                
-                # Criar objeto de manutenção
-                maintenance = VehicleMaintenance()
-                maintenance.vehicle_id = vehicle.id
-                maintenance.date = maintenance_date
-                maintenance.odometer = mileage
-                maintenance.description = description
-                maintenance.cost = cost
-                maintenance.workshop = workshop
-                maintenance.invoice_number = invoice_number
-                maintenance.created_by = performed_by
-                
-                app.logger.info(f"Objeto manutenção pronto para inserção: {maintenance}")
-                db.session.add(maintenance)
-                
-                # Atualizar hodômetro do veículo se o valor informado é maior que o atual
-                if mileage > 0 and (vehicle.current_km is None or mileage > vehicle.current_km):
-                    vehicle.current_km = mileage
-                    app.logger.info(f"Atualizando hodômetro do veículo para: {mileage}")
-                
-                # Usar flush para obter o ID da manutenção sem confirmar a transação
-                db.session.flush()
-                app.logger.info(f"Manutenção ID após flush: {maintenance.id}")
-                
-                # Criar entrada financeira se houver custo
-                if cost > 0:
-                    financial_entry = FinancialEntry()
-                    financial_entry.description = f"Manutenção do veículo placa {vehicle.plate} - {description[:50]}"
-                    financial_entry.amount = cost
-                    financial_entry.type = FinancialEntryType.saida
-                    financial_entry.date = maintenance_date
-                    financial_entry.created_by = current_user.id
-                    financial_entry.entry_type = 'vehicle_maintenance'
-                    financial_entry.reference_id = maintenance.id
-                    
-                    db.session.add(financial_entry)
-                    app.logger.info(f"Entrada financeira criada: {financial_entry}")
-                
-                # Confirmar toda a transação de uma vez
-                db.session.commit()
-                app.logger.info("Transação confirmada com sucesso!")
-                
-                flash('Manutenção registrada com sucesso!', 'success')
-                log_action(
-                    'Registro de Manutenção',
-                    'vehicle_maintenance',
-                    maintenance.id,
-                    f"Manutenção registrada para o veículo placa {vehicle.plate}"
-                )
-                
-                return redirect(url_for('view_vehicle', id=vehicle.id))
-                
-            except Exception as e:
-                db.session.rollback()
-                app.logger.error(f"Erro ao registrar manutenção: {str(e)}")
-                app.logger.exception(e)  # Log do traceback completo
-                flash(f'Erro ao registrar manutenção: {str(e)}', 'danger')
-        
-        return render_template('fleet/new_maintenance.html', form=form, vehicle=vehicle, today=today)
-        
-    @app.route('/frota/veiculos/<int:id>/excluir', methods=['GET', 'POST'])
-    @login_required
-    def delete_fleet_vehicle(id):
-        """Rota para excluir um veículo da frota (método legado)"""
-        # Verificar se o usuário é administrador
-        if current_user.role.value != 'admin':
-            flash('Acesso negado. Apenas administradores podem excluir veículos.', 'danger')
-            return redirect(url_for('fleet'))
-            
-        app.logger.info(f"Tentando excluir veículo ID: {id} via método legado {request.method}")
-        
-        # Redirecionar para o novo método de exclusão
-        if request.method == 'POST':
-            return redirect(url_for('excluir_veiculo_direct', id=id))
-        else:
-            # Para solicitações GET, apenas redirecionar para a página de frota
-            return redirect(url_for('fleet'))
-            
     @app.route('/excluir-veiculo/<int:id>', methods=['POST'])
     @login_required
     def excluir_veiculo_direct(id):
@@ -4549,9 +3644,9 @@ def register_routes(app):
                 db.session.rollback()
                 flash(f'Erro ao registrar abastecimento: {str(e)}', 'danger')
                 app.logger.error(f"Erro ao registrar abastecimento para veículo {id}: {str(e)}")
-                return redirect(url_for('view_vehicle', id=id))
+                return redirect(url_for('view_vehicle', id=vehicle.id))
         
-        return redirect(url_for('view_vehicle', id=id))
+        return redirect(url_for('view_vehicle', id=vehicle.id))
     
     @app.route('/frota/manutencoes')
     @login_required
