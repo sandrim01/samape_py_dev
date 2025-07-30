@@ -28,12 +28,6 @@ setup_logging(app)
 login_manager = LoginManager()
 csrf = CSRFProtect()
 
-# Validate required configuration
-if not app.config.get('SECRET_KEY'):
-    raise ValueError("SECRET_KEY is required")
-if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-    raise ValueError("DATABASE_URL is required")
-
 # Initialize extensions with app
 init_db(app)
 login_manager.init_app(app)
