@@ -1,4 +1,5 @@
-from app import app, db
+from app import app
+from database import db
 from sqlalchemy import text
 
 def add_profile_image_column():

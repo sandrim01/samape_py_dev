@@ -1,0 +1,17 @@
+# Configurações de ambiente para SAMAPE
+# Copie este arquivo para .env e ajuste conforme necessário
+
+# Configuração do Flask
+FLASK_ENV=development
+SECRET_KEY=samape-secret-key-2024-dev
+DATABASE_URL=sqlite:///samape.db
+
+# Configuração do Admin
+ADMIN_DEFAULT_PASSWORD=admin123
+
+# Configuração do Banco
+SQLALCHEMY_DATABASE_URI=sqlite:///samape.db
+SQLALCHEMY_TRACK_MODIFICATIONS=False
+
+# Configuração de Debug
+DEBUG=True

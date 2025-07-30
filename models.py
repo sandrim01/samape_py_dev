@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_login import UserMixin
 from sqlalchemy import Enum
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db
+from database import db
 
 # Enum definitions
 class UserRole(enum.Enum):

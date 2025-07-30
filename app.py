@@ -3,54 +3,39 @@ import logging
 from datetime import timedelta
 
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from database import db, init_db
 from jinja_filters import nl2br, format_document, format_currency, status_color, absolute_value
-
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
-# Create SQLAlchemy base class
-class Base(DeclarativeBase):
-    pass
-
-
-# Initialize extensions
-db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
-csrf = CSRFProtect()
+from logging_config import setup_logging
+from config import config
 
 # Create application
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "development_key")
+
+# Load configuration
+config_name = os.environ.get('FLASK_ENV', 'development')
+app.config.from_object(config[config_name])
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configure database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://postgres:qUngJAyBvLWQdkmSkZEjjEoMoDVzOBnx@trolley.proxy.rlwy.net:22285/railway")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Setup logging
+setup_logging(app)
 
-# Configure session
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
-app.config["SESSION_COOKIE_SECURE"] = True
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Initialize extensions
+login_manager = LoginManager()
+csrf = CSRFProtect()
 
-# Configure CSRF protection (temporariamente desabilitado para resolver problemas)
-app.config["WTF_CSRF_ENABLED"] = False 
-app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
-app.config["WTF_CSRF_SSL_STRICT"] = False  # Para ambiente de desenvolvimento
+# Validate required configuration
+if not app.config.get('SECRET_KEY'):
+    raise ValueError("SECRET_KEY is required")
+if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+    raise ValueError("DATABASE_URL is required")
 
 # Initialize extensions with app
-db.init_app(app)
+init_db(app)
 login_manager.init_app(app)
 
 # Adicionar exceção CSRF para as rotas de exclusão de cliente
@@ -89,3 +74,27 @@ register_routes(app)
 with app.app_context():
     if hasattr(app, 'create_initial_admin'):
         app.create_initial_admin()
+    else:
+        # Fallback: criar admin diretamente se não houver função
+        from models import User, UserRole
+        try:
+            # Verificar se existe algum admin
+            admin_exists = User.query.filter_by(role=UserRole.admin).first()
+            if not admin_exists:
+                # Criar admin padrão
+                admin = User(
+                    username='admin',
+                    name='Administrador',
+                    email='admin@samape.com',
+                    role=UserRole.admin,
+                    active=True
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                app.logger.info("Admin user created: username=admin, password=admin123")
+        except Exception as e:
+            app.logger.error(f"Error creating admin user: {e}")
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -2,20 +2,31 @@ import os
 import re
 import json
 import io
+import uuid
 from datetime import datetime
 from functools import wraps
+from decimal import Decimal
+from io import StringIO
 from flask import (
     render_template, redirect, url_for, flash, request, jsonify, session, abort,
-    current_app, send_file, Response
+    current_app, send_file, Response, make_response
 )
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
-from sqlalchemy import func, desc, or_
+from werkzeug.utils import secure_filename
+from sqlalchemy import func, desc, or_, inspect, distinct, text
 from sqlalchemy.exc import IntegrityError
 
 from wtforms.validators import Optional
 
-from app import db
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
+
+from database import db
 from models import (
     User, Client, Equipment, ServiceOrder, FinancialEntry, ActionLog,
     UserRole, ServiceOrderStatus, FinancialEntryType, Supplier, Part, PartSale,
@@ -95,40 +106,39 @@ def register_routes(app):
         form = LoginForm()
         if form.validate_on_submit():
             username = form.username.data
-            print(f"[DEBUG] Username recebido: '{username}'")
-            print(f"[DEBUG] Senha recebida: '{form.password.data}'")
+            
             # Check if user is rate limited
             if check_login_attempts(username):
+                app.logger.warning(f"Rate limit exceeded for user: {username}")
                 flash('Muitas tentativas de login. Tente novamente mais tarde.', 'danger')
                 return render_template('login.html', form=form)
+                
             user = User.query.filter_by(username=username).first()
-            if user:
-                print(f"[DEBUG] Usuário encontrado: {user.username} | Ativo: {user.active}")
-                print(f"[DEBUG] Hash no banco: {user.password_hash}")
-                senha_ok = user.check_password(form.password.data)
-                print(f"[DEBUG] Resultado check_password: {senha_ok}")
-            else:
-                print("[DEBUG] Usuário não encontrado!")
             if user and user.check_password(form.password.data) and user.active:
                 try:
                     login_user(user, remember=form.remember_me.data)
                     record_login_attempt(username, True)
+                    app.logger.info(f"Successful login for user: {username}")
                     try:
                         log_action('Login', 'user', user.id)
-                    except Exception:
+                    except Exception as e:
+                        app.logger.error(f"Failed to log user action: {e}")
                         db.session.rollback()
                     next_page = request.args.get('next')
                     if not next_page or not next_page.startswith('/'):
                         next_page = url_for('dashboard')
                     return redirect(next_page)
-                except Exception:
+                except Exception as e:
+                    app.logger.error(f"Login error for user {username}: {e}")
                     db.session.rollback()
                     flash('Erro ao efetuar login. Tente novamente.', 'danger')
                     return render_template('login.html', form=form)
             else:
+                app.logger.warning(f"Failed login attempt for user: {username}")
                 try:
                     record_login_attempt(username, False)
-                except Exception:
+                except Exception as e:
+                    app.logger.error(f"Failed to record login attempt: {e}")
                     db.session.rollback()
                 flash('Nome de usuário ou senha inválidos.', 'danger')
         return render_template('login.html', form=form)
@@ -473,7 +483,8 @@ def register_routes(app):
                 client = cursor.fetchone()
                 if client:
                     client_name = client[0]
-            except:
+            except Exception as e:
+                app.logger.warning(f"Erro ao buscar nome do cliente: {str(e)}")
                 pass
                 
             # Recuperar nome do responsável
@@ -483,7 +494,8 @@ def register_routes(app):
                 resp = cursor.fetchone()
                 if resp:
                     responsible_name = resp[0]
-            except:
+            except Exception as e:
+                app.logger.warning(f"Erro ao buscar nome do responsável: {str(e)}")
                 pass
             
             cursor.close()
@@ -558,7 +570,8 @@ def register_routes(app):
                 if client:
                     client_name = client[0]
                     cliente_telefone = client[1]
-            except:
+            except Exception as e:
+                app.logger.warning(f"Erro ao buscar dados do cliente: {str(e)}")
                 pass
                 
             # Recuperar nome do responsável (opcional)
@@ -567,7 +580,8 @@ def register_routes(app):
                 resp = cursor.fetchone()
                 if resp:
                     responsavel_nome = resp[0]
-            except:
+            except Exception as e:
+                app.logger.warning(f"Erro ao buscar nome do responsável: {str(e)}")
                 pass
             
             cursor.close()
@@ -1214,7 +1228,6 @@ def register_routes(app):
             return jsonify([])
         
         # Buscar modelos distintos para a marca selecionada
-        from sqlalchemy import distinct
         models = db.session.query(distinct(Equipment.model))\
             .filter(Equipment.brand == brand)\
             .order_by(Equipment.model)\
@@ -1332,7 +1345,6 @@ def register_routes(app):
         form.client_id.choices = [(c.id, c.name) for c in Client.query.order_by(Client.name).all()]
         
         # Adicionar os valores atuais do equipamento às listas de seleção se não estiverem presentes
-        from sqlalchemy import distinct
         
         # Se o tipo do equipamento não estiver nas opções, adicionar
         types = [choice[0] for choice in form.type_select.choices if choice[0]]
@@ -1796,8 +1808,6 @@ def register_routes(app):
             # Handle profile image upload
             if form.profile_image.data and hasattr(form.profile_image.data, 'filename'):
                 # Save the image
-                import os
-                from werkzeug.utils import secure_filename
                 
                 # Create the profiles directory if it doesn't exist
                 os.makedirs('static/images/profiles', exist_ok=True)
@@ -1826,7 +1836,8 @@ def register_routes(app):
                     if os.path.exists(old_file_path):
                         try:
                             os.remove(old_file_path)
-                        except:
+                        except OSError as e:
+                            app.logger.warning(f"Erro ao remover imagem anterior: {str(e)}")
                             pass  # Se não conseguir remover, apenas continue
                 
                 # Create a unique filename based on user ID and timestamp para evitar cache do navegador
@@ -1915,12 +1926,11 @@ def register_routes(app):
     @login_required
     def export_invoices():
         import zipfile
-        import io
-        from weasyprint import HTML
-        from flask import make_response
         import tempfile
-        import os
-        from decimal import Decimal
+        
+        if not WEASYPRINT_AVAILABLE:
+            flash('WeasyPrint não está disponível. Não é possível gerar PDFs.', 'error')
+            return redirect(url_for('lista_notas_fiscais'))
         
         try:
             # Obtém os mesmos filtros da listagem
@@ -2084,12 +2094,11 @@ def register_routes(app):
     @app.route('/os/<int:id>/nfe/exportar')
     @login_required
     def export_invoice(id):
-        from weasyprint import HTML
-        from flask import make_response
         import tempfile
-        import os
-        from decimal import Decimal
-        from datetime import datetime
+        
+        if not WEASYPRINT_AVAILABLE:
+            flash('WeasyPrint não está disponível. Não é possível gerar PDFs.', 'error')
+            return redirect(url_for('view_service_order', id=id))
         
         service_order = ServiceOrder.query.get_or_404(id)
         
@@ -2400,7 +2409,6 @@ def register_routes(app):
                     try:
                         image = form.image.data
                         # Gerar nome de arquivo único
-                        from werkzeug.utils import secure_filename
                         filename = secure_filename(f"{form.name.data.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{image.filename.split('.')[-1]}")
                         image_path = os.path.join('static', 'uploads', 'parts', filename)
                         os.makedirs(os.path.join('static', 'uploads', 'parts'), exist_ok=True)
@@ -2489,31 +2497,31 @@ def register_routes(app):
             form.location.data = part.location
         
         if form.validate_on_submit():
-            # Adicionar novo item ao pedido
-            item = OrderItem(
-                order_id=order.id,
-                stock_item_id=form.stock_item_id.data if form.stock_item_id.data else None,
-                description=form.description.data,
-                quantity=form.quantity.data,
-                unit_price=form.unit_price.data or 0,
-                total_price=form.total_price.data or 0,
-                status=form.status.data,
-                notes=form.notes.data
-            )
+            part.name = form.name.data
+            part.description = form.description.data
+            part.part_number = form.part_number.data
+            part.supplier_id = form.supplier_id.data
+            part.category = form.category.data
+            part.subcategory = form.subcategory.data
+            part.cost_price = form.cost_price.data
+            part.selling_price = form.selling_price.data
+            part.stock_quantity = form.stock_quantity.data
+            part.minimum_stock = form.minimum_stock.data
+            part.location = form.location.data
             
-            db.session.add(item)
             db.session.commit()
             
-            # Atualizar o valor total do pedido
-            recalculate_supplier_order_total(order.id)
+            log_action(
+                'Edição de Peça',
+                'part',
+                part.id,
+                f'Peça {part.name} atualizada'
+            )
             
-            flash('Item adicionado com sucesso!', 'success')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f'Erro no campo {getattr(form, field).label.text}: {error}', 'danger')
+            flash('Peça atualizada com sucesso!', 'success')
+            return redirect(url_for('view_part', id=part.id))
         
-        return redirect(url_for('view_supplier_order', id=order.id))
+        return render_template('parts/edit.html', form=form, part=part)
         
     @app.route('/pedidos-fornecedor/item/<int:id>/editar', methods=['GET', 'POST'])
     @login_required
@@ -2902,7 +2910,6 @@ def register_routes(app):
     # Permitir que funcionários também excluam itens de estoque
     def delete_stock_item(id):
         # Solução simplificada para resolver problemas de transação
-        from flask import current_app
         
         # Garantir que qualquer operação pendente seja encerrada
         db.session.close()
@@ -2917,7 +2924,6 @@ def register_routes(app):
             item_image = item.image
             
             # 2. Excluir movimentações primeiro
-            from sqlalchemy import text
             db.session.execute(text("DELETE FROM stock_movement WHERE stock_item_id = :id"), {"id": id})
             db.session.commit()
             
@@ -3085,7 +3091,6 @@ def register_routes(app):
     # Initialize the first admin user if no users exist
     def create_initial_admin():
         # Verificar se a tabela de usuários existe
-        from sqlalchemy import inspect
         inspector = inspect(db.engine)
         if not inspector.has_table('user'):
             return
@@ -3093,7 +3098,7 @@ def register_routes(app):
         # Verificar se a coluna username existe
         columns = [c['name'] for c in inspector.get_columns('user')]
         if 'username' not in columns:
-            print("Coluna username não existe. Migrando o banco de dados...")
+            app.logger.info("Username column not found. Migrating database...")
             # A coluna username não existe, então precisamos criar o esquema do zero
             db.drop_all()
             db.create_all()
@@ -3112,7 +3117,7 @@ def register_routes(app):
             db.session.add(admin)
             db.session.commit()
             
-            print("Admin user created: username=admin, password=admin123")
+            app.logger.info("Admin user created: username=admin, password=admin123")
             
     # Register function to be called with app context in app.py
     app.create_initial_admin = create_initial_admin
@@ -3459,9 +3464,11 @@ def register_routes(app):
                 vehicle.acquisition_date = acquisition_date
                 # Tratar o tipo de combustível corretamente
                 try:
+                    # Buscar o valor do campo de combustível do formulário
+                    fuel_type = form.fuel_type.data
                     # Converter o tipo de combustível para o enum correto
                     fuel_type_enum = FuelType[fuel_type] if fuel_type in [ft.name for ft in FuelType] else FuelType.flex
-                except (KeyError, ValueError):
+                except (KeyError, ValueError, AttributeError):
                     # Fallback para o tipo padrão se houver erro
                     fuel_type_enum = FuelType.flex
                 

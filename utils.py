@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from flask import request, abort, session, redirect, url_for, flash, current_app
 from flask_login import current_user
 from werkzeug.utils import secure_filename
-from models import ActionLog, LoginAttempt, db, UserRole, ServiceOrderImage, FinancialEntry
+from models import ActionLog, LoginAttempt, UserRole, ServiceOrderImage, FinancialEntry
+from database import db
 
 def identify_and_format_document(document):
     """Identifica se é CPF ou CNPJ e formata adequadamente"""
@@ -233,7 +234,7 @@ def get_maintenance_in_progress():
 def get_system_setting(name, default=None):
     """Get a system setting by name"""
     from models import SystemSettings
-    from app import db
+    from database import db
     
     setting = SystemSettings.query.filter_by(name=name).first()
     if setting:
@@ -251,7 +252,7 @@ def get_system_setting(name, default=None):
 def set_system_setting(name, value, user_id=None):
     """Set a system setting by name"""
     from models import SystemSettings
-    from app import db
+    from database import db
     
     setting = SystemSettings.query.filter_by(name=name).first()
     if setting:
