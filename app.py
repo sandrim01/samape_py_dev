@@ -28,6 +28,12 @@ setup_logging(app)
 login_manager = LoginManager()
 csrf = CSRFProtect()
 
+# Validate required configuration
+if not app.config.get('SECRET_KEY'):
+    raise ValueError("SECRET_KEY is required")
+if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+    raise ValueError("DATABASE_URL is required")
+
 # Initialize extensions with app
 init_db(app)
 login_manager.init_app(app)
@@ -91,12 +97,4 @@ with app.app_context():
             app.logger.error(f"Error creating admin user: {e}")
 
 if __name__ == '__main__':
-    # Configuração para Railway (produção)
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV', 'production') != 'production'
-    
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=debug
-    )
+    app.run(debug=True)

@@ -1,5 +1,4 @@
 import os
-import secrets
 from datetime import timedelta
 
 class Config:
@@ -7,18 +6,12 @@ class Config:
     # Flask
     SECRET_KEY = os.environ.get("SESSION_SECRET")
     if not SECRET_KEY:
-        # Gerar chave temporária para Railway se não estiver configurada
-        SECRET_KEY = secrets.token_hex(32)
-        print("⚠️  AVISO: SESSION_SECRET não configurada, usando chave temporária")
-        print("   Configure SESSION_SECRET no Railway para segurança em produção")
+        raise ValueError("SESSION_SECRET environment variable is required")
     
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     if not SQLALCHEMY_DATABASE_URI:
-        # Fallback para SQLite local se não houver PostgreSQL
-        SQLALCHEMY_DATABASE_URI = "sqlite:///samape.db"
-        print("⚠️  AVISO: DATABASE_URL não configurada, usando SQLite local")
-        print("   Configure DATABASE_URL do PostgreSQL no Railway")
+        raise ValueError("DATABASE_URL environment variable is required")
         
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
